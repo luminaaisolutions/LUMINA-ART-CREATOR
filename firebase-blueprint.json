@@ -1,0 +1,48 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Informações do perfil do usuário.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID único do usuário." },
+        "email": { "type": "string", "format": "email", "description": "E-mail do usuário." },
+        "displayName": { "type": "string", "description": "Nome de exibição." },
+        "photoURL": { "type": "string", "description": "URL da foto de perfil." },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "Papel do usuário no sistema." },
+        "credits": { "type": "number", "description": "Saldo de créditos para geração." },
+        "plan": { "type": "string", "enum": ["free", "pro", "elite"], "description": "Plano de assinatura atual." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação da conta." }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "BatchItem": {
+      "title": "Batch Generation Item",
+      "description": "Um item individual de geração de vídeo ou imagem.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID único do item." },
+        "type": { "type": "string", "enum": ["video", "image"], "description": "Tipo de geração." },
+        "status": { "type": "string", "enum": ["pending", "processing", "completed", "failed"], "description": "Status atual." },
+        "prompt": { "type": "string", "description": "Prompt de texto utilizado." },
+        "aspectRatio": { "type": "string", "description": "Proporção da imagem/vídeo." },
+        "resolution": { "type": "string", "description": "Resolução desejada." },
+        "previewUrl": { "type": "string", "description": "URL do resultado gerado." },
+        "progress": { "type": "number", "description": "Progresso da geração (0-100)." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação." },
+        "error": { "type": "string", "description": "Mensagem de erro em caso de falha." }
+      },
+      "required": ["id", "type", "status", "prompt", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Dados do perfil do usuário."
+    },
+    "/users/{userId}/batches/{batchId}": {
+      "schema": "BatchItem",
+      "description": "Itens de geração do usuário."
+    }
+  }
+}
