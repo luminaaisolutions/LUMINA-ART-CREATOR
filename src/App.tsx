@@ -336,6 +336,7 @@ function AppContent() {
   } | null>(null);
 
   const getAI = () => {
+    console.log("Ambiente:", process.env.NODE_ENV);
     const rawKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY || "";
     const key = rawKey.trim().replace(/['"]/g, '');
     if (key) {
