@@ -355,19 +355,25 @@ function AppContent() {
     try {
       const { prompt, contents, model = "gemini-3-flash-preview", config } = options;
       
-      const key = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
-      if (!key) {
-        throw new Error("GEMINI_API_KEY não configurada. Verifique as variáveis de ambiente no Vercel (GEMINI_API_KEY, API_KEY ou GOOGLE_API_KEY).");
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method: 'generateContent',
+          args: {
+            model,
+            contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
+            config
+          }
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to call Gemini API");
       }
 
-      const ai = getAI();
-      const response = await ai.models.generateContent({
-        model: model === "gemini-1.5-flash" ? "gemini-3-flash-preview" : model,
-        contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
-        config
-      });
-      
-      return response;
+      return await res.json();
     } catch (error: any) {
       console.error("Gemini API Error:", error);
       throw new Error(error.message || "Failed to call Gemini API");
@@ -897,7 +903,8 @@ function AppContent() {
                 base64Data = response.generatedImages?.[0]?.image?.imageBytes;
               } else {
                 const isHighRes = currentResolution === '2K' || currentResolution === '4K';
-                const modelName = 'gemini-1.5-flash'; 
+                // Use a proper image generation model
+                const modelName = isHighRes ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image'; 
                 
                 const parts: any[] = [{ text: enhancedPrompt }];
                 if (currentRefAsset && currentRefAsset.type === 'image') {
@@ -948,10 +955,10 @@ function AppContent() {
                   model: modelName,
                   contents: [{ role: 'user', parts }],
                   config: {
-                    tools: currentUseGrounding ? [{ googleSearch: {} }] : undefined,
+                    tools: currentUseGrounding && (modelName === 'gemini-3.1-flash-image-preview') ? [{ googleSearch: {} }] : undefined,
                     imageConfig: {
                       aspectRatio: currentAspectRatio as any,
-                      ...(isHighRes ? { imageSize: currentResolution as any } : {})
+                      ...(isHighRes && modelName === 'gemini-3.1-flash-image-preview' ? { imageSize: currentResolution as any } : {})
                     },
                     safetySettings: [
                       { category: 'HARM_CATEGORY_HATE_SPEECH' as any, threshold: 'BLOCK_NONE' as any },
@@ -1046,7 +1053,7 @@ function AppContent() {
           if (!fastMode && isLipsync && currentLipsyncAudio) {
             try {
               const analysisRes = await callGeminiAPI({
-                model: 'gemini-1.5-flash',
+                model: 'gemini-3-flash-preview',
                 contents: [{
                   role: 'user',
                   parts: [
@@ -1160,25 +1167,31 @@ function AppContent() {
             }
           }
 
-          const key = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
-          if (!key) {
-            throw new Error("GEMINI_API_KEY não configurada para geração de vídeo. Verifique as variáveis de ambiente no Vercel.");
+          // Use server-side proxy for video generation
+          const videoGenRes = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              method: 'generateVideos',
+              args: {
+                model: modelToUse,
+                prompt: videoParams.prompt,
+                config: {
+                  ...videoParams.config,
+                  numberOfVideos: 1
+                },
+                image: videoParams.image,
+                audio_input: videoParams.audio_input
+              }
+            })
+          });
+
+          if (!videoGenRes.ok) {
+            const err = await videoGenRes.json();
+            throw new Error(err.error || "Erro na geração do vídeo.");
           }
 
-          // Use SDK directly for video generation
-          const ai = getAI();
-          // @ts-ignore
-          let operation = await ai.models.generateVideos({
-            model: videoParams.model === 'veo-3.1-lite-generate-preview' ? 'veo-3.1-lite-generate-preview' : 'veo-3.1-generate-preview',
-            prompt: videoParams.prompt,
-            config: {
-              ...videoParams.config,
-              numberOfVideos: 1
-            },
-            image: videoParams.image,
-            // @ts-ignore
-            audio_input: videoParams.audio_input
-          });
+          let operation = await videoGenRes.json();
 
           // 3. Polling
           let pollCount = 0;
@@ -1188,8 +1201,22 @@ function AppContent() {
             await updateDoc(doc(db, itemPath), { progress: pollProgress });
             
             await new Promise(resolve => setTimeout(resolve, 10000));
-            // @ts-ignore
-            operation = await ai.operations.getVideosOperation({ operation });
+            
+            const pollRes = await fetch('/api/gemini', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                method: 'getVideosOperation',
+                args: { operation }
+              })
+            });
+
+            if (!pollRes.ok) {
+              const err = await pollRes.json();
+              throw new Error(err.error || "Erro ao verificar status do vídeo.");
+            }
+
+            operation = await pollRes.json();
           }
 
           if (operation.error) {

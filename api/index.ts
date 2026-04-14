@@ -52,7 +52,6 @@ async function createServer() {
       
       let apiKey = (process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY)?.trim()?.replace(/['"]/g, '');
       
-      // Only try to find another key if NO key was provided at all
       if (!apiKey) {
         const foundKey = Object.values(process.env).find(v => typeof v === 'string' && v.startsWith('AIza'));
         if (foundKey) apiKey = foundKey;
@@ -74,6 +73,73 @@ async function createServer() {
       res.send(Buffer.from(buffer));
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/gemini", async (req, res) => {
+    try {
+      const { method, args } = req.body;
+      let apiKey = (process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY)?.trim()?.replace(/['"]/g, '');
+      
+      if (!apiKey) {
+        const foundKey = Object.values(process.env).find(v => typeof v === 'string' && v.startsWith('AIza'));
+        if (foundKey) apiKey = foundKey;
+      }
+
+      if (!apiKey) {
+        return res.status(400).json({ error: "API Key ausente no servidor." });
+      }
+
+      // We'll use fetch to call the Gemini API directly from the server
+      // to avoid SDK version issues on the server-side if possible, 
+      // or just use the SDK if it's installed.
+      const { GoogleGenAI } = await import("@google/genai");
+      const genAI = new GoogleGenAI({ apiKey }) as any;
+      
+      let result;
+      if (method === 'generateContent') {
+        const model = genAI.getGenerativeModel({ model: args.model });
+        result = await model.generateContent(args.contents);
+        res.json(result.response);
+      } else if (method === 'generateVideos') {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideos`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
+          body: JSON.stringify({
+            prompt: args.prompt,
+            videoConfig: args.config,
+            image: args.image,
+            // Handle both possible naming conventions for audio input
+            audioConfig: args.audio_input || args.audioConfig,
+            audio_input: args.audio_input || args.audioConfig
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          console.error("Veo API Error:", data);
+          return res.status(response.status).json(data);
+        }
+        res.json(data);
+      } else if (method === 'getVideosOperation') {
+        const opName = args.operation.name || args.operation;
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${opName}`, {
+          headers: { 'x-goog-api-key': apiKey }
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          console.error("Veo Operation Error:", data);
+          return res.status(response.status).json(data);
+        }
+        res.json(data);
+      } else {
+        res.status(400).json({ error: "Método não suportado" });
+      }
+    } catch (error: any) {
+      console.error("Gemini Proxy Error:", error);
+      res.status(500).json({ error: error.message });
     }
   });
 
