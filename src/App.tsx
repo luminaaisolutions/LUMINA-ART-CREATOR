@@ -335,17 +335,27 @@ function AppContent() {
     details?: string
   } | null>(null);
 
-  // Initialize Gemini SDK
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+  const getAI = () => {
+    const rawKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+    const key = rawKey.trim().replace(/['"]/g, '');
+    if (key) {
+      console.log("Gemini API Key carregada:", key.substring(0, 4) + "..." + key.substring(key.length - 4));
+    } else {
+      console.warn("Gemini API Key está vazia!");
+    }
+    return new GoogleGenAI({ apiKey: key });
+  };
 
   const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any }) => {
     try {
       const { prompt, contents, model = "gemini-3-flash-preview", config } = options;
       
-      if (!process.env.GEMINI_API_KEY) {
+      const key = process.env.GEMINI_API_KEY || process.env.API_KEY;
+      if (!key) {
         throw new Error("GEMINI_API_KEY não configurada. Adicione-a nas configurações do seu projeto no Vercel Dashboard.");
       }
 
+      const ai = getAI();
       const response = await ai.models.generateContent({
         model: model === "gemini-1.5-flash" ? "gemini-3-flash-preview" : model,
         contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
@@ -1145,11 +1155,13 @@ function AppContent() {
             }
           }
 
-          if (!process.env.GEMINI_API_KEY) {
+          const key = process.env.GEMINI_API_KEY || process.env.API_KEY;
+          if (!key) {
             throw new Error("GEMINI_API_KEY não configurada para geração de vídeo.");
           }
 
           // Use SDK directly for video generation
+          const ai = getAI();
           // @ts-ignore
           let operation = await ai.models.generateVideos({
             model: videoParams.model === 'veo-3.1-lite-generate-preview' ? 'veo-3.1-lite-generate-preview' : 'veo-3.1-generate-preview',
@@ -1172,7 +1184,7 @@ function AppContent() {
             
             await new Promise(resolve => setTimeout(resolve, 10000));
             // @ts-ignore
-            operation = await ai.operations.get(operation.name || operation.id || operation);
+            operation = await ai.operations.getVideosOperation({ operation });
           }
 
           if (operation.error) {
