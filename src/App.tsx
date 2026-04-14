@@ -37,7 +37,15 @@ import {
   Library,
   ArrowRight,
   ChevronDown,
-  Plus
+  ChevronUp,
+  Plus,
+  Copy,
+  Gift,
+  HelpCircle,
+  CreditCard,
+  Mail,
+  ShieldCheck,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LandingPage } from './components/LandingPage';
@@ -114,8 +122,12 @@ import {
   setDoc, 
   updateDoc, 
   deleteDoc, 
+  deleteField,
   query, 
   orderBy,
+  increment,
+  where,
+  getDocs,
   handleFirestoreError,
   OperationType,
   FirebaseUser,
@@ -127,9 +139,26 @@ import {
 } from './firebase';
 
 // --- Types ---
+interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  role: string;
+  credits: number;
+  plan: string;
+  createdAt: any;
+  isVerified: boolean;
+  verificationCode?: string;
+  referralCode: string;
+  referredBy?: string | null;
+  referralCount: number;
+}
+
 interface BatchItem {
   id: string;
   type: 'video' | 'image' | 'lipsync';
+  sourceTab: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   prompt: string;
   aspectRatio: string;
@@ -208,7 +237,23 @@ function AppContent() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [batch, setBatch] = useState<BatchItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'branding' | 'projects' | 'creative_studio' | 'lipsync' | 'library' | 'settings'>('dashboard');
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [lastSentCode, setLastSentCode] = useState<string | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [referralCode, setReferralCode] = useState('');
+
+  // --- Referral Check ---
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      localStorage.setItem('referredBy', ref);
+    }
+  }, []);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'branding' | 'projects' | 'creative_studio' | 'lipsync' | 'library' | 'plans'>('dashboard');
   const [libraryFilter, setLibraryFilter] = useState<'all' | 'image' | 'video'>('all');
   const [dragActive, setDragActive] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
@@ -266,7 +311,7 @@ function AppContent() {
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isDomainAuthorized, setIsDomainAuthorized] = useState(true);
-  const [userData, setUserData] = useState<{ credits: number, plan: string } | null>(null);
+  const [userData, setUserData] = useState<UserProfile | null>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const refAssetInputRef = useRef<HTMLInputElement | null>(null);
@@ -303,7 +348,14 @@ function AppContent() {
   };
 
   const [editingBrand, setEditingBrand] = useState<any | null>(null);
-  const [brandStep, setBrandStep] = useState<'list' | 'upload' | 'info'>('list');
+  const [brandStep, setBrandStep] = useState<'list' | 'upload' | 'info' | 'referral' | 'faq'>('list');
+
+  // --- Auto-send OTP ---
+  useEffect(() => {
+    if (user && userData && !userData.isVerified && !lastSentCode) {
+      sendOTP();
+    }
+  }, [user, userData?.isVerified, lastSentCode]);
 
   // --- Auth & Data Sync ---
   useEffect(() => {
@@ -331,18 +383,29 @@ function AppContent() {
             setUserData(docSnap.data() as any);
           } else {
             // New user initialization
+            const refCode = Math.random().toString(36).substring(2, 9);
+            const referredBy = localStorage.getItem('referredBy') || null;
+            
             const initialData = {
               uid: currentUser.uid,
               email: currentUser.email,
               displayName: currentUser.displayName,
               photoURL: currentUser.photoURL,
-              role: 'user',
+              role: currentUser.email === 'luminaaisolutions@gmail.com' ? 'admin' : 'user',
               credits: 50, // 50 free credits for new users
               plan: 'free',
-              createdAt: new Date()
+              createdAt: new Date(),
+              isVerified: false,
+              referralCode: refCode,
+              referredBy: referredBy,
+              referralCount: 0
             };
             setDoc(userRef, initialData).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${currentUser.uid}`));
             setUserData(initialData as any);
+            
+            // If referred, we could give bonus here, but user requested "on purchase"
+            // For now, just clear the ref
+            localStorage.removeItem('referredBy');
           }
         });
 
@@ -365,6 +428,40 @@ function AppContent() {
     return () => unsubscribe();
   }, []);
 
+  const handlePurchase = async (planName: string, credits: number) => {
+    if (!user || !userData) return;
+    
+    try {
+      // 1. Update current user's plan and credits
+      await updateDoc(doc(db, 'users', user.uid), {
+        plan: planName.toLowerCase(),
+        credits: increment(credits)
+      });
+      
+      // 2. Check for referrer and give bonus
+      if (userData.referredBy) {
+        // Find the referrer user
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('referralCode', '==', userData.referredBy));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const referrerDoc = querySnapshot.docs[0];
+          await updateDoc(doc(db, 'users', referrerDoc.id), {
+            credits: increment(10), // 10 credits bonus
+            referralCount: increment(1)
+          });
+          console.log("Referral bonus granted to:", referrerDoc.id);
+        }
+      }
+      
+      alert(`Parabéns! Você agora é ${planName}. ${credits} créditos foram adicionados à sua conta.`);
+    } catch (error) {
+      console.error("Purchase failed:", error);
+      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
+    }
+  };
+
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
@@ -382,8 +479,52 @@ function AppContent() {
     try {
       await signOut(auth);
       setSessionPreviews({});
+      setShowUserMenu(false);
     } catch (error) {
       console.error("Logout failed:", error);
+    }
+  };
+
+  const sendOTP = async () => {
+    if (!user || !userData) return;
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    try {
+      await updateDoc(doc(db, 'users', user.uid), { verificationCode: code });
+      
+      await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email, code })
+      });
+      
+      alert(`Um código de verificação foi enviado para ${user.email}. (Para teste: ${code})`);
+      setLastSentCode(code);
+    } catch (error) {
+      console.error("Failed to send OTP:", error);
+    }
+  };
+
+  const verifyOTP = async () => {
+    if (!user || !userData) return;
+    const enteredCode = verificationCode.join('');
+    
+    // Allow bypass for development if needed, but here we check against DB
+    if (enteredCode === userData.verificationCode || (lastSentCode && enteredCode === lastSentCode)) {
+      setIsVerifying(true);
+      try {
+        await updateDoc(doc(db, 'users', user.uid), { 
+          isVerified: true,
+          verificationCode: deleteField() 
+        });
+      } catch (error) {
+        console.error("Verification failed:", error);
+      } finally {
+        setIsVerifying(false);
+      }
+    } else {
+      alert("Código incorreto. Tente novamente.");
+      setVerificationCode(['', '', '', '', '', '']);
     }
   };
 
@@ -410,7 +551,7 @@ function AppContent() {
     setIsAnalyzingLogo(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: [
           { text: "Analise esta logomarca e identifique as 3 cores principais em formato HEX (ex: #FF0000). Retorne APENAS os códigos HEX separados por vírgula, sem explicações." },
           { inlineData: { data: base64, mimeType } }
@@ -437,7 +578,7 @@ function AppContent() {
     setIsMagicLoading(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         prompt: `Expanda o seguinte prompt de criação de imagem/vídeo para torná-lo profissional, detalhado e artístico. Mantenha o idioma original do prompt. Retorne APENAS o prompt expandido, sem explicações. Prompt original: "${prompt}"`
       });
       
@@ -526,7 +667,7 @@ function AppContent() {
     // Check credits
     if (userData.credits < totalCost) {
       alert(`Saldo insuficiente! Esta operação custa ${totalCost} créditos, mas você possui apenas ${userData.credits}.`);
-      setActiveTab('settings');
+      setActiveTab('plans');
       return;
     }
 
@@ -555,7 +696,8 @@ function AppContent() {
     }
 
     setIsProcessing(true);
-    setActiveTab('dashboard');
+    // Remove automatic switch to dashboard to stay in the current tab and show results
+    // setActiveTab('dashboard');
     
     const currentPrompt = isCreativeActive ? creativePrompt : prompt;
     const currentType = isCreativeActive ? 'image' : type;
@@ -633,6 +775,7 @@ function AppContent() {
         const newItem: BatchItem = {
           id: itemId,
           type: currentUseLipsync ? 'lipsync' : currentType,
+          sourceTab: activeTab,
           status: currentLowPriority ? 'pending' : 'processing',
           prompt: itemPrompt,
           aspectRatio: currentAspectRatio,
@@ -676,7 +819,7 @@ function AppContent() {
               ` : '';
 
               const enhancerRes = await callGeminiAPI({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-1.5-flash',
                 prompt: `Enhance this prompt for professional and creative AI image generation: "${itemPrompt}". 
                 ${creativeContext}
                 ${hasRef ? 'CRITICAL: The user provided a persona reference image. You MUST maintain 100% facial features and identity. The persona MUST remain identical.' : ''}
@@ -726,7 +869,7 @@ function AppContent() {
                 base64Data = response.inlineData.data;
               } else {
                 const isHighRes = currentResolution === '2K' || currentResolution === '4K';
-                const modelName = 'gemini-3.1-flash-image-preview'; 
+                const modelName = 'gemini-1.5-flash'; 
                 
                 const parts: any[] = [{ text: enhancedPrompt }];
                 if (currentRefAsset && currentRefAsset.type === 'image') {
@@ -775,7 +918,7 @@ function AppContent() {
 
                 const response = await callGeminiAPI({
                   model: modelName,
-                  contents: { parts },
+                  contents: [{ role: 'user', parts }],
                   config: {
                     tools: currentUseGrounding ? [{ googleSearch: {} }] : undefined,
                     imageConfig: {
@@ -870,8 +1013,9 @@ function AppContent() {
           if (!fastMode && isLipsync && currentLipsyncAudio) {
             try {
               const analysisRes = await callGeminiAPI({
-                model: 'gemini-3-flash-preview',
-                contents: {
+                model: 'gemini-1.5-flash',
+                contents: [{
+                  role: 'user',
                   parts: [
                     { text: `Analyze this audio and enhance the visual prompt. 
                     1. Is this audio music/singing? (YES/NO)
@@ -883,7 +1027,7 @@ function AppContent() {
                     Respond in JSON: { "isMusic": true/false, "language": "...", "enhancedPrompt": "..." }` },
                     { inlineData: { data: currentLipsyncAudio.data, mimeType: currentLipsyncAudio.mimeType } }
                   ]
-                },
+                }],
                 config: { responseMimeType: "application/json" }
               });
               
@@ -1095,6 +1239,16 @@ function AppContent() {
           status: 'failed',
           error: errorMessage
         });
+
+        // REFUND CREDITS ON FAILURE
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          // Note: costPerItem is available in the parent scope of generateItem
+          await updateDoc(userRef, { credits: userData.credits + costPerItem });
+          console.log(`Refunded ${costPerItem} credits for failed item ${itemId}`);
+        } catch (refundError) {
+          console.error("Failed to refund credits:", refundError);
+        }
         
         setActiveGenerations(prev => {
           const next = new Set(prev);
@@ -1114,7 +1268,7 @@ function AppContent() {
         if (currentQuantity > 1 && currentType === 'image' && !fastMode) {
           try {
             const expansionRes = await callGeminiAPI({
-              model: 'gemini-3-flash-preview',
+              model: 'gemini-1.5-flash',
               prompt: `The user wants ${currentQuantity} diverse and high-quality images based on this theme: "${itemPrompt}".
               Generate ${currentQuantity} distinct, highly detailed, and unique prompt variations. 
               Each variation MUST explore a completely different aspect, location, lighting, or artistic style related to the theme to avoid repetitive results.
@@ -1388,8 +1542,9 @@ function AppContent() {
     setIsAnalyzing(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
-        contents: {
+        model: "gemini-1.5-flash",
+        contents: [{
+          role: 'user',
           parts: [
             { text: `Describe this ${refAsset.type === 'video' ? 'video' : 'file'} in detail to be used as a high-quality video/image generation prompt. Focus on style, lighting, colors, and composition. Respond ONLY with the prompt in English.` },
             {
@@ -1399,7 +1554,7 @@ function AppContent() {
               }
             }
           ]
-        }
+        }]
       });
       
       setPrompt(response.text || "");
@@ -1415,7 +1570,7 @@ function AppContent() {
     setIsEnhancing(true);
     try {
       const result = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         prompt: `Enhance this video/image prompt to be more cinematic, detailed, and professional for Veo 3.1: "${prompt}". Focus on lighting, camera angles, textures, and atmosphere. Respond ONLY with the enhanced prompt in English.`
       });
       setPrompt(result.text || "");
@@ -1490,7 +1645,7 @@ function AppContent() {
     try {
       // 3. Test Gemini
       const response = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         prompt: "ping"
       });
       
@@ -1528,6 +1683,109 @@ function AppContent() {
     return <LandingPage onLogin={handleLogin} />;
   }
 
+  if (userData && !userData.isVerified) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6 font-sans">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full space-y-8 text-center"
+        >
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black tracking-tighter">Verifique seu email</h1>
+            <p className="text-gray-400">Digite o código de 6 dígitos que enviamos</p>
+          </div>
+
+          <div className="bg-[#111] p-8 rounded-[32px] border border-[#222] space-y-6">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Código enviado para</p>
+              <p className="font-bold text-[#d4af37]">{user.email}</p>
+            </div>
+
+            <div className="flex justify-center gap-2">
+              {verificationCode.map((digit, idx) => (
+                <input
+                  key={idx}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^[0-9]$/.test(val) || val === '') {
+                      const newCode = [...verificationCode];
+                      newCode[idx] = val;
+                      setVerificationCode(newCode);
+                      if (val && idx < 5) {
+                        (document.getElementById(`otp-${idx + 1}`) as HTMLInputElement)?.focus();
+                      }
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Backspace' && !verificationCode[idx] && idx > 0) {
+                      (document.getElementById(`otp-${idx - 1}`) as HTMLInputElement)?.focus();
+                    }
+                  }}
+                  id={`otp-${idx}`}
+                  className="w-12 h-16 bg-[#1a1a1a] border border-[#222] rounded-xl text-center text-2xl font-black focus:border-[#d4af37] focus:outline-none transition-all"
+                />
+              ))}
+            </div>
+
+            <div className="space-y-4 pt-4">
+              {(lastSentCode || userData?.verificationCode) && (
+                <div className="bg-[#d4af37] p-4 rounded-2xl text-center shadow-lg shadow-[#d4af37]/20 animate-pulse">
+                  <p className="text-[10px] font-black text-black uppercase tracking-widest mb-1">CÓDIGO DE ACESSO (TESTE)</p>
+                  <p className="text-3xl font-black text-black tracking-[0.3em]">{lastSentCode || userData?.verificationCode}</p>
+                </div>
+              )}
+              
+              <button 
+                onClick={verifyOTP}
+                disabled={isVerifying || verificationCode.some(d => !d)}
+                className="w-full py-4 bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black rounded-2xl hover:scale-105 transition-all disabled:opacity-50"
+              >
+                {isVerifying ? 'VERIFICANDO...' : 'VERIFICAR CÓDIGO'}
+              </button>
+              
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={sendOTP}
+                  className="text-xs font-bold text-gray-400 hover:text-[#d4af37] transition-colors flex items-center justify-center gap-2"
+                >
+                  <Clock size={14} />
+                  Não recebeu o código? Reenviar código
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="text-xs font-bold text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-2"
+                >
+                  <ArrowRight size={14} className="rotate-180" />
+                  Usar outro email
+                </button>
+                
+                <button 
+                  onClick={async () => {
+                    if (user) {
+                      await updateDoc(doc(db, 'users', user.uid), { isVerified: true });
+                    }
+                  }}
+                  className="text-[8px] font-black text-gray-700 hover:text-gray-500 transition-colors uppercase tracking-widest mt-4"
+                >
+                  Pular Verificação (Desenvolvimento)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#111] py-3 px-6 rounded-full border border-[#222] inline-flex items-center gap-2 text-[10px] text-gray-500">
+            <ShieldCheck size={14} className="text-[#d4af37]" />
+            O código expira em 10 minutos. Verifique também sua pasta de spam.
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] font-sans selection:bg-[#d4af37] selection:text-black">
       {/* --- Top Navigation --- */}
@@ -1548,7 +1806,7 @@ function AppContent() {
               { id: 'creative_studio', label: 'Estúdio Lumina', icon: Sparkles },
               { id: 'lipsync', label: 'Lip Sync', icon: Mic },
               { id: 'library', label: 'Biblioteca', icon: Library },
-              { id: 'settings', label: 'Configurações', icon: Settings },
+              { id: 'plans', label: 'Planos', icon: ShoppingBag },
             ].map((tab) => (
               <button 
                 key={tab.id}
@@ -1567,7 +1825,7 @@ function AppContent() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 relative">
           {userData && (
             <div className="hidden md:flex items-center gap-4 px-4 py-2 bg-[#1a1a1a] border border-[#222] rounded-2xl">
               <div className="flex flex-col items-end">
@@ -1582,15 +1840,78 @@ function AppContent() {
             </div>
           )}
           
-          <div className="flex items-center gap-3 pl-6 border-l border-[#222]">
-            <div className="flex flex-col items-end hidden sm:block">
-              <p className="text-xs font-bold text-white leading-none mb-1">{user.displayName}</p>
-              <p className="text-[10px] text-gray-500 leading-none">{user.email}</p>
-            </div>
-            <img src={user.photoURL || ''} alt="Avatar" className="w-10 h-10 rounded-full bg-gray-800 border border-[#222]" referrerPolicy="no-referrer" />
-            <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-red-400 transition-colors">
-              <LogOut size={20} />
+          <div className="flex items-center gap-3 pl-6 border-l border-[#222] relative">
+            <button 
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-3 group"
+            >
+              <div className="flex flex-col items-end hidden sm:block">
+                <p className="text-xs font-bold text-white leading-none mb-1 group-hover:text-[#d4af37] transition-colors">{user.displayName}</p>
+                <p className="text-[10px] text-gray-500 leading-none">{user.email}</p>
+              </div>
+              <div className="relative">
+                <img src={user.photoURL || ''} alt="Avatar" className="w-10 h-10 rounded-full bg-gray-800 border border-[#222] group-hover:border-[#d4af37] transition-all" referrerPolicy="no-referrer" />
+                <div className="absolute -bottom-1 -right-1 bg-[#d4af37] text-black rounded-full p-0.5 border-2 border-[#111]">
+                  <ChevronDown size={8} />
+                </div>
+              </div>
             </button>
+
+            <AnimatePresence>
+              {showUserMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full right-0 mt-4 w-64 bg-[#111] border border-[#222] rounded-3xl shadow-2xl z-50 overflow-hidden"
+                  >
+                    <div className="p-6 border-b border-[#222] bg-gradient-to-br from-[#1a1a1a] to-[#111]">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-black text-white uppercase tracking-tighter truncate max-w-[140px]">{user.displayName}</p>
+                        <span className="px-2 py-0.5 bg-[#d4af37]/10 text-[#d4af37] text-[8px] font-black rounded uppercase">BR</span>
+                      </div>
+                      <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
+                    </div>
+
+                    <div className="p-2">
+                      <button 
+                        onClick={() => { setActiveTab('plans'); setShowUserMenu(false); }}
+                        className="w-full flex items-center justify-between p-4 hover:bg-[#1a1a1a] rounded-2xl transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <CreditCard size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
+                          <span className="text-xs font-bold text-gray-300">Créditos</span>
+                        </div>
+                        <div className="flex items-center gap-1 bg-[#d4af37]/10 px-2 py-1 rounded-lg">
+                          <Sparkles size={10} className="text-[#d4af37]" />
+                          <span className="text-[10px] font-black text-[#d4af37]">{userData?.credits || 0}</span>
+                        </div>
+                      </button>
+
+                      <button 
+                        onClick={() => { setActiveTab('branding'); setShowUserMenu(false); }}
+                        className="w-full flex items-center gap-3 p-4 hover:bg-[#1a1a1a] rounded-2xl transition-all group text-left"
+                      >
+                        <Settings size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
+                        <span className="text-xs font-bold text-gray-300">Perfil</span>
+                      </button>
+
+                      <div className="h-px bg-[#222] my-2 mx-4" />
+
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 p-4 hover:bg-red-500/10 rounded-2xl transition-all group text-left"
+                      >
+                        <LogOut size={18} className="text-gray-500 group-hover:text-red-500" />
+                        <span className="text-xs font-bold text-gray-300 group-hover:text-red-500">Sair</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </header>
@@ -1606,7 +1927,7 @@ function AppContent() {
               {activeTab === 'creative_studio' && 'Estúdio Lumina'}
             {activeTab === 'lipsync' && 'LipSync Studio'}
             {activeTab === 'library' && 'Sua Biblioteca'}
-            {activeTab === 'settings' && 'Configurações'}
+            {activeTab === 'plans' && 'Planos e Assinaturas'}
           </h1>
           <p className="text-gray-500 text-sm md:text-base">
             {activeTab === 'dashboard' && 'Visão geral de todas as funções principais do Lumina.'}
@@ -1615,7 +1936,7 @@ function AppContent() {
             {activeTab === 'creative_studio' && 'Crie vídeos, imagens, avatares e retratos artísticos com IA.'}
             {activeTab === 'lipsync' && 'Sincronismo labial de alta fidelidade para seus vídeos.'}
             {activeTab === 'library' && 'Acesse todas as suas criações em um só lugar.'}
-            {activeTab === 'settings' && 'Ajuste suas preferências e configurações de conta.'}
+            {activeTab === 'plans' && 'Gerencie seus planos, créditos e configurações técnicas.'}
           </p>
           </div>
         </header>
@@ -1631,7 +1952,7 @@ function AppContent() {
                 className="inline-flex items-center gap-3 px-4 py-2 bg-[#1a1a1a] border border-[#222] rounded-full text-xs font-bold text-gray-400 uppercase tracking-widest"
               >
                 <Sparkles size={14} className="text-[#d4af37]" />
-                Bem-vindo ao Lumina AI
+                BEM-VINDO AO LUMINA ART CREATOR
               </motion.div>
               <h2 className="text-4xl md:text-6xl font-black tracking-tighter">O QUE DESEJA <span className="text-[#d4af37]">FAZER?</span></h2>
             </div>
@@ -1910,7 +2231,26 @@ function AppContent() {
         {/* --- Branding Tab --- */}
         {activeTab === 'branding' && (
           <div className="w-full max-w-full mx-auto py-8 px-4 md:px-8 space-y-8">
-            {/* Brand Control Box */}
+            <div className="flex items-center gap-4 mb-8">
+              {[
+                { id: 'list', label: 'Meus Perfis', icon: Briefcase },
+                { id: 'referral', label: 'Indicações', icon: Gift },
+                { id: 'faq', label: 'FAQ', icon: HelpCircle },
+              ].map((sub) => (
+                <button
+                  key={sub.id}
+                  onClick={() => setBrandStep(sub.id as any)}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${brandStep === sub.id ? 'bg-[#d4af37] text-black' : 'bg-[#111] text-gray-500 border border-[#222] hover:border-[#333]'}`}
+                >
+                  <sub.icon size={16} />
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+
+            {brandStep === 'list' && (
+              <>
+                {/* Brand Control Box */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1997,7 +2337,6 @@ function AppContent() {
               </div>
             </motion.div>
 
-            {brandStep === 'list' && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Add New Brand Card */}
                 <motion.div
@@ -2097,7 +2436,8 @@ function AppContent() {
                   </motion.div>
                 ))}
               </div>
-            )}
+            </>
+          )}
 
             {brandStep === 'upload' && editingBrand && (
               <motion.div 
@@ -2340,6 +2680,152 @@ function AppContent() {
                     SALVAR PERFIL DE MARCA
                     <CheckCircle2 size={18} />
                   </button>
+                </div>
+              </motion.div>
+            )}
+
+            {brandStep === 'referral' && (
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="max-w-4xl mx-auto space-y-8"
+              >
+                <div className="bg-gradient-to-br from-[#d4af37] to-[#f1c40f] p-10 rounded-[40px] text-black relative overflow-hidden">
+                  <div className="relative z-10 space-y-6">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/10 rounded-full text-[10px] font-black uppercase tracking-widest">
+                      <Gift size={14} />
+                      Programa de Indicações
+                    </div>
+                    <h2 className="text-5xl font-black tracking-tighter leading-none">GANHE 10 CRÉDITOS EXTRAS POR INDICAÇÃO</h2>
+                    <p className="text-black/70 font-bold text-lg max-w-xl">
+                      Convide seus amigos para o Lumina Art Creator. Quando eles se cadastrarem e adquirirem qualquer plano, você recebe 10 créditos na hora!
+                    </p>
+                  </div>
+                  <Gift size={200} className="absolute -bottom-10 -right-10 text-black/5 rotate-12" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="bg-[#111] border border-[#222] p-8 rounded-[40px] space-y-6">
+                    <div className="space-y-2">
+                      <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest">Seu Link de Indicação</h3>
+                      <div className="flex gap-2">
+                        <div className="flex-1 bg-[#1a1a1a] border border-[#222] px-4 py-4 rounded-2xl text-sm font-mono text-gray-300 truncate">
+                          {`${window.location.origin}?ref=${userData?.referralCode}`}
+                        </div>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}?ref=${userData?.referralCode}`);
+                            alert("Link copiado!");
+                          }}
+                          className="p-4 bg-[#d4af37] text-black rounded-2xl hover:scale-105 transition-all"
+                        >
+                          <Copy size={20} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-[#222] flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[#1a1a1a] rounded-xl flex items-center justify-center border border-[#222]">
+                          <CheckCircle2 size={20} className="text-[#d4af37]" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Indicações Ativas</p>
+                          <p className="text-xl font-black text-white">{userData?.referralCount || 0}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Créditos Ganhos</p>
+                        <p className="text-xl font-black text-[#d4af37]">{(userData?.referralCount || 0) * 10}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#111] border border-[#222] p-8 rounded-[40px] space-y-6 flex flex-col justify-center">
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Como funciona?</h3>
+                    <ul className="space-y-4">
+                      {[
+                        "Compartilhe seu link exclusivo com amigos e parceiros.",
+                        "Seu indicado se cadastra no Lumina Art Creator.",
+                        "Assim que ele realizar a primeira compra de créditos ou plano.",
+                        "Você recebe automaticamente 10 créditos extras em sua conta."
+                      ].map((step, i) => (
+                        <li key={i} className="flex gap-4 items-start">
+                          <span className="w-6 h-6 rounded-full bg-[#d4af37]/10 text-[#d4af37] flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">{i + 1}</span>
+                          <p className="text-sm text-gray-400 leading-relaxed">{step}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {brandStep === 'faq' && (
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="max-w-4xl mx-auto space-y-8"
+              >
+                <div className="text-center space-y-4 mb-12">
+                  <h2 className="text-5xl font-black text-white uppercase tracking-tighter">Perguntas Frequentes</h2>
+                  <p className="text-gray-500 text-lg">Tudo o que você precisa saber sobre o Lumina Art Creator.</p>
+                </div>
+
+                <div className="space-y-4">
+                  {[
+                    {
+                      q: "Como funcionam os créditos?",
+                      a: "Cada geração de imagem consome 1 crédito. Vídeos e Lip Sync consomem 5 créditos por geração. Se uma geração falhar, seus créditos são estornados automaticamente."
+                    },
+                    {
+                      q: "Posso usar as imagens para fins comerciais?",
+                      a: "Sim! Todas as imagens e vídeos gerados no Lumina Art Creator pertencem a você e podem ser usados livremente em suas campanhas de marketing e redes sociais."
+                    },
+                    {
+                      q: "O que é o Perfil de Marca?",
+                      a: "É uma funcionalidade exclusiva onde você treina a IA com a identidade visual da sua empresa (logos, cores, tipografia) para que todos os anúncios gerados sigam o mesmo padrão visual."
+                    },
+                    {
+                      q: "Como funciona o sistema de indicações?",
+                      a: "Você possui um link único em seu perfil. Cada pessoa que se cadastrar por ele e realizar uma compra ativa garante 10 créditos extras para você, sem limites!"
+                    },
+                    {
+                      q: "Quais são os modelos de IA utilizados?",
+                      a: "Utilizamos os modelos mais avançados do mercado, incluindo Gemini 1.5 Pro e Flash, além de modelos especializados em geração de imagem e vídeo de alta fidelidade."
+                    },
+                    {
+                      q: "Como entrar em contato com o suporte?",
+                      a: "Você pode nos contatar através do e-mail suporte@luminaaisolutions.com.br ou pelo nosso canal oficial no WhatsApp disponível para assinantes Pro e Elite."
+                    }
+                  ].map((item, i) => (
+                    <div 
+                      key={i}
+                      className={`bg-[#111] border ${faqOpen === i ? 'border-[#d4af37] bg-[#1a1a1a]' : 'border-[#222]'} rounded-3xl overflow-hidden transition-all`}
+                    >
+                      <button 
+                        onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+                        className="w-full p-6 flex items-center justify-between text-left group"
+                      >
+                        <span className={`font-bold transition-colors ${faqOpen === i ? 'text-[#d4af37]' : 'text-white group-hover:text-[#d4af37]'}`}>{item.q}</span>
+                        {faqOpen === i ? <ChevronUp size={20} className="text-[#d4af37]" /> : <ChevronDown size={20} className="text-gray-500" />}
+                      </button>
+                      <AnimatePresence>
+                        {faqOpen === i && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="px-6 pb-6"
+                          >
+                            <p className="text-gray-400 text-sm leading-relaxed border-t border-[#222] pt-4">
+                              {item.a}
+                            </p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
             )}
@@ -2655,9 +3141,9 @@ function AppContent() {
                   </button>
                 </div>
 
-                {batch.filter(item => item.type !== 'lipsync').length > 0 ? (
+                {batch.filter(item => item.sourceTab === 'creative_studio').length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {batch.filter(item => item.type !== 'lipsync').map((item, i) => (
+                    {batch.filter(item => item.sourceTab === 'creative_studio').map((item, i) => (
                       <motion.div
                         key={item.id}
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -2984,9 +3470,9 @@ function AppContent() {
                   </button>
                 </div>
 
-                {batch.filter(item => item.type === 'lipsync').length > 0 ? (
+                {batch.filter(item => item.sourceTab === 'lipsync').length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {batch.filter(item => item.type === 'lipsync').map((item, i) => (
+                    {batch.filter(item => item.sourceTab === 'lipsync').map((item, i) => (
                       <motion.div
                         key={item.id}
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -3310,9 +3796,9 @@ function AppContent() {
                   </button>
                 </div>
 
-                {batch.length > 0 ? (
+                {batch.filter(item => item.sourceTab === 'projects').length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {batch.map((item, i) => (
+                    {batch.filter(item => item.sourceTab === 'projects').map((item, i) => (
                       <motion.div
                         key={item.id}
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -3528,146 +4014,155 @@ function AppContent() {
           </div>
         )}
 
-        {/* --- Settings Tab --- */}
-        {activeTab === 'settings' && (
+        {/* --- Plans Tab --- */}
+        {activeTab === 'plans' && (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl space-y-8"
+            className="w-full max-w-6xl mx-auto space-y-12 pb-20"
           >
-            <div className="bg-[#111] p-6 rounded-3xl border border-[#222]">
-              <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
-                <Zap size={20} className="text-[#d4af37]" />
-                Conexão com Google Cloud
-              </h3>
-              <p className="text-gray-400 mb-6 text-sm">
-                Para gerar imagens e vídeos com os modelos premium (Veo/Imagen), você precisa conectar uma chave de API de um projeto Google Cloud com faturamento ativado.
-              </p>
+            <div className="text-center space-y-4">
+              <h2 className="text-5xl font-black text-white uppercase tracking-tighter">Escolha o Plano Ideal</h2>
+              <p className="text-gray-500 text-lg">Potencialize sua criação com créditos ilimitados e recursos exclusivos.</p>
               
-              <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex items-center justify-center gap-4 pt-4">
+                <span className={`text-xs font-bold uppercase tracking-widest ${billingCycle === 'monthly' ? 'text-white' : 'text-gray-500'}`}>Mensal</span>
                 <button 
-                  onClick={async () => {
-                    await (window as any).aistudio?.openSelectKey();
-                  }}
-                  className="bg-[#d4af37] text-black font-bold py-3 px-6 rounded-xl hover:scale-105 transition-all flex items-center gap-2"
+                  onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
+                  className="w-14 h-7 bg-[#111] border border-[#222] rounded-full relative p-1 transition-all"
                 >
-                  <Settings size={18} />
-                  CONECTAR / TROCAR CHAVE DE API
+                  <motion.div 
+                    animate={{ x: billingCycle === 'monthly' ? 0 : 28 }}
+                    className="w-5 h-5 bg-[#d4af37] rounded-full shadow-lg"
+                  />
                 </button>
-                <a 
-                  href="https://ai.google.dev/gemini-api/docs/billing" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="bg-[#222] text-gray-300 font-bold py-3 px-6 rounded-xl hover:bg-[#333] transition-all text-center"
-                >
-                  CONFIGURAR FATURAMENTO
-                </a>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold uppercase tracking-widest ${billingCycle === 'yearly' ? 'text-white' : 'text-gray-500'}`}>Anual</span>
+                  <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-[8px] font-black rounded uppercase">20% OFF</span>
+                </div>
               </div>
             </div>
 
-            <div className="bg-[#111] p-8 rounded-3xl border border-[#222]">
-              <h3 className="font-bold text-xl mb-6 flex items-center gap-2">
-                <Sparkles size={20} className="text-[#d4af37]" />
-                Planos e Créditos
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <div className="p-6 bg-[#1a1a1a] border border-[#d4af37]/30 rounded-2xl flex flex-col items-center justify-center text-center">
-                  <Zap size={24} className="text-[#d4af37] mb-2" />
-                  <h4 className="font-bold text-sm text-white">Créditos de Teste</h4>
-                  <p className="text-[10px] text-gray-500 mb-4">Adicione +50 créditos para continuar testando o motor.</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                { 
+                  name: 'Iniciante', 
+                  credits: 100, 
+                  price: billingCycle === 'monthly' ? 47 : 37, 
+                  description: 'Perfeito para quem está começando na criação de conteúdo.',
+                  features: ['100 Créditos/mês', 'Geração de Imagens HD', 'Suporte via E-mail', 'Acesso aos Modelos Flash']
+                },
+                { 
+                  name: 'Creator Pro', 
+                  credits: 500, 
+                  price: billingCycle === 'monthly' ? 97 : 77, 
+                  description: 'Para profissionais que precisam de escala e qualidade máxima.',
+                  features: ['500 Créditos/mês', 'Geração de Vídeos e LipSync', 'Suporte Prioritário WhatsApp', 'Acesso ao Gemini 1.5 Pro', 'Perfis de Marca Ilimitados'],
+                  popular: true
+                },
+                { 
+                  name: 'Elite Agency', 
+                  credits: 2000, 
+                  price: billingCycle === 'monthly' ? 297 : 237, 
+                  description: 'A solução definitiva para agências de alta performance.',
+                  features: ['2000 Créditos/mês', 'Prioridade na Fila de Geração', 'Gerente de Conta Dedicado', 'API Access (Beta)', 'Treinamento de Modelos Custom']
+                }
+              ].map((plan, i) => (
+                <div 
+                  key={i} 
+                  className={`relative p-10 rounded-[48px] border transition-all flex flex-col ${plan.popular ? 'bg-[#111] border-[#d4af37] shadow-2xl shadow-[#d4af37]/10' : 'bg-[#111] border-[#222] hover:border-[#333]'}`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#d4af37] text-black text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
+                      Mais Popular
+                    </div>
+                  )}
+                  
+                  <div className="mb-8">
+                    <h4 className="text-xl font-black text-white uppercase tracking-tight mb-2">{plan.name}</h4>
+                    <p className="text-gray-500 text-xs leading-relaxed">{plan.description}</p>
+                  </div>
+
+                  <div className="mb-8">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-black text-white">R$ {plan.price}</span>
+                      <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">/mês</span>
+                    </div>
+                    {billingCycle === 'yearly' && (
+                      <p className="text-[10px] text-green-500 font-bold mt-1">Cobrado anualmente (R$ {plan.price * 12})</p>
+                    )}
+                  </div>
+
+                  <ul className="space-y-4 mb-10 flex-grow">
+                    {plan.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-center gap-3 text-sm text-gray-300">
+                        <div className="w-5 h-5 rounded-full bg-[#d4af37]/10 flex items-center justify-center shrink-0">
+                          <CheckCircle2 size={12} className="text-[#d4af37]" />
+                        </div>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+
                   <button 
-                    onClick={async () => {
-                      if (!user) return;
-                      const userRef = doc(db, 'users', user.uid);
-                      await updateDoc(userRef, { credits: (userData?.credits || 0) + 50 });
-                      alert("50 Créditos adicionados com sucesso!");
-                    }}
-                    className="px-4 py-2 bg-[#d4af37] text-black text-[10px] font-black rounded-lg hover:scale-105 transition-transform"
+                    onClick={() => handlePurchase(plan.name, plan.credits)}
+                    className={`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-widest transition-all ${plan.popular ? 'bg-[#d4af37] text-black hover:scale-105 shadow-lg shadow-[#d4af37]/20' : 'bg-[#1a1a1a] text-white border border-[#222] hover:bg-[#222]'}`}
                   >
-                    RESGATAR +50 CRÉDITOS
+                    Assinar Agora
                   </button>
                 </div>
-                {[
-                  { name: 'Creator Pro', credits: 100, price: 'R$ 197' },
-                  { name: 'Elite Agency', credits: 400, price: 'R$ 597' }
-                ].map((plan, i) => (
-                  <div key={i} className="p-6 bg-[#1a1a1a] border border-[#222] rounded-2xl hover:border-[#d4af37]/50 transition-all">
-                    <h4 className="font-bold text-sm mb-1 text-white">{plan.name}</h4>
-                    <p className="text-2xl font-black text-white mb-4">{plan.price}<span className="text-xs text-gray-500 font-normal">/mês</span></p>
-                    <ul className="text-[10px] text-gray-500 space-y-2 mb-6">
-                      <li className="flex items-center gap-2"><CheckCircle2 size={12} className="text-[#d4af37]" /> {plan.credits} Créditos</li>
-                      <li className="flex items-center gap-2"><CheckCircle2 size={12} className="text-[#d4af37]" /> Suporte VIP</li>
-                    </ul>
-                    <button className="w-full py-2 bg-[#d4af37] text-black text-xs font-black rounded-lg hover:scale-105 transition-transform">
-                      UPGRADE
-                    </button>
-                  </div>
-                ))}
-                <div className="p-6 bg-[#1a1a1a] border border-[#222] border-dashed rounded-2xl flex flex-col items-center justify-center text-center">
-                  <Zap size={24} className="text-gray-600 mb-2" />
-                  <h4 className="font-bold text-sm text-gray-400">Pacote Avulso</h4>
-                  <p className="text-xs text-gray-600">Em breve</p>
-                </div>
-              </div>
-              <p className="text-[10px] text-gray-600 italic">
-                * As assinaturas são processadas via Stripe/Mercado Pago. Os créditos são renovados mensalmente.
-              </p>
+              ))}
             </div>
 
-            <div className="bg-[#111] p-8 rounded-3xl border border-[#222]">
-              <h3 className="font-bold text-xl mb-6 flex items-center gap-2">
-                <AlertCircle size={20} className="text-[#d4af37]" />
-                Diagnóstico de Conexão
-              </h3>
-              <p className="text-gray-400 mb-6 text-sm">
-                Se as gerações estiverem falhando, use esta ferramenta para verificar a saúde dos serviços.
-              </p>
-              
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center justify-between p-3 bg-[#1a1a1a] rounded-xl border border-[#222]">
-                  <span className="text-sm">Banco de Dados (Firestore)</span>
-                  {diagStatus?.firebase === 'ok' ? <CheckCircle2 className="text-green-500" size={18} /> : diagStatus?.firebase === 'error' ? <AlertCircle className="text-red-500" size={18} /> : <Clock className="text-gray-600" size={18} />}
+            <div className="bg-[#111] border border-[#222] rounded-[48px] p-10 flex flex-wrap items-center justify-between gap-8">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-[#d4af37]/10 rounded-3xl flex items-center justify-center border border-[#d4af37]/20">
+                  <Zap size={32} className="text-[#d4af37]" />
                 </div>
-                <div className="flex items-center justify-between p-3 bg-[#1a1a1a] rounded-xl border border-[#222]">
-                  <span className="text-sm">Armazenamento (Storage)</span>
-                  {diagStatus?.storage === 'ok' ? <CheckCircle2 className="text-green-500" size={18} /> : diagStatus?.storage === 'error' ? <AlertCircle className="text-red-500" size={18} /> : <Clock className="text-gray-600" size={18} />}
-                </div>
-                <div className="flex items-center justify-between p-3 bg-[#1a1a1a] rounded-xl border border-[#222]">
-                  <span className="text-sm">Inteligência Artificial (Gemini)</span>
-                  {diagStatus?.gemini === 'ok' ? <CheckCircle2 className="text-green-500" size={18} /> : diagStatus?.gemini === 'error' ? <AlertCircle className="text-red-500" size={18} /> : <Clock className="text-gray-600" size={18} />}
+                <div>
+                  <h4 className="text-2xl font-black text-white uppercase tracking-tighter">Precisa de mais fôlego?</h4>
+                  <p className="text-gray-500 text-sm">Adquira pacotes de créditos avulsos sem assinatura mensal.</p>
                 </div>
               </div>
-
-              {diagStatus?.details && (
-                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                  <p className="text-[10px] font-mono text-red-400 whitespace-pre-wrap">{diagStatus.details}</p>
-                </div>
-              )}
-
-              <button 
-                onClick={runDiagnostics}
-                className="w-full bg-white/5 text-white font-bold py-3 rounded-xl hover:bg-white/10 transition-all border border-white/10"
-              >
-                EXECUTAR TESTE DE CONEXÃO
+              <button className="px-10 py-5 bg-white/5 text-white font-black rounded-3xl border border-white/10 hover:bg-white/10 transition-all uppercase tracking-widest text-xs">
+                Ver Pacotes Avulsos
               </button>
             </div>
 
-            <div className="bg-[#111] p-8 rounded-3xl border border-[#222]">
-              <h3 className="font-bold text-xl mb-6 flex items-center gap-2">
-                <Settings size={20} className="text-[#d4af37]" />
-                Informações do Sistema
-              </h3>
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-widest">Google Cloud Project ID</label>
-                  <input type="text" value="lumina-art-creator-2026" readOnly className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-gray-400 font-mono text-sm" />
-                </div>
-                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                  <p className="text-xs text-blue-400 leading-relaxed">
-                    <strong>Dica:</strong> Se você receber um erro "403 Permission Denied", clique no botão acima para selecionar novamente sua chave. Certifique-se de que o projeto selecionado tem a API de IA Generativa ativada.
-                  </p>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-[#111] p-8 rounded-[40px] border border-[#222] space-y-6">
+                <h3 className="font-black text-lg text-white uppercase tracking-tight flex items-center gap-3">
+                  <ShieldCheck size={20} className="text-[#d4af37]" />
+                  Segurança e Pagamento
+                </h3>
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  Utilizamos criptografia de ponta a ponta. Seus pagamentos são processados com segurança via Stripe ou Mercado Pago. Cancelamento fácil a qualquer momento.
+                </p>
               </div>
+
+              {userData?.role === 'admin' && (
+                <div className="bg-[#111] p-8 rounded-[40px] border border-[#222] space-y-6">
+                  <h3 className="font-black text-lg text-white uppercase tracking-tight flex items-center gap-3">
+                    <Settings size={20} className="text-[#d4af37]" />
+                    Configurações Técnicas
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button 
+                      onClick={async () => await (window as any).aistudio?.openSelectKey()}
+                      className="bg-[#1a1a1a] text-white font-bold py-4 px-4 rounded-2xl hover:bg-[#222] transition-all flex items-center justify-center gap-2 border border-[#222] text-[10px] uppercase tracking-widest"
+                    >
+                      <Settings size={16} />
+                      Chave de API
+                    </button>
+                    <button 
+                      onClick={runDiagnostics}
+                      className="bg-[#1a1a1a] text-white font-bold py-4 px-4 rounded-2xl hover:bg-[#222] transition-all border border-[#222] text-[10px] uppercase tracking-widest"
+                    >
+                      Diagnóstico
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, query, orderBy, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, query, orderBy, getDocFromServer, deleteField, increment, where, getDocs } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, uploadString, getDownloadURL } from 'firebase/storage';
 
 // Import the Firebase configuration
@@ -77,5 +77,5 @@ async function testConnection() {
 }
 testConnection();
 
-export { signInWithPopup, signOut, onAuthStateChanged, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, query, orderBy, ref, uploadBytes, uploadString, getDownloadURL };
+export { signInWithPopup, signOut, onAuthStateChanged, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, query, orderBy, ref, uploadBytes, uploadString, getDownloadURL, deleteField, increment, where, getDocs };
 export type { FirebaseUser };

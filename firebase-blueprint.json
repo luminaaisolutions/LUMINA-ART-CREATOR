@@ -12,7 +12,12 @@
         "role": { "type": "string", "enum": ["admin", "user"], "description": "Papel do usuário no sistema." },
         "credits": { "type": "number", "description": "Saldo de créditos para geração." },
         "plan": { "type": "string", "enum": ["free", "pro", "elite"], "description": "Plano de assinatura atual." },
-        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação da conta." }
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação da conta." },
+        "isVerified": { "type": "boolean", "description": "Se o e-mail foi verificado via OTP." },
+        "verificationCode": { "type": "string", "description": "Código OTP atual." },
+        "referralCode": { "type": "string", "description": "Código de indicação único do usuário." },
+        "referredBy": { "type": "string", "description": "UID do usuário que indicou este usuário." },
+        "referralCount": { "type": "number", "description": "Total de indicações bem-sucedidas." }
       },
       "required": ["uid", "email", "role"]
     },
@@ -22,15 +27,20 @@
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "ID único do item." },
-        "type": { "type": "string", "enum": ["video", "image"], "description": "Tipo de geração." },
+        "type": { "type": "string", "enum": ["video", "image", "lipsync"], "description": "Tipo de geração." },
         "status": { "type": "string", "enum": ["pending", "processing", "completed", "failed"], "description": "Status atual." },
         "prompt": { "type": "string", "description": "Prompt de texto utilizado." },
         "aspectRatio": { "type": "string", "description": "Proporção da imagem/vídeo." },
         "resolution": { "type": "string", "description": "Resolução desejada." },
         "previewUrl": { "type": "string", "description": "URL do resultado gerado." },
         "progress": { "type": "number", "description": "Progresso da geração (0-100)." },
+        "duration": { "type": "number", "description": "Duração do vídeo em segundos." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação." },
-        "error": { "type": "string", "description": "Mensagem de erro em caso de falha." }
+        "completedAt": { "type": "string", "format": "date-time", "description": "Data de conclusão." },
+        "error": { "type": "string", "description": "Mensagem de erro em caso de falha." },
+        "isLarge": { "type": "boolean", "description": "Se o preview é muito grande para o Firestore." },
+        "lowPriority": { "type": "boolean", "description": "Se a geração é de baixa prioridade." },
+        "sourceTab": { "type": "string", "description": "Aba de origem da geração." }
       },
       "required": ["id", "type", "status", "prompt", "createdAt"]
     }

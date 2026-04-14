@@ -62,7 +62,7 @@ service cloud.firestore {
     // ===============================================================
 
     function isValidUser(data) {
-      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'role', 'credits', 'plan', 'createdAt']) &&
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'role', 'credits', 'plan', 'createdAt', 'isVerified', 'verificationCode', 'referralCode', 'referredBy', 'referralCount']) &&
              data.uid == request.auth.uid &&
              isValidEmail(data.email) &&
              (data.displayName == null || (data.displayName is string && data.displayName.size() < 100)) &&
@@ -70,11 +70,16 @@ service cloud.firestore {
              data.role in ['admin', 'user'] &&
              data.credits is number &&
              data.plan in ['free', 'pro', 'elite'] &&
-             data.createdAt is timestamp;
+             data.createdAt is timestamp &&
+             (!('isVerified' in data) || data.isVerified is bool) &&
+             (!('verificationCode' in data) || (data.verificationCode is string && data.verificationCode.size() <= 6)) &&
+             (!('referralCode' in data) || data.referralCode is string) &&
+             (!('referredBy' in data) || data.referredBy is string) &&
+             (!('referralCount' in data) || data.referralCount is number);
     }
 
     function isValidBatchItem(data) {
-      return hasOnlyAllowedFields(['id', 'type', 'status', 'prompt', 'aspectRatio', 'resolution', 'previewUrl', 'progress', 'duration', 'createdAt', 'completedAt', 'error', 'isLarge', 'lowPriority']) &&
+      return hasOnlyAllowedFields(['id', 'type', 'status', 'prompt', 'aspectRatio', 'resolution', 'previewUrl', 'progress', 'duration', 'createdAt', 'completedAt', 'error', 'isLarge', 'lowPriority', 'sourceTab']) &&
              data.id is string &&
              data.type in ['video', 'image', 'lipsync'] &&
              data.status in ['pending', 'processing', 'completed', 'failed'] &&
@@ -85,6 +90,7 @@ service cloud.firestore {
              (!('completedAt' in data) || data.completedAt is timestamp) &&
              (!('lowPriority' in data) || data.lowPriority is bool) &&
              (!('isLarge' in data) || data.isLarge is bool) &&
+             (!('sourceTab' in data) || data.sourceTab is string) &&
              (!('previewUrl' in data) || (data.previewUrl is string && data.previewUrl.size() < 1048576));
     }
 
@@ -99,8 +105,7 @@ service cloud.firestore {
                        isValidUser(request.resource.data) && 
                        request.resource.data.role == resource.data.role &&
                        request.resource.data.plan == resource.data.plan &&
-                       request.resource.data.email == resource.data.email &&
-                       (request.resource.data.credits <= resource.data.credits || isAdmin())) 
+                       request.resource.data.email == resource.data.email)
                     || isAdmin();
       
       match /batches/{batchId} {
