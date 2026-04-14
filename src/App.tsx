@@ -339,10 +339,10 @@ function AppContent() {
     const rawKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY || "";
     const key = rawKey.trim().replace(/['"]/g, '');
     if (key) {
-      if (key.startsWith('AIza')) {
-        console.log("Gemini API Key detectada (formato válido):", key.substring(0, 4) + "..." + key.substring(key.length - 4));
-      } else {
-        console.warn("Gemini API Key detectada, mas o formato parece estranho (não começa com AIza):", key.substring(0, 4) + "...");
+      console.log("Gemini API Key detectada:", key.substring(0, 4) + "..." + key.substring(key.length - 4));
+      console.log("Comprimento da chave:", key.length);
+      if (!key.startsWith('AIza')) {
+        console.warn("Aviso: A chave não começa com 'AIza'. Se for uma chave do Google Cloud, certifique-se de que é uma API Key válida e não um Token temporário.");
       }
     } else {
       console.error("ERRO: Nenhuma Gemini API Key encontrada no ambiente (GEMINI_API_KEY, API_KEY ou GOOGLE_API_KEY).");

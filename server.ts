@@ -52,13 +52,14 @@ async function createServer() {
       
       let apiKey = (process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY)?.trim()?.replace(/['"]/g, '');
       
-      if (!apiKey || !apiKey.startsWith('AIza')) {
+      // Only try to find another key if NO key was provided at all
+      if (!apiKey) {
         const foundKey = Object.values(process.env).find(v => typeof v === 'string' && v.startsWith('AIza'));
         if (foundKey) apiKey = foundKey;
       }
 
-      if (!apiKey || !apiKey.startsWith('AIza')) {
-        return res.status(400).send("API Key inválida ou ausente.");
+      if (!apiKey) {
+        return res.status(400).send("API Key ausente nas variáveis de ambiente.");
       }
       const response = await fetch(url as string, {
         headers: { 'x-goog-api-key': apiKey }
