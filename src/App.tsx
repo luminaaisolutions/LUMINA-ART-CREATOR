@@ -48,6 +48,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from "@google/genai";
 import { LandingPage } from './components/LandingPage';
 
 // --- Error Boundary Component ---
@@ -334,17 +335,24 @@ function AppContent() {
     details?: string
   } | null>(null);
 
+  // Initialize Gemini SDK
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+
   const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any }) => {
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(options),
-    });
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || "Failed to call Gemini API");
+    try {
+      const { prompt, contents, model = "gemini-3-flash-preview", config } = options;
+      
+      const response = await ai.models.generateContent({
+        model: model === "gemini-1.5-flash" ? "gemini-3-flash-preview" : model,
+        contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
+        config
+      });
+      
+      return response;
+    } catch (error: any) {
+      console.error("Gemini API Error:", error);
+      throw new Error(error.message || "Failed to call Gemini API");
     }
-    return response.json();
   };
 
   const [editingBrand, setEditingBrand] = useState<any | null>(null);
@@ -866,7 +874,8 @@ function AppContent() {
                   }
                 });
                 
-                base64Data = response.inlineData.data;
+                // @ts-ignore
+                base64Data = response.generatedImages?.[0]?.image?.imageBytes;
               } else {
                 const isHighRes = currentResolution === '2K' || currentResolution === '4K';
                 const modelName = 'gemini-1.5-flash'; 
@@ -937,9 +946,14 @@ function AppContent() {
                   }
                 });
                 
-                if (response.inlineData) {
-                  base64Data = response.inlineData.data;
-                  mimeType = response.inlineData.mimeType || 'image/png';
+                // Find the image part in the response candidates
+                const responseParts = response.candidates?.[0]?.content?.parts;
+                if (responseParts) {
+                  const imagePart = responseParts.find((p: any) => p.inlineData);
+                  if (imagePart) {
+                    base64Data = imagePart.inlineData.data;
+                    mimeType = imagePart.inlineData.mimeType || 'image/png';
+                  }
                 }
               }
             } catch (e: any) {
@@ -1127,36 +1141,30 @@ function AppContent() {
             }
           }
 
-          const genResponse = await fetch("/api/generate-video", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(videoParams)
+          // Use SDK directly for video generation
+          // @ts-ignore
+          let operation = await ai.models.generateVideos({
+            model: videoParams.model === 'veo-3.1-lite-generate-preview' ? 'veo-3.1-lite-generate-preview' : 'veo-3.1-generate-preview',
+            prompt: videoParams.prompt,
+            config: {
+              ...videoParams.config,
+              numberOfVideos: 1
+            },
+            image: videoParams.image,
+            // @ts-ignore
+            audio_input: videoParams.audio_input
           });
-          if (!genResponse.ok) {
-            const err = await genResponse.json();
-            throw new Error(err.error || "Failed to start video generation");
-          }
-          let operation = await genResponse.json();
 
           // 3. Polling
           let pollCount = 0;
           while (!operation.done) {
             pollCount++;
-            // Progress simulation during polling (30% to 90%)
             const pollProgress = Math.min(30 + (pollCount * 10), 90);
             await updateDoc(doc(db, itemPath), { progress: pollProgress });
             
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            const pollRes = await fetch("/api/get-operation", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ operation })
-            });
-            if (!pollRes.ok) {
-              const err = await pollRes.json();
-              throw new Error(err.error || "Failed to poll video operation");
-            }
-            operation = await pollRes.json();
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            // @ts-ignore
+            operation = await ai.operations.get(operation.name || operation.id || operation);
           }
 
           if (operation.error) {
