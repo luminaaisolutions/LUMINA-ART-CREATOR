@@ -342,6 +342,10 @@ function AppContent() {
     try {
       const { prompt, contents, model = "gemini-3-flash-preview", config } = options;
       
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error("GEMINI_API_KEY não configurada. Adicione-a nas configurações do seu projeto no Vercel Dashboard.");
+      }
+
       const response = await ai.models.generateContent({
         model: model === "gemini-1.5-flash" ? "gemini-3-flash-preview" : model,
         contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
@@ -1139,6 +1143,10 @@ function AppContent() {
                 }
               };
             }
+          }
+
+          if (!process.env.GEMINI_API_KEY) {
+            throw new Error("GEMINI_API_KEY não configurada para geração de vídeo.");
           }
 
           // Use SDK directly for video generation
