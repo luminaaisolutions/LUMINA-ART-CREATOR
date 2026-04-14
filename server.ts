@@ -44,7 +44,7 @@ async function createServer() {
       const { url } = req.query;
       if (!url) return res.status(400).send("URL required");
       
-      let apiKey = process.env.GEMINI_API_KEY?.trim()?.replace(/['"]/g, '');
+      let apiKey = (process.env.GEMINI_API_KEY || process.env.API_KEY)?.trim()?.replace(/['"]/g, '');
       
       if (!apiKey || !apiKey.startsWith('AIza')) {
         const foundKey = Object.values(process.env).find(v => typeof v === 'string' && v.startsWith('AIza'));
