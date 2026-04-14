@@ -336,12 +336,16 @@ function AppContent() {
   } | null>(null);
 
   const getAI = () => {
-    const rawKey = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+    const rawKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY || "";
     const key = rawKey.trim().replace(/['"]/g, '');
     if (key) {
-      console.log("Gemini API Key carregada:", key.substring(0, 4) + "..." + key.substring(key.length - 4));
+      if (key.startsWith('AIza')) {
+        console.log("Gemini API Key detectada (formato válido):", key.substring(0, 4) + "..." + key.substring(key.length - 4));
+      } else {
+        console.warn("Gemini API Key detectada, mas o formato parece estranho (não começa com AIza):", key.substring(0, 4) + "...");
+      }
     } else {
-      console.warn("Gemini API Key está vazia!");
+      console.error("ERRO: Nenhuma Gemini API Key encontrada no ambiente (GEMINI_API_KEY, API_KEY ou GOOGLE_API_KEY).");
     }
     return new GoogleGenAI({ apiKey: key });
   };
@@ -350,9 +354,9 @@ function AppContent() {
     try {
       const { prompt, contents, model = "gemini-3-flash-preview", config } = options;
       
-      const key = process.env.GEMINI_API_KEY || process.env.API_KEY;
+      const key = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
       if (!key) {
-        throw new Error("GEMINI_API_KEY não configurada. Adicione-a nas configurações do seu projeto no Vercel Dashboard.");
+        throw new Error("GEMINI_API_KEY não configurada. Verifique as variáveis de ambiente no Vercel (GEMINI_API_KEY, API_KEY ou GOOGLE_API_KEY).");
       }
 
       const ai = getAI();
@@ -1155,9 +1159,9 @@ function AppContent() {
             }
           }
 
-          const key = process.env.GEMINI_API_KEY || process.env.API_KEY;
+          const key = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
           if (!key) {
-            throw new Error("GEMINI_API_KEY não configurada para geração de vídeo.");
+            throw new Error("GEMINI_API_KEY não configurada para geração de vídeo. Verifique as variáveis de ambiente no Vercel.");
           }
 
           // Use SDK directly for video generation

@@ -1,11 +1,15 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import fs from "fs";
 
-import dotenv from "dotenv";
-
-dotenv.config();
+if (!process.env.VERCEL) {
+  try {
+    const dotenv = await import("dotenv");
+    dotenv.config();
+  } catch (e) {
+    console.log("Dotenv not found, skipping...");
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,9 +21,11 @@ async function createServer() {
   console.log("=== SERVER STARTUP ===");
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
-  console.log("GEMINI_API_KEY status:", process.env.GEMINI_API_KEY ? "Defined" : "Undefined");
-  if (process.env.GEMINI_API_KEY) {
-    console.log("GEMINI_API_KEY start:", process.env.GEMINI_API_KEY.substring(0, 5));
+  
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
+  console.log("Gemini Key status:", geminiKey ? "Defined" : "Undefined");
+  if (geminiKey) {
+    console.log("Gemini Key starts with:", geminiKey.substring(0, 5));
   }
   console.log("======================");
 
@@ -44,7 +50,7 @@ async function createServer() {
       const { url } = req.query;
       if (!url) return res.status(400).send("URL required");
       
-      let apiKey = (process.env.GEMINI_API_KEY || process.env.API_KEY)?.trim()?.replace(/['"]/g, '');
+      let apiKey = (process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY)?.trim()?.replace(/['"]/g, '');
       
       if (!apiKey || !apiKey.startsWith('AIza')) {
         const foundKey = Object.values(process.env).find(v => typeof v === 'string' && v.startsWith('AIza'));
