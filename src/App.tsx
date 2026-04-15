@@ -505,7 +505,7 @@ function AppContent() {
   };
 
   const [editingBrand, setEditingBrand] = useState<any | null>(null);
-  const [brandStep, setBrandStep] = useState<'list' | 'upload' | 'info' | 'referral' | 'faq'>('list');
+  const [brandStep, setBrandStep] = useState<'list' | 'upload' | 'info'>('list');
 
   // --- Auto-send OTP ---
   useEffect(() => {
@@ -856,8 +856,8 @@ function AppContent() {
       return;
     }
 
-    // Check for API key if using image models
-    if (type === 'image' || type === 'video' || isLipsyncActive || isCreativeActive) {
+    // Check for API key if using image models (Only in AI Studio environment)
+    if (typeof window !== 'undefined' && (window as any).aistudio && (type === 'image' || type === 'video' || isLipsyncActive || isCreativeActive)) {
       const hasKey = await (window as any).aistudio?.hasSelectedApiKey();
       if (!hasKey) {
         await (window as any).aistudio?.openSelectKey();
@@ -2229,7 +2229,7 @@ function AppContent() {
               <h2 className="text-4xl md:text-6xl font-black tracking-tighter">O QUE DESEJA <span className="text-[#d4af37]">FAZER?</span></h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4">
               {[
                 { 
                   id: 'branding', 
@@ -2273,7 +2273,7 @@ function AppContent() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  className={`group relative bg-[#111] rounded-[40px] border border-[#222] p-8 overflow-hidden transition-all ${card.borderColor} cursor-pointer`}
+                  className={`group relative bg-[#111] rounded-[40px] border border-[#222] p-6 sm:p-8 overflow-hidden transition-all ${card.borderColor} cursor-pointer`}
                   onClick={() => {
                     if (card.id === 'branding') setActiveTab('branding');
                     if (card.id === 'projects') {
@@ -2506,8 +2506,6 @@ function AppContent() {
             <div className="flex items-center gap-4 mb-8">
               {[
                 { id: 'list', label: 'Minhas Marcas', icon: Briefcase },
-                { id: 'referral', label: 'Indicações', icon: Gift },
-                { id: 'faq', label: 'FAQ', icon: HelpCircle },
               ].map((sub) => (
                 <button
                   key={sub.id}
@@ -2952,152 +2950,6 @@ function AppContent() {
                     SALVAR MARCA
                     <CheckCircle2 size={18} />
                   </button>
-                </div>
-              </motion.div>
-            )}
-
-            {brandStep === 'referral' && (
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="max-w-4xl mx-auto space-y-8"
-              >
-                <div className="bg-gradient-to-br from-[#d4af37] to-[#f1c40f] p-10 rounded-[40px] text-black relative overflow-hidden">
-                  <div className="relative z-10 space-y-6">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/10 rounded-full text-[10px] font-black uppercase tracking-widest">
-                      <Gift size={14} />
-                      Programa de Indicações
-                    </div>
-                    <h2 className="text-5xl font-black tracking-tighter leading-none">GANHE 10 CRÉDITOS EXTRAS POR INDICAÇÃO</h2>
-                    <p className="text-black/70 font-bold text-lg max-w-xl">
-                      Convide seus amigos para o Lumina Art Creator. Quando eles se cadastrarem e adquirirem qualquer plano, você recebe 10 créditos na hora!
-                    </p>
-                  </div>
-                  <Gift size={200} className="absolute -bottom-10 -right-10 text-black/5 rotate-12" />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="bg-[#111] border border-[#222] p-8 rounded-[40px] space-y-6">
-                    <div className="space-y-2">
-                      <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest">Seu Link de Indicação</h3>
-                      <div className="flex gap-2">
-                        <div className="flex-1 bg-[#1a1a1a] border border-[#222] px-4 py-4 rounded-2xl text-sm font-mono text-gray-300 truncate">
-                          {`${window.location.origin}?ref=${userData?.referralCode}`}
-                        </div>
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(`${window.location.origin}?ref=${userData?.referralCode}`);
-                            alert("Link copiado!");
-                          }}
-                          className="p-4 bg-[#d4af37] text-black rounded-2xl hover:scale-105 transition-all"
-                        >
-                          <Copy size={20} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-[#222] flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#1a1a1a] rounded-xl flex items-center justify-center border border-[#222]">
-                          <CheckCircle2 size={20} className="text-[#d4af37]" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Indicações Ativas</p>
-                          <p className="text-xl font-black text-white">{userData?.referralCount || 0}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Créditos Ganhos</p>
-                        <p className="text-xl font-black text-[#d4af37]">{(userData?.referralCount || 0) * 10}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#111] border border-[#222] p-8 rounded-[40px] space-y-6 flex flex-col justify-center">
-                    <h3 className="text-xl font-black text-white uppercase tracking-tight">Como funciona?</h3>
-                    <ul className="space-y-4">
-                      {[
-                        "Compartilhe seu link exclusivo com amigos e parceiros.",
-                        "Seu indicado se cadastra no Lumina Art Creator.",
-                        "Assim que ele realizar a primeira compra de créditos ou plano.",
-                        "Você recebe automaticamente 10 créditos extras em sua conta."
-                      ].map((step, i) => (
-                        <li key={i} className="flex gap-4 items-start">
-                          <span className="w-6 h-6 rounded-full bg-[#d4af37]/10 text-[#d4af37] flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">{i + 1}</span>
-                          <p className="text-sm text-gray-400 leading-relaxed">{step}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {brandStep === 'faq' && (
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="max-w-4xl mx-auto space-y-8"
-              >
-                <div className="text-center space-y-4 mb-12">
-                  <h2 className="text-5xl font-black text-white uppercase tracking-tighter">Perguntas Frequentes</h2>
-                  <p className="text-gray-500 text-lg">Tudo o que você precisa saber sobre o Lumina Art Creator.</p>
-                </div>
-
-                <div className="space-y-4">
-                  {[
-                    {
-                      q: "Como funcionam os créditos e planos?",
-                      a: "Cada geração de imagem consome 1 crédito. Vídeos de 5s consomem 20 créditos, vídeos de 8s consomem 35 créditos e Lip Sync consome 15 créditos. Nossos planos oferecem recargas mensais automáticas (100, 500 ou 2000 créditos)."
-                    },
-                    {
-                      q: "Posso usar as imagens para fins comerciais?",
-                      a: "Sim! Todas as imagens e vídeos gerados no Lumina Art Creator pertencem a você e podem ser usados livremente em suas campanhas de marketing e redes sociais."
-                    },
-                    {
-                      q: "O que é a Marca?",
-                      a: "É uma funcionalidade exclusiva onde você treina a IA com a identidade visual da sua empresa (logos, cores, tipografia) para que todos os anúncios gerados sigam o mesmo padrão visual."
-                    },
-                    {
-                      q: "Como funciona o sistema de indicações?",
-                      a: "Você possui um link único em sua conta. Cada pessoa que se cadastrar por ele e realizar uma compra ativa garante 10 créditos extras para você, sem limites!"
-                    },
-                    {
-                      q: "Quais são os modelos de IA utilizados?",
-                      a: "Utilizamos os modelos mais avançados do mercado, incluindo Gemini 1.5 Pro e Flash, além de modelos especializados em geração de imagem e vídeo de alta fidelidade."
-                    },
-                    {
-                      q: "Como entrar em contato com o suporte?",
-                      a: "Você pode nos contatar através do e-mail suporte@luminaaisolutions.com.br ou pelo nosso canal oficial no WhatsApp disponível para assinantes Pro e Elite."
-                    }
-                  ].map((item, i) => (
-                    <div 
-                      key={i}
-                      className={`bg-[#111] border ${faqOpen === i ? 'border-[#d4af37] bg-[#1a1a1a]' : 'border-[#222]'} rounded-3xl overflow-hidden transition-all`}
-                    >
-                      <button 
-                        onClick={() => setFaqOpen(faqOpen === i ? null : i)}
-                        className="w-full p-6 flex items-center justify-between text-left group"
-                      >
-                        <span className={`font-bold transition-colors ${faqOpen === i ? 'text-[#d4af37]' : 'text-white group-hover:text-[#d4af37]'}`}>{item.q}</span>
-                        {faqOpen === i ? <ChevronUp size={20} className="text-[#d4af37]" /> : <ChevronDown size={20} className="text-gray-500" />}
-                      </button>
-                      <AnimatePresence>
-                        {faqOpen === i && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="px-6 pb-6"
-                          >
-                            <p className="text-gray-400 text-sm leading-relaxed border-t border-[#222] pt-4">
-                              {item.a}
-                            </p>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
                 </div>
               </motion.div>
             )}
