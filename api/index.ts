@@ -1,6 +1,8 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+import admin from 'firebase-admin';
 
 if (!process.env.VERCEL) {
   try {
@@ -14,11 +16,27 @@ if (!process.env.VERCEL) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Initialize Firebase Admin
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    projectId: process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0723352507'
+  });
+}
+const dbAdmin = admin.firestore();
+
+// Initialize Mercado Pago
+const mpClient = new MercadoPagoConfig({ 
+  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || '',
+  options: { timeout: 5000 }
+});
+
 async function createServer() {
   const app = express();
   app.use(express.json({ limit: '50mb' }));
 
   console.log("=== SERVER STARTUP ===");
+  // ... (rest of the logs)
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
   
@@ -40,6 +58,98 @@ async function createServer() {
   // API Routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "Lumina API is running" });
+  });
+
+  // Mercado Pago Payment Creation
+  app.post("/api/create-payment", async (req, res) => {
+    try {
+      const { planName, credits, amount, userId, userEmail } = req.body;
+      
+      const preference = new Preference(mpClient);
+      const result = await preference.create({
+        body: {
+          items: [
+            {
+              id: planName,
+              title: `Lumina Art Creator - Plano ${planName}`,
+              quantity: 1,
+              unit_price: amount,
+              currency_id: 'BRL'
+            }
+          ],
+          payer: {
+            email: userEmail
+          },
+          back_urls: {
+            success: `${req.headers.origin}/dashboard?payment=success`,
+            failure: `${req.headers.origin}/dashboard?payment=failure`,
+            pending: `${req.headers.origin}/dashboard?payment=pending`
+          },
+          auto_return: 'approved',
+          notification_url: `${process.env.WEBHOOK_URL || req.headers.origin}/api/webhooks/mercadopago`,
+          metadata: {
+            user_id: userId,
+            plan_name: planName,
+            credits: credits
+          }
+        }
+      });
+
+      res.json({ id: result.id, init_point: result.init_point });
+    } catch (error: any) {
+      console.error("Mercado Pago Preference Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Mercado Pago Webhook
+  app.post("/api/webhooks/mercadopago", async (req, res) => {
+    try {
+      const { type, data } = req.body;
+      console.log(`[MercadoPago Webhook] Type: ${type}, Data ID: ${data?.id}`);
+
+      if (type === 'payment') {
+        const payment = new Payment(mpClient);
+        const paymentData = await payment.get({ id: data.id });
+
+        if (paymentData.status === 'approved') {
+          const { user_id, plan_name, credits } = paymentData.metadata;
+          
+          console.log(`[MercadoPago Webhook] Payment Approved! User: ${user_id}, Credits: ${credits}`);
+
+          // Update user credits in Firestore
+          const userRef = dbAdmin.collection('users').doc(user_id);
+          await dbAdmin.runTransaction(async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists) throw new Error("User not found");
+            
+            const currentCredits = userDoc.data()?.credits || 0;
+            transaction.update(userRef, {
+              credits: currentCredits + Number(credits),
+              plan: plan_name.toLowerCase()
+            });
+
+            // Log payment
+            const paymentRef = dbAdmin.collection('payments').doc(String(data.id));
+            transaction.set(paymentRef, {
+              id: String(data.id),
+              userId: user_id,
+              amount: paymentData.transaction_amount,
+              credits: Number(credits),
+              plan: plan_name,
+              status: 'approved',
+              method: paymentData.payment_method_id,
+              createdAt: new Date().toISOString()
+            });
+          });
+        }
+      }
+
+      res.status(200).send("OK");
+    } catch (error: any) {
+      console.error("Mercado Pago Webhook Error:", error);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   app.post("/api/send-otp", async (req, res) => {

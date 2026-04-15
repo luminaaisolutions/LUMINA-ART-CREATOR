@@ -69,7 +69,7 @@ service cloud.firestore {
              (data.photoURL == null || (data.photoURL is string && data.photoURL.size() < 500)) &&
              data.role in ['admin', 'user'] &&
              data.credits is number &&
-             data.plan in ['free', 'pro', 'elite'] &&
+             data.plan in ['trial', 'iniciante', 'creator pro', 'elite agency'] &&
              data.createdAt is timestamp &&
              (!('isVerified' in data) || data.isVerified is bool) &&
              (!('verificationCode' in data) || (data.verificationCode is string && data.verificationCode.size() <= 6)) &&
@@ -118,6 +118,12 @@ service cloud.firestore {
       match /test/{testId} {
         allow read, write: if isOwner(userId);
       }
+    }
+
+    // Payments Collection
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if false; // Only backend (Admin SDK) can write
     }
 
     // Default deny

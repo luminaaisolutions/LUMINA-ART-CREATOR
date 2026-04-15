@@ -14,7 +14,7 @@
         "photoURL": { "type": "string", "description": "URL da foto de perfil." },
         "role": { "type": "string", "enum": ["admin", "user"], "description": "Papel do usuário no sistema." },
         "credits": { "type": "number", "description": "Saldo de créditos para geração." },
-        "plan": { "type": "string", "enum": ["trial", "monthly", "annual", "elite"], "description": "Plano de assinatura atual." },
+        "plan": { "type": "string", "enum": ["trial", "iniciante", "creator pro", "elite agency"], "description": "Plano de assinatura atual." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação da conta." },
         "isVerified": { "type": "boolean", "description": "Se o e-mail foi verificado via OTP." },
         "verificationCode": { "type": "string", "description": "Código OTP atual." },
@@ -46,6 +46,22 @@
         "sourceTab": { "type": "string", "description": "Aba de origem da geração." }
       },
       "required": ["id", "type", "status", "prompt", "createdAt"]
+    },
+    "Payment": {
+      "title": "Payment Transaction",
+      "description": "Registro de transação de pagamento via Mercado Pago.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID da transação no Mercado Pago." },
+        "userId": { "type": "string", "description": "UID do usuário." },
+        "amount": { "type": "number", "description": "Valor pago." },
+        "credits": { "type": "number", "description": "Créditos adquiridos." },
+        "plan": { "type": "string", "description": "Plano adquirido." },
+        "status": { "type": "string", "description": "Status do pagamento (pending, approved, rejected)." },
+        "method": { "type": "string", "description": "Método de pagamento (pix, credit_card, etc.)." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data da transação." }
+      },
+      "required": ["id", "userId", "amount", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -56,6 +72,10 @@
     "/users/{userId}/batches/{batchId}": {
       "schema": "BatchItem",
       "description": "Itens de geração do usuário."
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Histórico de pagamentos global."
     }
   }
 }

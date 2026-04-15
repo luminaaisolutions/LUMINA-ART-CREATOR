@@ -522,11 +522,14 @@ function AppContent() {
 
       // Check if domain is authorized (hint for production setup)
       const currentDomain = window.location.hostname;
-      if (currentDomain !== 'localhost' && 
-          !currentDomain.includes('run.app') && 
-          !currentDomain.includes('firebaseapp.com') &&
-          !currentDomain.includes('web.app') &&
-          currentDomain !== 'luminaaisolutions.com.br') {
+      const isAuthorizedDomain = 
+        currentDomain === 'localhost' || 
+        currentDomain.includes('run.app') || 
+        currentDomain.includes('firebaseapp.com') ||
+        currentDomain.includes('web.app') ||
+        currentDomain.endsWith('luminaaisolutions.com.br');
+
+      if (!isAuthorizedDomain) {
         console.warn(`Atenção: O domínio ${currentDomain} pode não estar autorizado no Firebase Auth.`);
       }
       
@@ -605,24 +608,37 @@ function AppContent() {
     return () => unsubscribe();
   }, []);
 
-  const handlePurchase = async (planName: string, credits: number) => {
+  const handlePurchase = async (planName: string, credits: number, amount: number) => {
     if (!user || !userData) return;
     
-    // In a real app, this would redirect to Stripe/Checkout
-    const confirm = window.confirm(`Deseja assinar o plano ${planName}? Você será redirecionado para o checkout seguro.`);
+    const confirm = window.confirm(`Deseja assinar o plano ${planName} por R$ ${amount}? Você será redirecionado para o Mercado Pago para pagamento seguro (PIX ou Cartão).`);
     if (!confirm) return;
 
-    alert("Simulação de Checkout: Em um ambiente de produção, você seria redirecionado para o Stripe agora. Seus créditos serão adicionados após a confirmação do pagamento.");
-    
+    setIsProcessing(true);
     try {
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        plan: planName.toLowerCase(),
-        credits: increment(credits)
+      const res = await fetch('/api/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planName,
+          credits,
+          amount,
+          userId: user.uid,
+          userEmail: userData.email || user.email
+        })
       });
-      alert(`Pagamento confirmado! Você agora é ${planName}. ${credits} créditos foram adicionados.`);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
+
+      if (!res.ok) throw new Error("Falha ao criar preferência de pagamento.");
+      
+      const { init_point } = await res.json();
+      
+      // Redirect to Mercado Pago
+      window.location.href = init_point;
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      alert(`Erro ao processar pagamento: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -632,7 +648,7 @@ function AppContent() {
     } catch (error: any) {
       console.error("Login failed:", error);
       if (error.code === 'auth/unauthorized-domain') {
-        alert("ERRO DE AUTENTICAÇÃO: Este domínio não está autorizado no seu projeto Firebase. \n\nPor favor, acesse o Console do Firebase > Authentication > Settings > Authorized Domains e adicione 'luminaaisolutions.com.br'.");
+        alert("ERRO DE AUTENTICAÇÃO: Este domínio não está autorizado no seu projeto Firebase. \n\nPor favor, acesse o Console do Firebase > Authentication > Settings > Authorized Domains e adicione 'luminaaisolutions.com.br' e 'www.luminaaisolutions.com.br'.");
       } else {
         alert(`Erro ao entrar: ${error.message}`);
       }
@@ -4420,12 +4436,12 @@ function AppContent() {
                     <input 
                       type="text" 
                       readOnly 
-                      value={`https://www.luminaaisolutions.com/ref/${user.uid.slice(0, 8)}`}
+                      value={`https://luminaaisolutions.com.br/?ref=${user.uid.slice(0, 8)}`}
                       className="flex-1 bg-transparent border-none outline-none px-4 text-sm font-bold text-gray-400 truncate"
                     />
                     <button 
                       onClick={() => {
-                        navigator.clipboard.writeText(`https://www.luminaaisolutions.com/ref/${user.uid.slice(0, 8)}`);
+                        navigator.clipboard.writeText(`https://luminaaisolutions.com.br/?ref=${user.uid.slice(0, 8)}`);
                       }}
                       className="p-4 bg-[#d4af37] text-black rounded-xl hover:scale-105 transition-all shadow-lg shadow-[#d4af37]/20"
                     >
@@ -4441,12 +4457,12 @@ function AppContent() {
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Indicações Ativas</p>
-                      <p className="text-2xl font-black text-white">0</p>
+                      <p className="text-2xl font-black text-white">{userData?.referralCount || 0}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Créditos Ganhos</p>
-                    <p className="text-2xl font-black text-[#d4af37]">0</p>
+                    <p className="text-2xl font-black text-[#d4af37]">{(userData?.referralCount || 0) * 10}</p>
                   </div>
                 </div>
               </div>
@@ -4632,7 +4648,7 @@ function AppContent() {
                   </ul>
 
                   <button 
-                    onClick={() => handlePurchase(plan.name, plan.credits)}
+                    onClick={() => handlePurchase(plan.name, plan.credits, plan.price)}
                     className={`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-widest transition-all ${plan.popular ? 'bg-[#d4af37] text-black hover:scale-105 shadow-lg shadow-[#d4af37]/20' : 'bg-[#1a1a1a] text-white border border-[#222] hover:bg-[#222]'}`}
                   >
                     Assinar Agora
@@ -4664,7 +4680,7 @@ function AppContent() {
                       <span className="text-xl font-black text-white">R$ {pack.price}</span>
                     </div>
                     <button 
-                      onClick={() => handlePurchase(pack.name, pack.credits)}
+                      onClick={() => handlePurchase(pack.name, pack.credits, pack.price)}
                       className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
                     >
                       Comprar Agora
