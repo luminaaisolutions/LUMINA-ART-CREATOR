@@ -133,6 +133,24 @@ async function createServer() {
           }
           throw error;
         }
+      } else if (method === 'generateImages') {
+        try {
+          // @ts-ignore
+          result = await ai.models.generateImages({
+            model: args.model,
+            prompt: args.prompt,
+            config: args.config
+          });
+          res.json(result);
+        } catch (error: any) {
+          if (error.message?.includes('403') || error.message?.includes('PERMISSION_DENIED')) {
+            return res.status(403).json({ 
+              error: "ACESSO NEGADO: Sua chave de API do Gemini pode não ter a 'Generative Language API' ativada ou está bloqueada para este serviço (Imagen).",
+              details: error.message 
+            });
+          }
+          throw error;
+        }
       } else if (method === 'generateVideos') {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideos`, {
           method: 'POST',

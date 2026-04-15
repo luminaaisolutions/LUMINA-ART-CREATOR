@@ -143,6 +143,9 @@ interface UserProfile {
   uid: string;
   email: string | null;
   displayName: string | null;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
   photoURL: string | null;
   role: string;
   credits: number;
@@ -232,6 +235,93 @@ function Timer({ start, end, status }: { start: any; end?: any; status: string }
   );
 }
 
+// --- Registration Modal ---
+function RegistrationModal({ data, onChange, onSubmit, isProcessing }: { 
+  data: { firstName: string, lastName: string, phone: string, email: string }, 
+  onChange: (field: string, value: string) => void,
+  onSubmit: () => void,
+  isProcessing: boolean
+}) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="max-w-md w-full bg-[#111] border border-[#222] p-10 rounded-[48px] shadow-2xl relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#d4af37] via-[#f1c40f] to-[#d4af37]" />
+        
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-[#d4af37]/10 text-[#d4af37] rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3 hover:rotate-0 transition-all duration-500">
+            <User size={40} />
+          </div>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">Complete seu Perfil</h2>
+          <p className="text-gray-500 text-sm">Para começar seu plano de teste gratuito, precisamos de alguns dados básicos.</p>
+        </div>
+
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Nome</label>
+              <input 
+                type="text" 
+                value={data.firstName}
+                onChange={(e) => onChange('firstName', e.target.value)}
+                placeholder="Ex: João"
+                className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-all"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Sobrenome</label>
+              <input 
+                type="text" 
+                value={data.lastName}
+                onChange={(e) => onChange('lastName', e.target.value)}
+                placeholder="Ex: Silva"
+                className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">E-mail</label>
+            <input 
+              type="email" 
+              value={data.email}
+              disabled
+              className="w-full bg-[#0a0a0a] border border-[#222] rounded-2xl p-4 text-sm text-gray-500 cursor-not-allowed"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Telefone / WhatsApp</label>
+            <input 
+              type="tel" 
+              value={data.phone}
+              onChange={(e) => onChange('phone', e.target.value)}
+              placeholder="(00) 00000-0000"
+              className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-all"
+            />
+          </div>
+
+          <button 
+            onClick={onSubmit}
+            disabled={isProcessing || !data.firstName || !data.lastName || !data.phone}
+            className="w-full bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black py-5 rounded-2xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest mt-4 disabled:opacity-50 disabled:hover:scale-100"
+          >
+            {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={20} />}
+            FINALIZAR CADASTRO
+          </button>
+          
+          <p className="text-[10px] text-gray-600 text-center mt-6 uppercase tracking-widest font-bold">
+            Ao se cadastrar, você concorda com nossos <span className="text-gray-400 underline cursor-pointer">Termos de Uso</span>.
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 function AppContent() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -298,6 +388,34 @@ function AppContent() {
     description?: string
   }[]>([]);
   const [activeBrandProfileId, setActiveBrandProfileId] = useState<string | null>(null);
+  const [showRegistration, setShowRegistration] = useState(false);
+  const [registrationData, setRegistrationData] = useState({ firstName: '', lastName: '', phone: '', email: '' });
+  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  const handleRegister = async () => {
+    if (!user || !userData) return;
+    setIsRegistering(true);
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const updateData = {
+        firstName: registrationData.firstName,
+        lastName: registrationData.lastName,
+        phone: registrationData.phone,
+        displayName: `${registrationData.firstName} ${registrationData.lastName}`,
+        credits: 10, // 10 free trial credits
+        plan: 'trial'
+      };
+      await updateDoc(userRef, updateData);
+      setUserData(prev => prev ? { ...prev, ...updateData } : null);
+      setShowRegistration(false);
+      alert("Cadastro realizado com sucesso! Você recebeu 10 créditos de teste.");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
+    } finally {
+      setIsRegistering(false);
+    }
+  };
   const [studioMode, setStudioMode] = useState<string | null>(null);
   const [refAsset, setRefAsset] = useState<{ data: string, mimeType: string, type: 'image' | 'video' } | null>(null);
   const [productAsset, setProductAsset] = useState<{ data: string, mimeType: string, type: 'image' } | null>(null);
@@ -334,20 +452,23 @@ function AppContent() {
     details?: string
   } | null>(null);
 
-  const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any }) => {
+  const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any, method?: 'generateContent' | 'generateImages' }) => {
     try {
-      const { prompt, contents, model = "gemini-1.5-flash", config } = options;
+      const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
       
+      const args: any = { model, config };
+      if (method === 'generateImages') {
+        args.prompt = prompt;
+      } else {
+        args.contents = contents || [{ role: 'user', parts: [{ text: prompt || "" }] }];
+      }
+
       const res = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          method: 'generateContent',
-          args: {
-            model,
-            contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
-            config
-          }
+          method,
+          args
         })
       });
 
@@ -411,9 +532,23 @@ function AppContent() {
         // Listen for user data changes (credits, plan)
         const unsubUser = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
-            setUserData(docSnap.data() as any);
+            const data = docSnap.data() as UserProfile;
+            setUserData(data);
+            
+            // Check if registration is complete
+            if (!data.firstName || !data.lastName || !data.phone) {
+              setRegistrationData({
+                firstName: data.firstName || (currentUser.displayName?.split(' ')[0] || ''),
+                lastName: data.lastName || (currentUser.displayName?.split(' ').slice(1).join(' ') || ''),
+                phone: data.phone || '',
+                email: data.email || ''
+              });
+              setShowRegistration(true);
+            } else {
+              setShowRegistration(false);
+            }
           } else {
-            // New user initialization
+            // New user initial shell
             const refCode = Math.random().toString(36).substring(2, 9);
             const referredBy = localStorage.getItem('referredBy') || null;
             
@@ -423,8 +558,8 @@ function AppContent() {
               displayName: currentUser.displayName,
               photoURL: currentUser.photoURL,
               role: currentUser.email === 'luminaaisolutions@gmail.com' ? 'admin' : 'user',
-              credits: 50, // 50 free credits for new users
-              plan: 'free',
+              credits: 0, // No credits until registration
+              plan: 'trial',
               createdAt: new Date(),
               isVerified: false,
               referralCode: refCode,
@@ -434,8 +569,14 @@ function AppContent() {
             setDoc(userRef, initialData).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${currentUser.uid}`));
             setUserData(initialData as any);
             
-            // If referred, we could give bonus here, but user requested "on purchase"
-            // For now, just clear the ref
+            setRegistrationData({
+              firstName: currentUser.displayName?.split(' ')[0] || '',
+              lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
+              phone: '',
+              email: currentUser.email || ''
+            });
+            setShowRegistration(true);
+            
             localStorage.removeItem('referredBy');
           }
         });
@@ -462,33 +603,20 @@ function AppContent() {
   const handlePurchase = async (planName: string, credits: number) => {
     if (!user || !userData) return;
     
+    // In a real app, this would redirect to Stripe/Checkout
+    const confirm = window.confirm(`Deseja assinar o plano ${planName}? Você será redirecionado para o checkout seguro.`);
+    if (!confirm) return;
+
+    alert("Simulação de Checkout: Em um ambiente de produção, você seria redirecionado para o Stripe agora. Seus créditos serão adicionados após a confirmação do pagamento.");
+    
     try {
-      // 1. Update current user's plan and credits
-      await updateDoc(doc(db, 'users', user.uid), {
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
         plan: planName.toLowerCase(),
         credits: increment(credits)
       });
-      
-      // 2. Check for referrer and give bonus
-      if (userData.referredBy) {
-        // Find the referrer user
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('referralCode', '==', userData.referredBy));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const referrerDoc = querySnapshot.docs[0];
-          await updateDoc(doc(db, 'users', referrerDoc.id), {
-            credits: increment(10), // 10 credits bonus
-            referralCount: increment(1)
-          });
-          console.log("Referral bonus granted to:", referrerDoc.id);
-        }
-      }
-      
-      alert(`Parabéns! Você agora é ${planName}. ${credits} créditos foram adicionados à sua conta.`);
+      alert(`Pagamento confirmado! Você agora é ${planName}. ${credits} créditos foram adicionados.`);
     } catch (error) {
-      console.error("Purchase failed:", error);
       handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
     }
   };
@@ -1302,7 +1430,7 @@ function AppContent() {
         try {
           const userRef = doc(db, 'users', user.uid);
           // Note: costPerItem is available in the parent scope of generateItem
-          await updateDoc(userRef, { credits: userData.credits + costPerItem });
+          await updateDoc(userRef, { credits: increment(costPerItem) });
           console.log(`Refunded ${costPerItem} credits for failed item ${itemId}`);
         } catch (refundError) {
           console.error("Failed to refund credits:", refundError);
@@ -1652,6 +1780,7 @@ function AppContent() {
     };
     
     if (styles[style]) {
+      setSelectedStyle(style);
       setPrompt(prev => {
         const current = prev.trim();
         if (!current) return styles[style];
@@ -1848,6 +1977,14 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] font-sans selection:bg-[#d4af37] selection:text-black">
+      {showRegistration && (
+        <RegistrationModal 
+          data={registrationData}
+          onChange={(field, value) => setRegistrationData(prev => ({ ...prev, [field]: value }))}
+          onSubmit={handleRegister}
+          isProcessing={isRegistering}
+        />
+      )}
       {/* --- Top Navigation --- */}
       <header className="fixed top-0 left-0 right-0 h-20 bg-[#111] border-b border-[#222] z-50 flex items-center justify-between px-8">
         <div className="flex items-center gap-8">
@@ -1889,13 +2026,13 @@ function AppContent() {
           {userData && (
             <div className="hidden md:flex items-center gap-4 px-4 py-2 bg-[#1a1a1a] border border-[#222] rounded-2xl">
               <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-[#d4af37] uppercase tracking-widest leading-none mb-1">Créditos</span>
-                <span className="text-sm font-black text-white leading-none">{userData.credits || 0}</span>
+                <span className="text-[11px] font-black text-[#d4af37] uppercase tracking-widest leading-none mb-1">Créditos</span>
+                <span className="text-base font-black text-white leading-none">{userData.credits || 0}</span>
               </div>
               <div className="w-px h-6 bg-[#222]" />
               <div className="flex flex-col">
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">Plano</span>
-                <span className="text-xs font-bold text-white leading-none">{userData.plan}</span>
+                <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">Plano</span>
+                <span className="text-sm font-bold text-white leading-none uppercase">{userData.plan}</span>
               </div>
             </div>
           )}
@@ -3078,15 +3215,16 @@ function AppContent() {
                                 { id: 'Anime', label: 'ANIME', icon: Sparkles },
                                 { id: 'Pintura', label: 'ARTE', icon: Palette },
                                 { id: '3D Render', label: '3D', icon: Maximize },
+                                { id: 'Vintage', label: 'VINTAGE', icon: Clock },
                               ].map((style) => (
                                 <button
                                   key={style.id}
                                   type="button"
                                   onClick={() => applyStyle(style.id)}
-                                  className="bg-black/20 border border-white/5 hover:border-[#d4af37]/50 p-1.5 rounded-lg flex flex-col items-center gap-0.5 transition-all group"
+                                  className={`p-1.5 rounded-lg flex flex-col items-center gap-0.5 transition-all group ${selectedStyle === style.id ? 'bg-[#d4af37]/20 border-[#d4af37]' : 'bg-black/20 border border-white/5 hover:border-[#d4af37]/50'}`}
                                 >
-                                  <style.icon size={12} className="text-gray-600 group-hover:text-[#d4af37]" />
-                                  <span className="text-[7px] font-black text-gray-500 group-hover:text-white tracking-tighter uppercase">
+                                  <style.icon size={12} className={selectedStyle === style.id ? 'text-[#d4af37]' : 'text-gray-600 group-hover:text-[#d4af37]'} />
+                                  <span className={`text-[7px] font-black tracking-tighter uppercase ${selectedStyle === style.id ? 'text-white' : 'text-gray-500 group-hover:text-white'}`}>
                                     {style.label}
                                   </span>
                                 </button>
@@ -3097,8 +3235,8 @@ function AppContent() {
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-[9px] font-bold text-gray-400 mb-1 uppercase tracking-widest">Formato</label>
-                            <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-[10px] focus:outline-none focus:border-[#d4af37] appearance-none">
+                            <label className="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-widest">Formato</label>
+                            <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none">
                               <option value="9:16">9:16</option>
                               <option value="16:9">16:9</option>
                               <option value="1:1">1:1</option>
@@ -4044,9 +4182,9 @@ function AppContent() {
                               e.stopPropagation();
                               handleDelete(item.id);
                             }}
-                            className="w-12 h-12 bg-red-500/20 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+                            className="w-14 h-14 bg-red-500/20 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={24} />
                           </button>
                         </div>
                       </div>
@@ -4109,23 +4247,23 @@ function AppContent() {
                   name: 'Iniciante', 
                   credits: 100, 
                   price: billingCycle === 'monthly' ? 47 : 37, 
-                  description: 'Perfeito para quem está começando na criação de conteúdo.',
-                  features: ['100 Créditos/mês', 'Geração de Imagens HD', 'Suporte via E-mail', 'Acesso aos Modelos Flash']
+                  description: 'Ideal para criadores individuais que buscam consistência.',
+                  features: ['100 Créditos/mês', 'Geração de Imagens HD', 'Suporte via E-mail', 'Acesso aos Modelos Flash', '1 Perfil de Marca']
                 },
                 { 
                   name: 'Creator Pro', 
                   credits: 500, 
                   price: billingCycle === 'monthly' ? 97 : 77, 
-                  description: 'Para profissionais que precisam de escala e qualidade máxima.',
-                  features: ['500 Créditos/mês', 'Geração de Vídeos e LipSync', 'Suporte Prioritário WhatsApp', 'Acesso ao Gemini 1.5 Pro', 'Perfis de Marca Ilimitados'],
+                  description: 'A escolha dos profissionais para escala e qualidade máxima.',
+                  features: ['500 Créditos/mês', 'Geração de Vídeos e LipSync', 'Suporte Prioritário WhatsApp', 'Acesso ao Gemini 1.5 Pro', 'Perfis de Marca Ilimitados', 'Remoção de Marca d\'água'],
                   popular: true
                 },
                 { 
                   name: 'Elite Agency', 
                   credits: 2000, 
                   price: billingCycle === 'monthly' ? 297 : 237, 
-                  description: 'A solução definitiva para agências de alta performance.',
-                  features: ['2000 Créditos/mês', 'Prioridade na Fila de Geração', 'Gerente de Conta Dedicado', 'API Access (Beta)', 'Treinamento de Modelos Custom']
+                  description: 'Potência máxima para agências e grandes operações.',
+                  features: ['2000 Créditos/mês', 'Prioridade na Fila de Geração', 'Gerente de Conta Dedicado', 'API Access (Beta)', 'Treinamento de Modelos Custom', 'Colaboração em Equipe']
                 }
               ].map((plan, i) => (
                 <div 
@@ -4174,19 +4312,38 @@ function AppContent() {
               ))}
             </div>
 
-            <div className="bg-[#111] border border-[#222] rounded-[48px] p-10 flex flex-wrap items-center justify-between gap-8">
-              <div className="flex items-center gap-6">
-                <div className="w-16 h-16 bg-[#d4af37]/10 rounded-3xl flex items-center justify-center border border-[#d4af37]/20">
-                  <Zap size={32} className="text-[#d4af37]" />
-                </div>
-                <div>
-                  <h4 className="text-2xl font-black text-white uppercase tracking-tighter">Precisa de mais fôlego?</h4>
-                  <p className="text-gray-500 text-sm">Adquira pacotes de créditos avulsos sem assinatura mensal.</p>
-                </div>
+            {/* --- Add-on Credits Section --- */}
+            <div className="mt-20 pt-20 border-t border-[#222]">
+              <div className="text-center mb-12">
+                <h3 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Precisa de mais fôlego?</h3>
+                <p className="text-gray-500">Adquira pacotes de créditos avulsos que nunca expiram.</p>
               </div>
-              <button className="px-10 py-5 bg-white/5 text-white font-black rounded-3xl border border-white/10 hover:bg-white/10 transition-all uppercase tracking-widest text-xs">
-                Ver Pacotes Avulsos
-              </button>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  { name: 'Starter Pack', credits: 50, price: 27 },
+                  { name: 'Booster Pack', credits: 150, price: 67 },
+                  { name: 'Pro Pack', credits: 400, price: 147 },
+                  { name: 'Agency Pack', credits: 1000, price: 297 }
+                ].map((pack, i) => (
+                  <div key={i} className="bg-[#111] border border-[#222] p-8 rounded-[32px] hover:border-[#d4af37]/50 transition-all group">
+                    <div className="w-12 h-12 bg-[#d4af37]/10 text-[#d4af37] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                      <Zap size={24} />
+                    </div>
+                    <h4 className="text-lg font-black text-white uppercase tracking-tight mb-1">{pack.name}</h4>
+                    <p className="text-2xl font-black text-[#d4af37] mb-4">{pack.credits} <span className="text-xs text-gray-500 font-bold uppercase tracking-widest text-[10px]">Créditos</span></p>
+                    <div className="flex items-baseline gap-1 mb-6">
+                      <span className="text-xl font-black text-white">R$ {pack.price}</span>
+                    </div>
+                    <button 
+                      onClick={() => handlePurchase(pack.name, pack.credits)}
+                      className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
+                    >
+                      Comprar Agora
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
