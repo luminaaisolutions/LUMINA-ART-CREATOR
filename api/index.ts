@@ -116,12 +116,23 @@ async function createServer() {
       
       let result;
       if (method === 'generateContent') {
-        result = await ai.models.generateContent({
-          model: args.model,
-          contents: args.contents,
-          config: args.config
-        });
-        res.json(result);
+        try {
+          result = await ai.models.generateContent({
+            model: args.model,
+            contents: args.contents,
+            config: args.config
+          });
+          res.json(result);
+        } catch (error: any) {
+          if (error.message?.includes('403') || error.message?.includes('PERMISSION_DENIED')) {
+            console.error("Gemini API 403 Error: Service might be blocked or API Key restricted.");
+            return res.status(403).json({ 
+              error: "ACESSO NEGADO: Sua chave de API do Gemini pode não ter a 'Generative Language API' ativada ou está bloqueada para este serviço. Verifique as configurações no Google Cloud Console.",
+              details: error.message 
+            });
+          }
+          throw error;
+        }
       } else if (method === 'generateVideos') {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideos`, {
           method: 'POST',
@@ -141,6 +152,12 @@ async function createServer() {
         const data = await response.json();
         if (!response.ok) {
           console.error("Veo API Error:", data);
+          if (response.status === 403) {
+            return res.status(403).json({ 
+              error: "ACESSO NEGADO: Sua chave de API do Gemini pode não ter a 'Generative Language API' ativada ou está bloqueada para este serviço (Veo).",
+              details: data 
+            });
+          }
           return res.status(response.status).json(data);
         }
         res.json(data);
@@ -152,6 +169,12 @@ async function createServer() {
         const data = await response.json();
         if (!response.ok) {
           console.error("Veo Operation Error:", data);
+          if (response.status === 403) {
+            return res.status(403).json({ 
+              error: "ACESSO NEGADO: Sua chave de API do Gemini pode não ter a 'Generative Language API' ativada ou está bloqueada.",
+              details: data 
+            });
+          }
           return res.status(response.status).json(data);
         }
         res.json(data);
@@ -160,7 +183,12 @@ async function createServer() {
       }
     } catch (error: any) {
       console.error("Gemini Proxy Error:", error);
-      res.status(500).json({ error: error.message });
+      // Ensure we always return JSON
+      res.setHeader('Content-Type', 'application/json');
+      res.status(500).json({ 
+        error: "Erro interno no servidor de proxy do Gemini.",
+        details: error.message || String(error)
+      });
     }
   });
 

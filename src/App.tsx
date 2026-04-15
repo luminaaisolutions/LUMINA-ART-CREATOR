@@ -336,7 +336,7 @@ function AppContent() {
 
   const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any }) => {
     try {
-      const { prompt, contents, model = "gemini-3-flash-preview", config } = options;
+      const { prompt, contents, model = "gemini-1.5-flash", config } = options;
       
       const res = await fetch('/api/gemini', {
         method: 'POST',
@@ -352,11 +352,26 @@ function AppContent() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to call Gemini API");
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const err = await res.json();
+          throw new Error(err.error || "Failed to call Gemini API");
+        } else {
+          const text = await res.text();
+          console.error("Non-JSON error response:", text);
+          if (res.status === 403) {
+            throw new Error("ACESSO NEGADO (403): Sua chave de API está bloqueada ou a API não está ativada. Verifique o Google Cloud Console.");
+          }
+          throw new Error(`Erro no servidor (${res.status}): O servidor não retornou um JSON válido.`);
+        }
       }
 
-      return await res.json();
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return await res.json();
+      } else {
+        throw new Error("O servidor retornou uma resposta inesperada (não-JSON).");
+      }
     } catch (error: any) {
       console.error("Gemini API Error:", error);
       throw new Error(error.message || "Failed to call Gemini API");
@@ -838,12 +853,11 @@ function AppContent() {
                 model: 'gemini-1.5-flash',
                 prompt: `Enhance this prompt for professional and creative AI image generation: "${itemPrompt}". 
                 ${creativeContext}
-                ${hasRef ? 'CRITICAL: The user provided a persona reference image. You MUST maintain 100% facial features and identity. The persona MUST remain identical.' : ''}
+                ${hasRef ? 'CRITICAL: The user provided a persona reference image. Focus on preserving the person\'s facial features and identity, but allow the pose and background to change based on the prompt.' : ''}
                 ${hasProduct ? 'CRITICAL: The user provided a product reference image. The persona MUST be presenting/holding this EXACT product.' : ''}
                 Your goal is to be highly efficient, seeking rich references, intricate details, and novelties in the composition. 
-                Focus on cinematic lighting, hyper-realistic textures, and unique artistic perspectives while keeping the person and product identical.
-                IMPORTANT: If this is part of a batch, ensure this specific variation is visually distinct from any other possible interpretation of the theme.
-                Output ONLY the enhanced prompt in English.`
+                Focus on cinematic lighting, hyper-realistic textures, and unique artistic perspectives.
+                IMPORTANT: Output ONLY the enhanced prompt in English.`
               });
               
               if (enhancerRes && enhancerRes.text) {
@@ -874,7 +888,7 @@ function AppContent() {
                 }
 
                 const response = await callGeminiAPI({
-                  model: 'imagen-4.0-generate-001', 
+                  model: 'imagen-3.0-generate-001', 
                   prompt: promptText,
                   config: {
                     numberOfImages: 1,
@@ -887,7 +901,7 @@ function AppContent() {
               } else {
                 const isHighRes = currentResolution === '2K' || currentResolution === '4K';
                 // Use a proper image generation model
-                const modelName = isHighRes ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image'; 
+                const modelName = isHighRes ? 'gemini-1.5-pro' : 'gemini-1.5-flash'; 
                 
                 const parts: any[] = [{ text: enhancedPrompt }];
                 if (currentRefAsset && currentRefAsset.type === 'image') {
@@ -897,14 +911,14 @@ function AppContent() {
                       mimeType: currentRefAsset.mimeType
                     }
                   });
-                  // Extremely strong instruction for persona fidelity
+                  // Refined Persona Preservation Mode
                   parts[0].text = `[SYSTEM: PERSONA PRESERVATION MODE]
                   ACT AS A MASTER PORTRAIT ARTIST. 
                   REFERENCE IMAGE ATTACHED. 
-                  TASK: Generate a new image based on the prompt while maintaining 100% IDENTITY FIDELITY.
-                  DO NOT ALTER: Face shape, eyes, nose, lips, skin tone, hair texture, or unique features.
-                  THE PERSON IN THE GENERATED IMAGE MUST BE THE EXACT SAME INDIVIDUAL AS IN THE REFERENCE.
-                  PROMPT: ${enhancedPrompt}`;
+                  TASK: Generate a new image based on the prompt while maintaining the EXACT facial features and identity of the person in the reference image.
+                  PRESERVE: Face shape, eyes, nose, lips, skin tone, and hair texture.
+                  ADAPT: Pose, expression, clothing, and background to match the prompt: "${enhancedPrompt}".
+                  DO NOT copy the background or lighting from the reference image unless it matches the prompt.`;
                 }
 
                 if (currentProductAsset && currentProductAsset.type === 'image') {
@@ -917,7 +931,8 @@ function AppContent() {
                   parts[0].text += `\n[SYSTEM: PRODUCT INTEGRATION]
                   PRODUCT IMAGE ATTACHED. 
                   TASK: The persona MUST be presenting the product shown in the reference image. 
-                  The product must look exactly as shown. The persona should hold or interact with the product naturally.`;
+                  The product must look exactly as shown (shape, labels, colors). 
+                  The persona should hold or interact with the product naturally in the context of the prompt.`;
                 }
 
                 if (currentUseCreativeStudio && currentCreativeLogo) {
@@ -938,10 +953,10 @@ function AppContent() {
                   model: modelName,
                   contents: [{ role: 'user', parts }],
                   config: {
-                    tools: currentUseGrounding && (modelName === 'gemini-3.1-flash-image-preview') ? [{ googleSearch: {} }] : undefined,
+                    tools: currentUseGrounding && (modelName === 'gemini-1.5-pro') ? [{ googleSearch: {} }] : undefined,
                     imageConfig: {
                       aspectRatio: currentAspectRatio as any,
-                      ...(isHighRes && modelName === 'gemini-3.1-flash-image-preview' ? { imageSize: currentResolution as any } : {})
+                      ...(isHighRes && modelName === 'gemini-1.5-pro' ? { imageSize: currentResolution as any } : {})
                     },
                     safetySettings: [
                       { category: 'HARM_CATEGORY_HATE_SPEECH' as any, threshold: 'BLOCK_NONE' as any },
@@ -949,8 +964,8 @@ function AppContent() {
                       { category: 'HARM_CATEGORY_HARASSMENT' as any, threshold: 'BLOCK_NONE' as any },
                       { category: 'HARM_CATEGORY_DANGEROUS_CONTENT' as any, threshold: 'BLOCK_NONE' as any }
                     ],
-                    temperature: 0.4, // Lower temperature for better persona consistency
-                    topP: 0.8,
+                    temperature: currentRefAsset ? 0.4 : 0.7, // Dynamic temperature
+                    topP: 0.9,
                     topK: 40
                   }
                 });
@@ -1036,7 +1051,7 @@ function AppContent() {
           if (!fastMode && isLipsync && currentLipsyncAudio) {
             try {
               const analysisRes = await callGeminiAPI({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-1.5-flash',
                 contents: [{
                   role: 'user',
                   parts: [
@@ -1703,6 +1718,8 @@ function AppContent() {
       let msg = e.message;
       if (msg.includes('API key not valid') || msg.includes('not configured')) {
         msg = "Chave de API inválida ou não configurada no servidor.";
+      } else if (msg.includes('403') || msg.includes('PERMISSION_DENIED') || msg.includes('BLOCKED')) {
+        msg = "ACESSO NEGADO: Sua chave de API do Gemini pode não ter a 'Generative Language API' ativada no Google Cloud Console ou está bloqueada.";
       } else if (msg.includes('503') || msg.includes('high demand')) {
         msg = "Servidores do Google sobrecarregados. Tente novamente em 1 minuto.";
       }
