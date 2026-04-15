@@ -345,7 +345,7 @@ function AppContent() {
       localStorage.setItem('referredBy', ref);
     }
   }, []);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'branding' | 'projects' | 'creative_studio' | 'lipsync' | 'library' | 'plans'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'branding' | 'projects' | 'creative_studio' | 'lipsync' | 'library' | 'plans' | 'profile' | 'referrals' | 'faq'>('dashboard');
   const [libraryFilter, setLibraryFilter] = useState<'all' | 'image' | 'video'>('all');
   const [dragActive, setDragActive] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
@@ -2101,11 +2101,27 @@ function AppContent() {
                       </button>
 
                       <button 
-                        onClick={() => { setActiveTab('branding'); setShowUserMenu(false); }}
+                        onClick={() => { setActiveTab('profile'); setShowUserMenu(false); }}
                         className="w-full flex items-center gap-3 p-4 hover:bg-[#1a1a1a] rounded-2xl transition-all group text-left"
                       >
                         <Settings size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
-                        <span className="text-xs font-bold text-gray-300">Minhas Marcas</span>
+                        <span className="text-xs font-bold text-gray-300">Perfil e Conta</span>
+                      </button>
+
+                      <button 
+                        onClick={() => { setActiveTab('referrals'); setShowUserMenu(false); }}
+                        className="w-full flex items-center gap-3 p-4 hover:bg-[#1a1a1a] rounded-2xl transition-all group text-left"
+                      >
+                        <Gift size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
+                        <span className="text-xs font-bold text-gray-300">Indicações</span>
+                      </button>
+
+                      <button 
+                        onClick={() => { setActiveTab('faq'); setShowUserMenu(false); }}
+                        className="w-full flex items-center gap-3 p-4 hover:bg-[#1a1a1a] rounded-2xl transition-all group text-left"
+                      >
+                        <HelpCircle size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
+                        <span className="text-xs font-bold text-gray-300">FAQ e Informações</span>
                       </button>
 
                       <div className="h-px bg-[#222] my-2 mx-4" />
@@ -2138,6 +2154,9 @@ function AppContent() {
             {activeTab === 'lipsync' && 'LipSync Studio'}
             {activeTab === 'library' && 'Sua Biblioteca'}
             {activeTab === 'plans' && 'Planos e Assinaturas'}
+            {activeTab === 'profile' && 'Perfil e Conta'}
+            {activeTab === 'referrals' && 'Programa de Indicações'}
+            {activeTab === 'faq' && 'FAQ e Suporte'}
           </h1>
           <p className="text-gray-500 text-sm md:text-base">
             {activeTab === 'dashboard' && 'Visão geral de todas as funções principais do Lumina.'}
@@ -2147,6 +2166,9 @@ function AppContent() {
             {activeTab === 'lipsync' && 'Sincronismo labial de alta fidelidade para seus vídeos.'}
             {activeTab === 'library' && 'Acesse todas as suas criações em um só lugar.'}
             {activeTab === 'plans' && 'Gerencie seus planos, créditos e configurações técnicas.'}
+            {activeTab === 'profile' && 'Gerencie seus dados pessoais, segurança e informações da conta.'}
+            {activeTab === 'referrals' && 'Convide amigos e ganhe créditos bônus para suas criações.'}
+            {activeTab === 'faq' && 'Dúvidas frequentes, tutoriais e canais de suporte.'}
           </p>
           </div>
         </header>
@@ -4223,6 +4245,235 @@ function AppContent() {
               </div>
             )}
           </div>
+        )}
+
+        {/* --- Profile Tab --- */}
+        {activeTab === 'profile' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-4xl mx-auto space-y-8 pb-20"
+          >
+            <div className="bg-[#111] border border-[#222] rounded-[3rem] overflow-hidden">
+              <div className="h-32 bg-gradient-to-r from-[#d4af37] to-[#f1c40f] relative">
+                <div className="absolute -bottom-12 left-10">
+                  <div className="relative group">
+                    <img 
+                      src={user.photoURL || ''} 
+                      alt="Avatar" 
+                      className="w-24 h-24 rounded-3xl border-4 border-[#111] bg-gray-800 object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                    <button className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-3xl">
+                      <Upload size={20} className="text-white" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-16 pb-10 px-10">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                  <div>
+                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter">{user.displayName}</h3>
+                    <p className="text-gray-500 font-medium">{user.email}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="px-4 py-2 bg-[#d4af37]/10 text-[#d4af37] text-[10px] font-black rounded-xl uppercase tracking-widest border border-[#d4af37]/20">
+                      Plano {userData?.plan || 'Free'}
+                    </span>
+                    <span className="px-4 py-2 bg-green-500/10 text-green-500 text-[10px] font-black rounded-xl uppercase tracking-widest border border-green-500/20">
+                      Conta Verificada
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-[#111] border border-[#222] rounded-[3rem] p-10 space-y-8">
+                <h4 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                  <User size={20} className="text-[#d4af37]" />
+                  Dados Pessoais
+                </h4>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Nome Completo</label>
+                    <input 
+                      type="text" 
+                      defaultValue={user.displayName || ''} 
+                      className="w-full bg-[#0a0a0a] border border-[#222] rounded-2xl px-5 py-4 text-sm font-bold text-white focus:border-[#d4af37] transition-all outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">E-mail de Contato</label>
+                    <input 
+                      type="email" 
+                      defaultValue={user.email || ''} 
+                      disabled
+                      className="w-full bg-[#0a0a0a] border border-[#222] rounded-2xl px-5 py-4 text-sm font-bold text-gray-600 outline-none cursor-not-allowed"
+                    />
+                  </div>
+                  <button className="w-full py-4 bg-[#d4af37] text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all">
+                    Salvar Alterações
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-[#111] border border-[#222] rounded-[3rem] p-10 space-y-8">
+                <h4 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                  <ShieldCheck size={20} className="text-[#d4af37]" />
+                  Segurança e Plano
+                </h4>
+                <div className="space-y-6">
+                  <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-2xl flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Seu Plano Atual</p>
+                      <p className="text-lg font-black text-white uppercase tracking-tighter">{userData?.plan || 'Free Trial'}</p>
+                    </div>
+                    <button 
+                      onClick={() => setActiveTab('plans')}
+                      className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                    >
+                      Mudar Plano
+                    </button>
+                  </div>
+                  <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-2xl flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Créditos Disponíveis</p>
+                      <p className="text-lg font-black text-[#d4af37] uppercase tracking-tighter">{userData?.credits || 0} Créditos</p>
+                    </div>
+                    <button 
+                      onClick={() => setActiveTab('plans')}
+                      className="px-4 py-2 bg-[#d4af37]/10 text-[#d4af37] text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                    >
+                      Recarregar
+                    </button>
+                  </div>
+                  <button className="w-full py-4 border border-red-500/20 text-red-500 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-red-500/5 transition-all">
+                    Excluir Minha Conta
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* --- Referrals Tab --- */}
+        {activeTab === 'referrals' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-4xl mx-auto space-y-8 pb-20"
+          >
+            <div className="bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-[#222] rounded-[3rem] p-12 text-center space-y-8 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
+              <div className="w-24 h-24 bg-[#d4af37]/10 text-[#d4af37] rounded-[2rem] flex items-center justify-center mx-auto mb-4">
+                <Gift size={48} />
+              </div>
+              <div className="space-y-4">
+                <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Ganhe Créditos Indicando Amigos</h2>
+                <p className="text-gray-500 max-w-xl mx-auto">
+                  Para cada amigo que se cadastrar e realizar a primeira compra através do seu link, você ganha <span className="text-[#d4af37] font-bold">50 créditos bônus</span> e ele ganha 10% de desconto.
+                </p>
+              </div>
+
+              <div className="max-w-md mx-auto p-2 bg-[#0a0a0a] border border-[#222] rounded-2xl flex items-center gap-2">
+                <input 
+                  type="text" 
+                  readOnly 
+                  value={`https://lumina.art/ref/${user.uid.slice(0, 8)}`}
+                  className="flex-1 bg-transparent border-none outline-none px-4 text-sm font-bold text-gray-400"
+                />
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://lumina.art/ref/${user.uid.slice(0, 8)}`);
+                    // Add toast notification here if available
+                  }}
+                  className="px-6 py-3 bg-[#d4af37] text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all"
+                >
+                  Copiar Link
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
+                <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-3xl">
+                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Indicações</p>
+                  <p className="text-2xl font-black text-white">0</p>
+                </div>
+                <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-3xl">
+                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Créditos Ganhos</p>
+                  <p className="text-2xl font-black text-[#d4af37]">0</p>
+                </div>
+                <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-3xl">
+                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Conversão</p>
+                  <p className="text-2xl font-black text-green-500">0%</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* --- FAQ Tab --- */}
+        {activeTab === 'faq' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-4xl mx-auto space-y-8 pb-20"
+          >
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-black text-white uppercase tracking-tighter mb-4">Como podemos ajudar?</h2>
+              <p className="text-gray-500">Encontre respostas rápidas para as dúvidas mais comuns sobre o Lumina.</p>
+            </div>
+
+            <div className="space-y-4">
+              {[
+                {
+                  q: "Como funcionam os créditos?",
+                  a: "Cada geração de imagem ou vídeo consome uma quantidade específica de créditos. Imagens HD consomem 1 crédito, enquanto vídeos e LipSync podem consumir mais dependendo da duração e complexidade."
+                },
+                {
+                  q: "Posso usar as criações comercialmente?",
+                  a: "Sim! Todas as criações geradas nos planos pagos (Iniciante, Pro e Elite) possuem licença comercial completa. No plano Free, o uso é restrito a fins não comerciais."
+                },
+                {
+                  q: "O que é o LipSync Studio?",
+                  a: "É nossa tecnologia avançada que permite sincronizar o movimento dos lábios de qualquer personagem ou foto com um arquivo de áudio, criando vídeos realistas de fala."
+                },
+                {
+                  q: "Como cancelar minha assinatura?",
+                  a: "Você pode cancelar a qualquer momento na aba 'Perfil e Conta' ou 'Planos'. Sua assinatura permanecerá ativa até o final do período já pago."
+                },
+                {
+                  q: "Meus créditos expiram?",
+                  a: "Créditos de planos mensais expiram ao final do ciclo. Créditos adquiridos via 'Packs Avulsos' nunca expiram e ficam acumulados em sua conta."
+                }
+              ].map((item, i) => (
+                <div key={i} className="bg-[#111] border border-[#222] rounded-[2rem] overflow-hidden">
+                  <button className="w-full p-8 text-left flex items-center justify-between hover:bg-[#1a1a1a] transition-all group">
+                    <span className="text-lg font-bold text-white group-hover:text-[#d4af37] transition-colors">{item.q}</span>
+                    <ChevronDown size={20} className="text-gray-600" />
+                  </button>
+                  <div className="px-8 pb-8 text-gray-500 text-sm leading-relaxed border-t border-[#222]/50 pt-6">
+                    {item.a}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-12 p-10 bg-[#d4af37] rounded-[3rem] text-black flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="text-center md:text-left">
+                <h3 className="text-2xl font-black uppercase tracking-tighter mb-2">Ainda tem dúvidas?</h3>
+                <p className="font-bold opacity-70">Nossa equipe de suporte está pronta para te atender.</p>
+              </div>
+              <div className="flex gap-4">
+                <button className="px-8 py-4 bg-black text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 transition-all">
+                  Suporte via WhatsApp
+                </button>
+                <button className="px-8 py-4 bg-white/20 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-white/30 transition-all">
+                  Enviar E-mail
+                </button>
+              </div>
+            </div>
+          </motion.div>
         )}
 
         {/* --- Plans Tab --- */}
