@@ -117,12 +117,23 @@ async function createServer() {
       let result;
       if (method === 'generateContent') {
         try {
-          result = await ai.models.generateContent({
+          const response = await ai.models.generateContent({
             model: args.model,
             contents: args.contents,
             config: args.config
           });
-          res.json(result);
+          
+          // Extract serializable data from the response
+          res.json({
+            candidates: response.candidates?.map(c => ({
+              content: c.content,
+              finishReason: c.finishReason,
+              index: c.index,
+              safetyRatings: c.safetyRatings
+            })),
+            text: response.text,
+            usageMetadata: response.usageMetadata
+          });
         } catch (error: any) {
           if (error.message?.includes('403') || error.message?.includes('PERMISSION_DENIED')) {
             console.error("Gemini API 403 Error: Service might be blocked or API Key restricted.");
@@ -136,12 +147,21 @@ async function createServer() {
       } else if (method === 'generateImages') {
         try {
           // @ts-ignore
-          result = await ai.models.generateImages({
+          const response = await ai.models.generateImages({
             model: args.model,
             prompt: args.prompt,
             config: args.config
           });
-          res.json(result);
+          
+          // Extract serializable data from the response
+          res.json({
+            generatedImages: response.generatedImages?.map(img => ({
+              image: {
+                imageBytes: img.image.imageBytes,
+                mimeType: img.image.mimeType
+              }
+            }))
+          });
         } catch (error: any) {
           if (error.message?.includes('403') || error.message?.includes('PERMISSION_DENIED')) {
             return res.status(403).json({ 

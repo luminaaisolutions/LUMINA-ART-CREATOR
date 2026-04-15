@@ -1026,7 +1026,8 @@ function AppContent() {
                 }
 
                 const response = await callGeminiAPI({
-                  model: 'gemini-2.5-flash-image', 
+                  model: 'imagen-3.0-generate-001', 
+                  method: 'generateImages',
                   prompt: promptText,
                   config: {
                     numberOfImages: 1,
@@ -1034,7 +1035,6 @@ function AppContent() {
                   }
                 });
                 
-                // @ts-ignore
                 base64Data = response.generatedImages?.[0]?.image?.imageBytes;
               } else {
                 const isHighRes = currentResolution === '2K' || currentResolution === '4K';
@@ -1102,7 +1102,7 @@ function AppContent() {
                       { category: 'HARM_CATEGORY_HARASSMENT' as any, threshold: 'BLOCK_NONE' as any },
                       { category: 'HARM_CATEGORY_DANGEROUS_CONTENT' as any, threshold: 'BLOCK_NONE' as any }
                     ],
-                    temperature: currentRefAsset ? 0.4 : 0.7, // Dynamic temperature
+                    temperature: currentRefAsset ? 0.4 : 0.7,
                     topP: 0.9,
                     topK: 40
                   }
