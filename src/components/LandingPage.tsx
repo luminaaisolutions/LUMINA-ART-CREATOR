@@ -67,7 +67,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                 onClick={onLogin}
                 className="w-full sm:w-auto bg-[#d4af37] text-black px-10 py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-2xl shadow-[#d4af37]/20"
               >
-                COMEÇAR AGORA GRATUITAMENTE
+                COMEÇAR AGORA (40 CRÉDITOS GRÁTIS)
                 <ArrowRight size={20} />
               </button>
               <button className="w-full sm:w-auto bg-[#111] border border-[#222] text-white px-10 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-[#1a1a1a] transition-all">
@@ -171,19 +171,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
           <p className="text-gray-500">Escolha o plano que melhor se adapta à sua escala de produção.</p>
         </div>
         
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             {
+              name: "Iniciante",
+              price: "R$ 47",
+              features: ["100 Créditos/mês", "Geração de Imagens HD", "Suporte via E-mail", "1 Perfil de Marca"],
+              cta: "COMEÇAR AGORA",
+              popular: false
+            },
+            {
               name: "Creator Pro",
-              price: "R$ 197",
-              features: ["100 Créditos/mês", "Qualidade 4K Ultra", "Prioridade na Fila", "Lipsync Ilimitado", "Suporte VIP"],
+              price: "R$ 97",
+              features: ["500 Créditos/mês", "Geração de Vídeos e LipSync", "Suporte Prioritário", "Perfis Ilimitados", "Sem Marca d'água"],
               cta: "ASSINAR AGORA",
               popular: true
             },
             {
               name: "Elite Agency",
-              price: "R$ 597",
-              features: ["400 Créditos/mês", "API Access", "Gerente de Conta", "Treinamento de Modelos", "White Label"],
+              price: "R$ 297",
+              features: ["2000 Créditos/mês", "API Access (Beta)", "Gerente de Conta", "Treinamento Custom", "Colaboração"],
               cta: "FALAR COM VENDAS",
               popular: false
             }
@@ -230,6 +237,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
           <div className="space-y-4">
             {[
               {
+                q: "Como posso testar a plataforma?",
+                a: "Ao criar sua conta e verificar seu e-mail, você ganha automaticamente 40 créditos de teste para experimentar todas as funcionalidades, incluindo geração de imagens e vídeos."
+              },
+              {
                 q: "Como funcionam os créditos?",
                 a: "Cada plano oferece uma quantidade mensal de créditos. Imagens custam 1 crédito, vídeos de 5s custam 10 créditos e vídeos de 8s custam 20 créditos. Os créditos são renovados a cada ciclo de faturamento."
               },
@@ -272,7 +283,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
             onClick={onLogin}
             className="bg-white text-black px-12 py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-2xl"
           >
-            CRIAR MINHA CONTA AGORA
+            CRIAR MINHA CONTA (40 CRÉDITOS)
           </button>
         </div>
       </section>

@@ -255,8 +255,8 @@ function RegistrationModal({ data, onChange, onSubmit, isProcessing }: {
           <div className="w-20 h-20 bg-[#d4af37]/10 text-[#d4af37] rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3 hover:rotate-0 transition-all duration-500">
             <User size={40} />
           </div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">Complete seu Perfil</h2>
-          <p className="text-gray-500 text-sm">Para começar seu plano de teste gratuito, precisamos de alguns dados básicos.</p>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">Crie sua conta/perfil na <br/><span className="text-[#d4af37]">LUMINA ART CREATOR</span></h2>
+          <p className="text-gray-500 text-sm">Para começar seu plano de teste gratuito e ganhar 40 créditos, precisamos de alguns dados básicos.</p>
         </div>
 
         <div className="space-y-5">
@@ -403,13 +403,15 @@ function AppContent() {
         lastName: registrationData.lastName,
         phone: registrationData.phone,
         displayName: `${registrationData.firstName} ${registrationData.lastName}`,
-        credits: 10, // 10 free trial credits
+        credits: 0, // No credits until email verification
         plan: 'trial'
       };
       await updateDoc(userRef, updateData);
       setUserData(prev => prev ? { ...prev, ...updateData } : null);
       setShowRegistration(false);
-      alert("Cadastro realizado com sucesso! Você recebeu 10 créditos de teste.");
+      
+      // Trigger OTP flow
+      await sendOTP();
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
     } finally {
@@ -674,8 +676,10 @@ function AppContent() {
       try {
         await updateDoc(doc(db, 'users', user.uid), { 
           isVerified: true,
+          credits: 40, // 40 trial credits after verification
           verificationCode: deleteField() 
         });
+        alert("Conta verificada com sucesso! Você recebeu 40 créditos de teste.");
       } catch (error) {
         console.error("Verification failed:", error);
       } finally {
@@ -1872,6 +1876,17 @@ function AppContent() {
     return <LandingPage onLogin={handleLogin} />;
   }
 
+  if (showRegistration) {
+    return (
+      <RegistrationModal 
+        data={registrationData}
+        onChange={(field, value) => setRegistrationData(prev => ({ ...prev, [field]: value }))}
+        onSubmit={handleRegister}
+        isProcessing={isRegistering}
+      />
+    );
+  }
+
   if (userData && !userData.isVerified) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6 font-sans">
@@ -1951,17 +1966,6 @@ function AppContent() {
                   <ArrowRight size={14} className="rotate-180" />
                   Usar outro email
                 </button>
-                
-                <button 
-                  onClick={async () => {
-                    if (user) {
-                      await updateDoc(doc(db, 'users', user.uid), { isVerified: true });
-                    }
-                  }}
-                  className="text-[8px] font-black text-gray-700 hover:text-gray-500 transition-colors uppercase tracking-widest mt-4"
-                >
-                  Pular Verificação (Desenvolvimento)
-                </button>
               </div>
             </div>
           </div>
@@ -1977,14 +1981,6 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] font-sans selection:bg-[#d4af37] selection:text-black">
-      {showRegistration && (
-        <RegistrationModal 
-          data={registrationData}
-          onChange={(field, value) => setRegistrationData(prev => ({ ...prev, [field]: value }))}
-          onSubmit={handleRegister}
-          isProcessing={isRegistering}
-        />
-      )}
       {/* --- Top Navigation --- */}
       <header className="fixed top-0 left-0 right-0 h-20 bg-[#111] border-b border-[#222] z-50 flex items-center justify-between px-8">
         <div className="flex items-center gap-8">
