@@ -22,11 +22,19 @@ async function createServer() {
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
   
+  // Log available keys (masked for security)
+  const possibleKeys = ['GEMINI_API_KEY', 'API_KEY', 'GOOGLE_API_KEY', 'VITE_GEMINI_API_KEY'];
+  possibleKeys.forEach(k => {
+    const val = process.env[k];
+    if (val) {
+      console.log(`Env Var ${k}: Present, starts with "${val.substring(0, 4)}", length: ${val.length}`);
+    } else {
+      console.log(`Env Var ${k}: Not found`);
+    }
+  });
+  
   const geminiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
-  console.log("Gemini Key status:", geminiKey ? "Defined" : "Undefined");
-  if (geminiKey) {
-    console.log("Gemini Key starts with:", geminiKey.substring(0, 5));
-  }
+  console.log("Final Gemini Key to use starts with:", geminiKey ? geminiKey.substring(0, 4) : "NONE");
   console.log("======================");
 
   // API Routes
@@ -79,28 +87,41 @@ async function createServer() {
   app.post("/api/gemini", async (req, res) => {
     try {
       const { method, args } = req.body;
-      let apiKey = (process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY)?.trim()?.replace(/['"]/g, '');
       
-      if (!apiKey) {
-        const foundKey = Object.values(process.env).find(v => typeof v === 'string' && v.startsWith('AIza'));
-        if (foundKey) apiKey = foundKey;
+      // Priority 1: GEMINI_API_KEY (Official name)
+      // Priority 2: GOOGLE_API_KEY (Common name)
+      // Priority 3: API_KEY (Generic name)
+      let apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.API_KEY;
+      
+      apiKey = apiKey?.trim()?.replace(/['"]/g, '');
+      
+      // Validation: If the key doesn't look like a Gemini key (AIza...), 
+      // check if there's a better one in the environment.
+      if (!apiKey || (!apiKey.startsWith('AIza') && !apiKey.startsWith('AQ.'))) {
+        const betterKey = Object.values(process.env).find(v => 
+          typeof v === 'string' && v.startsWith('AIza')
+        );
+        if (betterKey) apiKey = betterKey.trim().replace(/['"]/g, '');
       }
 
       if (!apiKey) {
-        return res.status(400).json({ error: "API Key ausente no servidor." });
+        console.error("ERRO: Nenhuma chave de API válida encontrada.");
+        return res.status(400).json({ error: "API Key ausente ou inválida no servidor." });
       }
 
-      // We'll use fetch to call the Gemini API directly from the server
-      // to avoid SDK version issues on the server-side if possible, 
-      // or just use the SDK if it's installed.
+      console.log(`[Gemini Proxy] Usando chave: ${apiKey.substring(0, 6)}... (Total: ${apiKey.length} chars)`);
+
       const { GoogleGenAI } = await import("@google/genai");
-      const genAI = new GoogleGenAI({ apiKey }) as any;
+      const ai = new GoogleGenAI({ apiKey });
       
       let result;
       if (method === 'generateContent') {
-        const model = genAI.getGenerativeModel({ model: args.model });
-        result = await model.generateContent(args.contents);
-        res.json(result.response);
+        result = await ai.models.generateContent({
+          model: args.model,
+          contents: args.contents,
+          config: args.config
+        });
+        res.json(result);
       } else if (method === 'generateVideos') {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideos`, {
           method: 'POST',

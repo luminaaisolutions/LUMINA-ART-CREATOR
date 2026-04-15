@@ -48,7 +48,6 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
 import { LandingPage } from './components/LandingPage';
 
 // --- Error Boundary Component ---
@@ -334,22 +333,6 @@ function AppContent() {
     gemini: 'pending' | 'ok' | 'error',
     details?: string
   } | null>(null);
-
-  const getAI = () => {
-    console.log("Ambiente:", process.env.NODE_ENV);
-    const rawKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY || "";
-    const key = rawKey.trim().replace(/['"]/g, '');
-    if (key) {
-      console.log("Gemini API Key detectada:", key.substring(0, 4) + "..." + key.substring(key.length - 4));
-      console.log("Comprimento da chave:", key.length);
-      if (!key.startsWith('AIza')) {
-        console.warn("Aviso: A chave não começa com 'AIza'. Se for uma chave do Google Cloud, certifique-se de que é uma API Key válida e não um Token temporário.");
-      }
-    } else {
-      console.error("ERRO: Nenhuma Gemini API Key encontrada no ambiente (GEMINI_API_KEY, API_KEY ou GOOGLE_API_KEY).");
-    }
-    return new GoogleGenAI({ apiKey: key });
-  };
 
   const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any }) => {
     try {
