@@ -2173,6 +2173,30 @@ function AppContent() {
           </div>
         </header>
 
+        {/* --- Sub Navigation for Account Sections --- */}
+        {['profile', 'referrals', 'faq'].includes(activeTab) && (
+          <div className="flex items-center gap-4 mb-12 overflow-x-auto pb-2 no-scrollbar">
+            {[
+              { id: 'profile', label: 'Perfil e Conta', icon: User },
+              { id: 'referrals', label: 'Indicações', icon: Gift },
+              { id: 'faq', label: 'FAQ', icon: HelpCircle },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${
+                  activeTab === tab.id 
+                    ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' 
+                    : 'bg-[#111] text-gray-500 border border-[#222] hover:border-[#333]'
+                }`}
+              >
+                <tab.icon size={14} />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* --- Dashboard Tab --- */}
         {activeTab === 'dashboard' && (
           <>
@@ -4362,50 +4386,91 @@ function AppContent() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-4xl mx-auto space-y-8 pb-20"
+            className="w-full max-w-5xl mx-auto space-y-8 pb-20"
           >
-            <div className="bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-[#222] rounded-[3rem] p-12 text-center space-y-8 relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
-              <div className="w-24 h-24 bg-[#d4af37]/10 text-[#d4af37] rounded-[2rem] flex items-center justify-center mx-auto mb-4">
-                <Gift size={48} />
+            {/* Main Banner */}
+            <div className="bg-[#d4af37] rounded-[3rem] p-12 md:p-16 relative overflow-hidden shadow-2xl shadow-[#d4af37]/20">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl" />
+              <div className="absolute bottom-0 right-0 opacity-10">
+                <Gift size={300} className="text-black -mr-20 -mb-20" />
               </div>
-              <div className="space-y-4">
-                <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Ganhe Créditos Indicando Amigos</h2>
-                <p className="text-gray-500 max-w-xl mx-auto">
-                  Para cada amigo que se cadastrar e realizar a primeira compra através do seu link, você ganha <span className="text-[#d4af37] font-bold">50 créditos bônus</span> e ele ganha 10% de desconto.
+              
+              <div className="relative z-10 space-y-6 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-black/10 rounded-full border border-black/10">
+                  <Gift size={14} className="text-black" />
+                  <span className="text-[10px] font-black text-black uppercase tracking-widest">Programa de Indicações</span>
+                </div>
+                
+                <h2 className="text-4xl md:text-6xl font-black text-black uppercase tracking-tighter leading-none">
+                  Ganhe 10 Créditos Extras por Indicação
+                </h2>
+                
+                <p className="text-black/70 text-lg font-bold leading-relaxed">
+                  Convide seus amigos para o Lumina Art Creator. Quando eles se cadastrarem e adquirirem qualquer plano, você recebe 10 créditos na hora!
                 </p>
               </div>
+            </div>
 
-              <div className="max-w-md mx-auto p-2 bg-[#0a0a0a] border border-[#222] rounded-2xl flex items-center gap-2">
-                <input 
-                  type="text" 
-                  readOnly 
-                  value={`https://lumina.art/ref/${user.uid.slice(0, 8)}`}
-                  className="flex-1 bg-transparent border-none outline-none px-4 text-sm font-bold text-gray-400"
-                />
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(`https://lumina.art/ref/${user.uid.slice(0, 8)}`);
-                    // Add toast notification here if available
-                  }}
-                  className="px-6 py-3 bg-[#d4af37] text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all"
-                >
-                  Copiar Link
-                </button>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Link and Stats */}
+              <div className="bg-[#111] border border-[#222] rounded-[3rem] p-10 space-y-8">
+                <div className="space-y-4">
+                  <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Seu Link de Indicação</h3>
+                  <div className="flex items-center gap-2 p-2 bg-[#0a0a0a] border border-[#222] rounded-2xl">
+                    <input 
+                      type="text" 
+                      readOnly 
+                      value={`https://www.luminaaisolutions.com/ref/${user.uid.slice(0, 8)}`}
+                      className="flex-1 bg-transparent border-none outline-none px-4 text-sm font-bold text-gray-400 truncate"
+                    />
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://www.luminaaisolutions.com/ref/${user.uid.slice(0, 8)}`);
+                      }}
+                      className="p-4 bg-[#d4af37] text-black rounded-xl hover:scale-105 transition-all shadow-lg shadow-[#d4af37]/20"
+                    >
+                      <Copy size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-8 border-t border-[#222] flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#d4af37]/10 rounded-xl flex items-center justify-center">
+                      <CheckCircle2 size={24} className="text-[#d4af37]" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Indicações Ativas</p>
+                      <p className="text-2xl font-black text-white">0</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Créditos Ganhos</p>
+                    <p className="text-2xl font-black text-[#d4af37]">0</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8">
-                <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-3xl">
-                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Indicações</p>
-                  <p className="text-2xl font-black text-white">0</p>
-                </div>
-                <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-3xl">
-                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Créditos Ganhos</p>
-                  <p className="text-2xl font-black text-[#d4af37]">0</p>
-                </div>
-                <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-3xl">
-                  <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1">Conversão</p>
-                  <p className="text-2xl font-black text-green-500">0%</p>
+              {/* How it works */}
+              <div className="bg-[#111] border border-[#222] rounded-[3rem] p-10 space-y-8">
+                <h3 className="text-xl font-black text-white uppercase tracking-tight">Como Funciona?</h3>
+                
+                <div className="space-y-6">
+                  {[
+                    "Compartilhe seu link exclusivo com amigos e parceiros.",
+                    "Seu indicado se cadastra no Lumina Art Creator.",
+                    "Assim que ele realizar a primeira compra de créditos ou plano.",
+                    "Você recebe automaticamente 10 créditos extras em sua conta."
+                  ].map((step, i) => (
+                    <div key={i} className="flex items-start gap-4 group">
+                      <div className="w-8 h-8 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center shrink-0 text-[#d4af37] text-xs font-black group-hover:bg-[#d4af37] group-hover:text-black transition-all">
+                        {i + 1}
+                      </div>
+                      <p className="text-sm text-gray-400 font-medium leading-relaxed pt-1">
+                        {step}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

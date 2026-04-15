@@ -54,12 +54,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
             <span className="inline-block px-4 py-1.5 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/20 text-[#d4af37] text-xs font-black uppercase tracking-[0.2em] mb-8">
               Powered by Google Veo 3.1 & Imagen 3
             </span>
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-8">
-              CRIE CONTEÚDO DE <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d4af37] via-[#f1c40f] to-[#d4af37]">ELITE EM LOTE</span>
+            <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-8 text-white">
+              CRIE CONTEÚDO <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d4af37] via-[#f1c40f] to-[#d4af37]">PROFISSIONAL DE ELITE</span>
             </h1>
             <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-              A primeira plataforma brasileira focada em escala. Gere centenas de vídeos e imagens cinematográficas com sincronismo labial perfeito em minutos.
+              Transforme suas ideias em produções cinematográficas de alto impacto. A primeira plataforma brasileira que une inteligência artificial de ponta com qualidade profissional absoluta.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
@@ -86,8 +86,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
             {[
               {
                 icon: <Layers className="text-[#d4af37]" size={32} />,
-                title: "Geração em Lote",
-                desc: "Não perca tempo criando um por um. Envie sua lista de prompts e gere centenas de ativos simultaneamente."
+                title: "Produção de Elite",
+                desc: "Crie múltiplos ativos de alta qualidade simultaneamente com a potência da nossa IA, mantendo o padrão profissional em cada detalhe."
               },
               {
                 icon: <Sparkles className="text-[#d4af37]" size={32} />,
