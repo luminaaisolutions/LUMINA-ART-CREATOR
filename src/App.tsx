@@ -288,8 +288,9 @@ function RegistrationModal({ data, onChange, onSubmit, isProcessing }: {
             <input 
               type="email" 
               value={data.email}
-              disabled
-              className="w-full bg-[#0a0a0a] border border-[#222] rounded-2xl p-4 text-sm text-gray-500 cursor-not-allowed"
+              onChange={(e) => onChange('email', e.target.value)}
+              placeholder="seu@email.com"
+              className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-all"
             />
           </div>
 
@@ -306,7 +307,7 @@ function RegistrationModal({ data, onChange, onSubmit, isProcessing }: {
 
           <button 
             onClick={onSubmit}
-            disabled={isProcessing || !data.firstName || !data.lastName || !data.phone}
+            disabled={isProcessing || !data.firstName || !data.lastName || !data.phone || !data.email}
             className="w-full bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black py-5 rounded-2xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest mt-4 disabled:opacity-50 disabled:hover:scale-100"
           >
             {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={20} />}
@@ -325,6 +326,7 @@ function RegistrationModal({ data, onChange, onSubmit, isProcessing }: {
 function AppContent() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [view, setView] = useState<'landing' | 'app'>('landing');
   const [batch, setBatch] = useState<BatchItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
@@ -402,6 +404,7 @@ function AppContent() {
         firstName: registrationData.firstName,
         lastName: registrationData.lastName,
         phone: registrationData.phone,
+        email: registrationData.email,
         displayName: `${registrationData.firstName} ${registrationData.lastName}`,
         credits: 0, // No credits until email verification
         plan: 'trial'
@@ -538,12 +541,12 @@ function AppContent() {
             setUserData(data);
             
             // Check if registration is complete
-            if (!data.firstName || !data.lastName || !data.phone) {
+            if (!data.firstName || !data.lastName || !data.phone || !data.email) {
               setRegistrationData({
-                firstName: data.firstName || (currentUser.displayName?.split(' ')[0] || ''),
-                lastName: data.lastName || (currentUser.displayName?.split(' ').slice(1).join(' ') || ''),
-                phone: data.phone || '',
-                email: data.email || ''
+                firstName: '',
+                lastName: '',
+                phone: '',
+                email: ''
               });
               setShowRegistration(true);
             } else {
@@ -572,10 +575,10 @@ function AppContent() {
             setUserData(initialData as any);
             
             setRegistrationData({
-              firstName: currentUser.displayName?.split(' ')[0] || '',
-              lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
+              firstName: '',
+              lastName: '',
               phone: '',
-              email: currentUser.email || ''
+              email: ''
             });
             setShowRegistration(true);
             
@@ -641,6 +644,7 @@ function AppContent() {
       await signOut(auth);
       setSessionPreviews({});
       setShowUserMenu(false);
+      setView('landing');
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -1870,6 +1874,17 @@ function AppContent() {
         <div className="w-12 h-12 border-4 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
       </div>
     );
+  }
+
+  if (view === 'landing') {
+    return <LandingPage onLogin={async () => {
+      if (user) {
+        setView('app');
+      } else {
+        await handleLogin();
+        setView('app');
+      }
+    }} />;
   }
 
   if (!user) {
