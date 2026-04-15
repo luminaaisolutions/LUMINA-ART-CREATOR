@@ -544,12 +544,21 @@ function AppContent() {
             setUserData(data);
             
             // Check if registration is complete
-            if (!data.firstName || !data.lastName || !data.phone || !data.email) {
-              setRegistrationData({
-                firstName: '',
-                lastName: '',
-                phone: '',
-                email: ''
+            const isMissingData = !data.firstName || !data.lastName || !data.phone || !data.email;
+            
+            if (isMissingData) {
+              // Only initialize registration data if it's currently empty to avoid overwriting user typing
+              setRegistrationData(prev => {
+                const isFormEmpty = !prev.firstName && !prev.lastName && !prev.phone && !prev.email;
+                if (isFormEmpty) {
+                  return {
+                    firstName: data.firstName || '',
+                    lastName: data.lastName || '',
+                    phone: data.phone || '',
+                    email: data.email || currentUser.email || ''
+                  };
+                }
+                return prev;
               });
               setShowRegistration(true);
             } else {
@@ -581,7 +590,7 @@ function AppContent() {
               firstName: '',
               lastName: '',
               phone: '',
-              email: ''
+              email: currentUser.email || ''
             });
             setShowRegistration(true);
             
