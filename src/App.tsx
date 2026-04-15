@@ -255,7 +255,7 @@ function RegistrationModal({ data, onChange, onSubmit, isProcessing }: {
           <div className="w-20 h-20 bg-[#d4af37]/10 text-[#d4af37] rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3 hover:rotate-0 transition-all duration-500">
             <User size={40} />
           </div>
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">Crie sua conta/perfil na <br/><span className="text-[#d4af37]">LUMINA ART CREATOR</span></h2>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">Crie sua conta na <br/><span className="text-[#d4af37]">LUMINA ART CREATOR</span></h2>
           <p className="text-gray-500 text-sm">Para começar seu plano de teste gratuito e ganhar 40 créditos, precisamos de alguns dados básicos.</p>
         </div>
 
@@ -413,8 +413,8 @@ function AppContent() {
       setUserData(prev => prev ? { ...prev, ...updateData } : null);
       setShowRegistration(false);
       
-      // Trigger OTP flow
-      await sendOTP();
+      // Trigger OTP flow with the email just registered
+      await sendOTP(registrationData.email);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
     } finally {
@@ -650,9 +650,10 @@ function AppContent() {
     }
   };
 
-  const sendOTP = async () => {
+  const sendOTP = async (targetEmailOverride?: string) => {
     if (!user || !userData) return;
     const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const targetEmail = targetEmailOverride || userData.email || user.email;
     
     try {
       await updateDoc(doc(db, 'users', user.uid), { verificationCode: code });
@@ -660,10 +661,10 @@ function AppContent() {
       await fetch('/api/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email, code })
+        body: JSON.stringify({ email: targetEmail, code })
       });
       
-      alert(`Um código de verificação foi enviado para ${user.email}. (Para teste: ${code})`);
+      alert(`Um código de verificação foi enviado para ${targetEmail}. (Para teste: ${code})`);
       setLastSentCode(code);
     } catch (error) {
       console.error("Failed to send OTP:", error);
@@ -684,6 +685,7 @@ function AppContent() {
           verificationCode: deleteField() 
         });
         alert("Conta verificada com sucesso! Você recebeu 40 créditos de teste.");
+        setView('app'); // Redirect to dashboard automatically
       } catch (error) {
         console.error("Verification failed:", error);
       } finally {
@@ -718,7 +720,7 @@ function AppContent() {
     setIsAnalyzingLogo(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-1.5-flash",
+        model: "gemini-3-flash-preview",
         contents: [
           { text: "Analise esta logomarca e identifique as 3 cores principais em formato HEX (ex: #FF0000). Retorne APENAS os códigos HEX separados por vírgula, sem explicações." },
           { inlineData: { data: base64, mimeType } }
@@ -745,7 +747,7 @@ function AppContent() {
     setIsMagicLoading(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-1.5-flash",
+        model: "gemini-3-flash-preview",
         prompt: `Expanda o seguinte prompt de criação de imagem/vídeo para torná-lo profissional, detalhado e artístico. Mantenha o idioma original do prompt. Retorne APENAS o prompt expandido, sem explicações. Prompt original: "${prompt}"`
       });
       
@@ -765,15 +767,15 @@ function AppContent() {
     let currentLowPri = lowPriority;
     
     if (isLipsyncMode) {
-      baseCost = lipsyncDuration === 8 ? 30 : 15;
+      baseCost = 15; // Standard LipSync cost
       currentRes = lipsyncResolution;
       currentLowPri = lipsyncLowPriority;
     } else if (type === 'video') {
-      baseCost = videoDuration >= 8 ? 20 : 10;
+      baseCost = videoDuration >= 8 ? 35 : 20;
       currentRes = resolution;
       currentLowPri = lowPriority;
     } else {
-      baseCost = 2; // Base image cost increased slightly for better balancing
+      baseCost = 1; // Base image cost
       currentRes = resolution;
       currentLowPri = lowPriority;
     }
@@ -986,7 +988,7 @@ function AppContent() {
               ` : '';
 
               const enhancerRes = await callGeminiAPI({
-                model: 'gemini-1.5-flash',
+                model: 'gemini-3-flash-preview',
                 prompt: `Enhance this prompt for professional and creative AI image generation: "${itemPrompt}". 
                 ${creativeContext}
                 ${hasRef ? 'CRITICAL: The user provided a persona reference image. Focus on preserving the person\'s facial features and identity, but allow the pose and background to change based on the prompt.' : ''}
@@ -1024,7 +1026,7 @@ function AppContent() {
                 }
 
                 const response = await callGeminiAPI({
-                  model: 'imagen-3.0-generate-001', 
+                  model: 'gemini-2.5-flash-image', 
                   prompt: promptText,
                   config: {
                     numberOfImages: 1,
@@ -1037,7 +1039,7 @@ function AppContent() {
               } else {
                 const isHighRes = currentResolution === '2K' || currentResolution === '4K';
                 // Use a proper image generation model
-                const modelName = isHighRes ? 'gemini-1.5-pro' : 'gemini-1.5-flash'; 
+                const modelName = isHighRes ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image'; 
                 
                 const parts: any[] = [{ text: enhancedPrompt }];
                 if (currentRefAsset && currentRefAsset.type === 'image') {
@@ -1089,10 +1091,10 @@ function AppContent() {
                   model: modelName,
                   contents: [{ role: 'user', parts }],
                   config: {
-                    tools: currentUseGrounding && (modelName === 'gemini-1.5-pro') ? [{ googleSearch: {} }] : undefined,
+                    tools: currentUseGrounding && (modelName === 'gemini-3.1-flash-image-preview') ? [{ googleSearch: {} }] : undefined,
                     imageConfig: {
                       aspectRatio: currentAspectRatio as any,
-                      ...(isHighRes && modelName === 'gemini-1.5-pro' ? { imageSize: currentResolution as any } : {})
+                      ...(isHighRes && modelName === 'gemini-3.1-flash-image-preview' ? { imageSize: currentResolution as any } : {})
                     },
                     safetySettings: [
                       { category: 'HARM_CATEGORY_HATE_SPEECH' as any, threshold: 'BLOCK_NONE' as any },
@@ -1187,7 +1189,7 @@ function AppContent() {
           if (!fastMode && isLipsync && currentLipsyncAudio) {
             try {
               const analysisRes = await callGeminiAPI({
-                model: 'gemini-1.5-flash',
+                model: 'gemini-3-flash-preview',
                 contents: [{
                   role: 'user',
                   parts: [
@@ -1462,7 +1464,7 @@ function AppContent() {
         if (currentQuantity > 1 && currentType === 'image' && !fastMode) {
           try {
             const expansionRes = await callGeminiAPI({
-              model: 'gemini-1.5-flash',
+              model: 'gemini-3-flash-preview',
               prompt: `The user wants ${currentQuantity} diverse and high-quality images based on this theme: "${itemPrompt}".
               Generate ${currentQuantity} distinct, highly detailed, and unique prompt variations. 
               Each variation MUST explore a completely different aspect, location, lighting, or artistic style related to the theme to avoid repetitive results.
@@ -1736,7 +1738,7 @@ function AppContent() {
     setIsAnalyzing(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-1.5-flash",
+        model: "gemini-3-flash-preview",
         contents: [{
           role: 'user',
           parts: [
@@ -1764,7 +1766,7 @@ function AppContent() {
     setIsEnhancing(true);
     try {
       const result = await callGeminiAPI({
-        model: "gemini-1.5-flash",
+        model: "gemini-3-flash-preview",
         prompt: `Enhance this video/image prompt to be more cinematic, detailed, and professional for Veo 3.1: "${prompt}". Focus on lighting, camera angles, textures, and atmosphere. Respond ONLY with the enhanced prompt in English.`
       });
       setPrompt(result.text || "");
@@ -1840,7 +1842,7 @@ function AppContent() {
     try {
       // 3. Test Gemini
       const response = await callGeminiAPI({
-        model: "gemini-1.5-flash",
+        model: "gemini-3-flash-preview",
         prompt: "ping"
       });
       
@@ -1918,7 +1920,7 @@ function AppContent() {
           <div className="bg-[#111] p-8 rounded-[32px] border border-[#222] space-y-6">
             <div className="space-y-1">
               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Código enviado para</p>
-              <p className="font-bold text-[#d4af37]">{user.email}</p>
+              <p className="font-bold text-[#d4af37]">{userData?.email || user?.email}</p>
             </div>
 
             <div className="flex justify-center gap-2">
@@ -1968,7 +1970,7 @@ function AppContent() {
               
               <div className="flex flex-col gap-4">
                 <button 
-                  onClick={sendOTP}
+                  onClick={() => sendOTP()}
                   className="text-xs font-bold text-gray-400 hover:text-[#d4af37] transition-colors flex items-center justify-center gap-2"
                 >
                   <Clock size={14} />
@@ -2009,7 +2011,7 @@ function AppContent() {
           <nav className="flex items-center gap-2">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-              { id: 'branding', label: 'Perfis de Marca', icon: Palette },
+              { id: 'branding', label: 'Minhas Marcas', icon: Palette },
               { id: 'projects', label: 'Projetos Criativos Ads', icon: Briefcase },
               { id: 'creative_studio', label: 'Estúdio Lumina', icon: Sparkles },
               { id: 'lipsync', label: 'Lip Sync', icon: Mic },
@@ -2090,7 +2092,7 @@ function AppContent() {
                       >
                         <div className="flex items-center gap-3">
                           <CreditCard size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
-                          <span className="text-xs font-bold text-gray-300">Créditos</span>
+                          <span className="text-xs font-bold text-gray-300">Créditos/Mês</span>
                         </div>
                         <div className="flex items-center gap-1 bg-[#d4af37]/10 px-2 py-1 rounded-lg">
                           <Sparkles size={10} className="text-[#d4af37]" />
@@ -2103,7 +2105,7 @@ function AppContent() {
                         className="w-full flex items-center gap-3 p-4 hover:bg-[#1a1a1a] rounded-2xl transition-all group text-left"
                       >
                         <Settings size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
-                        <span className="text-xs font-bold text-gray-300">Perfil</span>
+                        <span className="text-xs font-bold text-gray-300">Minhas Marcas</span>
                       </button>
 
                       <div className="h-px bg-[#222] my-2 mx-4" />
@@ -2130,7 +2132,7 @@ function AppContent() {
           <div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white">
               {activeTab === 'dashboard' && 'Painel de Controle'}
-              {activeTab === 'branding' && 'Perfis de Marca'}
+              {activeTab === 'branding' && 'Minhas Marcas'}
               {activeTab === 'projects' && 'Projetos Criativos Ads'}
               {activeTab === 'creative_studio' && 'Estúdio Lumina'}
             {activeTab === 'lipsync' && 'LipSync Studio'}
@@ -2169,7 +2171,7 @@ function AppContent() {
               {[
                 { 
                   id: 'branding', 
-                  title: 'Perfis de Marca', 
+                  title: 'Minhas Marcas', 
                   desc: 'Mantenha sua marca com identidade visual consistente em todas as suas artes.', 
                   icon: Palette, 
                   btn: 'Gerenciar Marcas',
@@ -2441,7 +2443,7 @@ function AppContent() {
           <div className="w-full max-w-full mx-auto py-8 px-4 md:px-8 space-y-8">
             <div className="flex items-center gap-4 mb-8">
               {[
-                { id: 'list', label: 'Meus Perfis', icon: Briefcase },
+                { id: 'list', label: 'Minhas Marcas', icon: Briefcase },
                 { id: 'referral', label: 'Indicações', icon: Gift },
                 { id: 'faq', label: 'FAQ', icon: HelpCircle },
               ].map((sub) => (
@@ -2469,7 +2471,7 @@ function AppContent() {
                   <Palette size={28} className="text-[#d4af37]" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Perfis de Marca</h2>
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Minhas Marcas</h2>
                   <p className="text-gray-500 text-sm">Gerencie a identidade visual e informações de seus clientes.</p>
                 </div>
               </div>
@@ -2572,7 +2574,7 @@ function AppContent() {
                   </div>
                   <div className="text-center">
                     <h3 className="font-bold text-lg text-white">Nova Marca</h3>
-                    <p className="text-gray-500 text-xs">Adicione um novo perfil de cliente</p>
+                    <p className="text-gray-500 text-xs">Adicione uma nova marca</p>
                   </div>
                 </motion.div>
 
@@ -2638,7 +2640,7 @@ function AppContent() {
                         }}
                         className="px-6 py-3 bg-[#d4af37] text-black font-black rounded-2xl text-xs uppercase tracking-widest hover:scale-105 transition-all"
                       >
-                        Editar Perfil
+                        Editar Marca
                       </button>
                     </div>
                   </motion.div>
@@ -2885,7 +2887,7 @@ function AppContent() {
                     disabled={!editingBrand.name}
                     className="px-10 py-4 bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black rounded-2xl hover:scale-105 transition-all disabled:opacity-50 flex items-center gap-2"
                   >
-                    SALVAR PERFIL DE MARCA
+                    SALVAR MARCA
                     <CheckCircle2 size={18} />
                   </button>
                 </div>
@@ -2983,20 +2985,20 @@ function AppContent() {
                 <div className="space-y-4">
                   {[
                     {
-                      q: "Como funcionam os créditos?",
-                      a: "Cada geração de imagem consome 1 crédito. Vídeos e Lip Sync consomem 5 créditos por geração. Se uma geração falhar, seus créditos são estornados automaticamente."
+                      q: "Como funcionam os créditos e planos?",
+                      a: "Cada geração de imagem consome 1 crédito. Vídeos de 5s consomem 20 créditos, vídeos de 8s consomem 35 créditos e Lip Sync consome 15 créditos. Nossos planos oferecem recargas mensais automáticas (100, 500 ou 2000 créditos)."
                     },
                     {
                       q: "Posso usar as imagens para fins comerciais?",
                       a: "Sim! Todas as imagens e vídeos gerados no Lumina Art Creator pertencem a você e podem ser usados livremente em suas campanhas de marketing e redes sociais."
                     },
                     {
-                      q: "O que é o Perfil de Marca?",
+                      q: "O que é a Marca?",
                       a: "É uma funcionalidade exclusiva onde você treina a IA com a identidade visual da sua empresa (logos, cores, tipografia) para que todos os anúncios gerados sigam o mesmo padrão visual."
                     },
                     {
                       q: "Como funciona o sistema de indicações?",
-                      a: "Você possui um link único em seu perfil. Cada pessoa que se cadastrar por ele e realizar uma compra ativa garante 10 créditos extras para você, sem limites!"
+                      a: "Você possui um link único em sua conta. Cada pessoa que se cadastrar por ele e realizar uma compra ativa garante 10 créditos extras para você, sem limites!"
                     },
                     {
                       q: "Quais são os modelos de IA utilizados?",
@@ -4259,14 +4261,14 @@ function AppContent() {
                   credits: 100, 
                   price: billingCycle === 'monthly' ? 47 : 37, 
                   description: 'Ideal para criadores individuais que buscam consistência.',
-                  features: ['100 Créditos/mês', 'Geração de Imagens HD', 'Suporte via E-mail', 'Acesso aos Modelos Flash', '1 Perfil de Marca']
+                  features: ['100 Créditos/mês', 'Geração de Imagens HD', 'Suporte via E-mail', 'Acesso aos Modelos Flash', '1 Marca']
                 },
                 { 
                   name: 'Creator Pro', 
                   credits: 500, 
                   price: billingCycle === 'monthly' ? 97 : 77, 
                   description: 'A escolha dos profissionais para escala e qualidade máxima.',
-                  features: ['500 Créditos/mês', 'Geração de Vídeos e LipSync', 'Suporte Prioritário WhatsApp', 'Acesso ao Gemini 1.5 Pro', 'Perfis de Marca Ilimitados', 'Remoção de Marca d\'água'],
+                  features: ['500 Créditos/mês', 'Geração de Vídeos e LipSync', 'Suporte Prioritário WhatsApp', 'Acesso ao Gemini 3.1 Pro', 'Marcas Ilimitadas', 'Remoção de Marca d\'água'],
                   popular: true
                 },
                 { 
@@ -4332,10 +4334,9 @@ function AppContent() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                  { name: 'Starter Pack', credits: 50, price: 27 },
-                  { name: 'Booster Pack', credits: 150, price: 67 },
-                  { name: 'Pro Pack', credits: 400, price: 147 },
-                  { name: 'Agency Pack', credits: 1000, price: 297 }
+                  { name: 'Pack 100', credits: 100, price: 49 },
+                  { name: 'Pack 500', credits: 500, price: 197 },
+                  { name: 'Pack 1000', credits: 1000, price: 347 }
                 ].map((pack, i) => (
                   <div key={i} className="bg-[#111] border border-[#222] p-8 rounded-[32px] hover:border-[#d4af37]/50 transition-all group">
                     <div className="w-12 h-12 bg-[#d4af37]/10 text-[#d4af37] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">

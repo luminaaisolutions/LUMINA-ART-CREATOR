@@ -173,27 +173,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
         
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            {
-              name: "Iniciante",
-              price: "R$ 47",
-              features: ["100 Créditos/mês", "Geração de Imagens HD", "Suporte via E-mail", "1 Perfil de Marca"],
-              cta: "COMEÇAR AGORA",
-              popular: false
-            },
-            {
-              name: "Creator Pro",
-              price: "R$ 97",
-              features: ["500 Créditos/mês", "Geração de Vídeos e LipSync", "Suporte Prioritário", "Perfis Ilimitados", "Sem Marca d'água"],
-              cta: "ASSINAR AGORA",
-              popular: true
-            },
-            {
-              name: "Elite Agency",
-              price: "R$ 297",
-              features: ["2000 Créditos/mês", "API Access (Beta)", "Gerente de Conta", "Treinamento Custom", "Colaboração"],
-              cta: "FALAR COM VENDAS",
-              popular: false
-            }
+              {
+                name: "Iniciante",
+                price: "R$ 47",
+                features: ["100 Créditos/mês", "Geração de Imagens HD", "Suporte via E-mail", "1 Marca"],
+                cta: "ASSINAR AGORA",
+                popular: false
+              },
+              {
+                name: "Creator Pro",
+                price: "R$ 97",
+                features: ["500 Créditos/mês", "Geração de Vídeos e LipSync", "Suporte Prioritário", "Marcas Ilimitadas", "Sem Marca d'água"],
+                cta: "ASSINAR AGORA",
+                popular: true
+              },
+              {
+                name: "Elite Agency",
+                price: "R$ 297",
+                features: ["2000 Créditos/mês", "API Access (Beta)", "Gerente de Conta", "Treinamento Custom", "Colaboração"],
+                cta: "FALAR COM VENDAS",
+                popular: false
+              }
           ].map((plan, i) => (
             <div 
               key={i}
@@ -242,7 +242,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
               },
               {
                 q: "Como funcionam os créditos?",
-                a: "Cada plano oferece uma quantidade mensal de créditos. Imagens custam 1 crédito, vídeos de 5s custam 10 créditos e vídeos de 8s custam 20 créditos. Os créditos são renovados a cada ciclo de faturamento."
+                a: "Cada plano oferece uma quantidade mensal de créditos. Imagens custam 1 crédito, vídeos de 5s custam 20 créditos e vídeos de 8s custam 35 créditos. Lip Sync consome 15 créditos. Os créditos são renovados a cada ciclo de faturamento."
               },
               {
                 q: "Posso cancelar minha assinatura a qualquer momento?",
