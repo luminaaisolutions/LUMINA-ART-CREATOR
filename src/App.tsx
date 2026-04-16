@@ -438,10 +438,14 @@ function AppContent() {
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const registrationInitialized = useRef(false);
+  const isSubmittingRegistration = useRef(false);
+  const unsubUserRef = useRef<(() => void) | null>(null);
+  const unsubBatchRef = useRef<(() => void) | null>(null);
 
   const handleRegister = async () => {
     if (!user || !userData) return;
     setIsRegistering(true);
+    isSubmittingRegistration.current = true;
     try {
       const userRef = doc(db, 'users', user.uid);
       const updateData = {
@@ -463,6 +467,10 @@ function AppContent() {
       handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
     } finally {
       setIsRegistering(false);
+      // Keep isSubmittingRegistration true for a bit to let onSnapshot settle
+      setTimeout(() => {
+        isSubmittingRegistration.current = false;
+      }, 3000);
     }
   };
   const [studioMode, setStudioMode] = useState<string | null>(null);
@@ -604,25 +612,16 @@ function AppContent() {
       setIsAuthReady(true);
       registrationInitialized.current = false;
 
-      // Check if domain is authorized (hint for production setup)
-      const currentDomain = window.location.hostname;
-      const isAuthorizedDomain = 
-        currentDomain === 'localhost' || 
-        currentDomain.includes('run.app') || 
-        currentDomain.includes('firebaseapp.com') ||
-        currentDomain.includes('web.app') ||
-        currentDomain.endsWith('luminaaisolutions.com.br');
-
-      if (!isAuthorizedDomain) {
-        console.warn(`Atenção: O domínio ${currentDomain} pode não estar autorizado no Firebase Auth.`);
-      }
-      
       if (currentUser) {
+        // Cleanup previous listeners if any
+        unsubUserRef.current?.();
+        unsubBatchRef.current?.();
+
         // Sync user profile
         const userRef = doc(db, 'users', currentUser.uid);
         
         // Listen for user data changes (credits, plan)
-        const unsubUser = onSnapshot(userRef, (docSnap) => {
+        unsubUserRef.current = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data() as UserProfile;
             setUserData(data);
@@ -640,7 +639,10 @@ function AppContent() {
                 });
                 registrationInitialized.current = true;
               }
-              setShowRegistration(true);
+              // Only show registration if we're not currently submitting it
+              if (!isSubmittingRegistration.current) {
+                setShowRegistration(true);
+              }
             } else {
               setShowRegistration(false);
             }
@@ -675,11 +677,13 @@ function AppContent() {
               });
               registrationInitialized.current = true;
             }
-            setShowRegistration(true);
+            if (!isSubmittingRegistration.current) {
+              setShowRegistration(true);
+            }
             
             localStorage.removeItem('referredBy');
           }
-        });
+        }, (err) => handleFirestoreError(err, OperationType.GET, `users/${currentUser.uid}`));
 
         // Sync batch items
         const batchQuery = query(
@@ -687,20 +691,21 @@ function AppContent() {
           orderBy('createdAt', 'desc')
         );
         
-        const unsubBatch = onSnapshot(batchQuery, (snapshot) => {
+        unsubBatchRef.current = onSnapshot(batchQuery, (snapshot) => {
           const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BatchItem));
           setBatch(items);
         }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/batches`));
-
-        return () => {
-          unsubUser();
-          unsubBatch();
-        };
       } else {
         setBatch([]);
+        unsubUserRef.current?.();
+        unsubBatchRef.current?.();
       }
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubUserRef.current?.();
+      unsubBatchRef.current?.();
+    };
   }, []);
 
   const handlePurchase = async (planName: string, credits: number, amount: number) => {
@@ -2025,7 +2030,12 @@ function AppContent() {
         >
           <div className="space-y-2">
             <h1 className="text-4xl font-black tracking-tighter">Verifique seu email</h1>
-            <p className="text-gray-400">Digite o código de 6 dígitos que enviamos</p>
+            <p className="text-gray-400">Digite o código de 6 dígitos enviado para seu email</p>
+            <div className="mt-2">
+              <span className="text-[10px] text-[#d4af37] font-bold uppercase tracking-widest bg-[#d4af37]/10 py-1 px-3 rounded-full inline-block border border-[#d4af37]/20">
+                Ambiente de Teste: Código disponível abaixo
+              </span>
+            </div>
           </div>
 
           <div className="bg-[#111] p-8 rounded-[32px] border border-[#222] space-y-6">
