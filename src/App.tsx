@@ -394,6 +394,7 @@ function AppContent() {
   const [registrationData, setRegistrationData] = useState({ firstName: '', lastName: '', phone: '', email: '' });
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const registrationInitialized = useRef(false);
 
   const handleRegister = async () => {
     if (!user || !userData) return;
@@ -519,6 +520,7 @@ function AppContent() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsAuthReady(true);
+      registrationInitialized.current = false;
 
       // Check if domain is authorized (hint for production setup)
       const currentDomain = window.location.hostname;
@@ -547,19 +549,15 @@ function AppContent() {
             const isMissingData = !data.firstName || !data.lastName || !data.phone || !data.email;
             
             if (isMissingData) {
-              // Only initialize registration data if it's currently empty to avoid overwriting user typing
-              setRegistrationData(prev => {
-                const isFormEmpty = !prev.firstName && !prev.lastName && !prev.phone && !prev.email;
-                if (isFormEmpty) {
-                  return {
-                    firstName: data.firstName || '',
-                    lastName: data.lastName || '',
-                    phone: data.phone || '',
-                    email: data.email || currentUser.email || ''
-                  };
-                }
-                return prev;
-              });
+              if (!registrationInitialized.current) {
+                setRegistrationData({
+                  firstName: data.firstName || '',
+                  lastName: data.lastName || '',
+                  phone: data.phone || '',
+                  email: data.email || currentUser.email || ''
+                });
+                registrationInitialized.current = true;
+              }
               setShowRegistration(true);
             } else {
               setShowRegistration(false);
@@ -586,12 +584,15 @@ function AppContent() {
             setDoc(userRef, initialData).catch(err => handleFirestoreError(err, OperationType.WRITE, `users/${currentUser.uid}`));
             setUserData(initialData as any);
             
-            setRegistrationData({
-              firstName: '',
-              lastName: '',
-              phone: '',
-              email: currentUser.email || ''
-            });
+            if (!registrationInitialized.current) {
+              setRegistrationData({
+                firstName: '',
+                lastName: '',
+                phone: '',
+                email: currentUser.email || ''
+              });
+              registrationInitialized.current = true;
+            }
             setShowRegistration(true);
             
             localStorage.removeItem('referredBy');
@@ -609,7 +610,10 @@ function AppContent() {
           setBatch(items);
         }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/batches`));
 
-        return () => unsubBatch();
+        return () => {
+          unsubUser();
+          unsubBatch();
+        };
       } else {
         setBatch([]);
       }
