@@ -163,6 +163,90 @@ async function createServer() {
     }
   });
 
+  // Proxy for downloads to avoid CORS issues
+  app.get("/api/proxy-download", async (req, res) => {
+    try {
+      const { url } = req.query;
+      if (!url) return res.status(400).json({ error: "URL is required" });
+      
+      const response = await fetch(url as string);
+      if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
+      
+      const contentType = response.headers.get("content-type");
+      if (contentType) res.setHeader("Content-Type", contentType);
+      
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    } catch (error: any) {
+      console.error("Proxy Download Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Proxy for video generation and polling
+  app.post("/api/gemini", async (req, res) => {
+    try {
+      const { method, args } = req.body;
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(500).json({ error: "Gemini API Key not configured on server." });
+      }
+
+      let url = "";
+      let body: any = null;
+
+      if (method === 'generateVideos') {
+        url = `https://generativelanguage.googleapis.com/v1alpha/models/${args.model}:generateVideos?key=${apiKey}`;
+        body = {
+          prompt: args.prompt,
+          videoConfig: args.config,
+          image: args.image,
+          audio_input: args.audio_input
+        };
+      } else if (method === 'getVideosOperation') {
+        url = `https://generativelanguage.googleapis.com/v1alpha/${args.operation.name}?key=${apiKey}`;
+      } else {
+        return res.status(400).json({ error: "Invalid method" });
+      }
+
+      const response = await fetch(url, {
+        method: method === 'generateVideos' ? 'POST' : 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json(data);
+      }
+      res.json(data);
+    } catch (error: any) {
+      console.error("Gemini API Proxy Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Proxy for video files
+  app.get("/api/proxy-video", async (req, res) => {
+    try {
+      const { url } = req.query;
+      if (!url) return res.status(400).json({ error: "URL is required" });
+      
+      const response = await fetch(url as string);
+      if (!response.ok) throw new Error(`Failed to fetch video: ${response.statusText}`);
+      
+      const contentType = response.headers.get("content-type");
+      if (contentType) res.setHeader("Content-Type", contentType);
+      
+      const buffer = await response.arrayBuffer();
+      res.send(Buffer.from(buffer));
+    } catch (error: any) {
+      console.error("Proxy Video Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
     const { createServer: createViteServer } = await import("vite");

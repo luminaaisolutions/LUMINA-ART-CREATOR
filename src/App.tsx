@@ -1859,13 +1859,15 @@ function AppContent() {
 
   const handleDownload = async (url: string, id: string) => {
     try {
-      const response = await fetch(url);
+      // Use proxy to avoid CORS issues if it's an external URL
+      const downloadUrl = url.startsWith('blob:') ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`;
+      const response = await fetch(downloadUrl);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
       const extension = blob.type.includes('video') ? 'mp4' : 'png';
-      link.download = `geracao-${id}.${extension}`;
+      link.download = `lumina-${id}.${extension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -2804,7 +2806,10 @@ function AppContent() {
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                           {(sessionPreviews[item.id] || item.previewUrl) && (
                             <button 
-                              onClick={() => handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id)} 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id);
+                              }} 
                               className="p-2 bg-[#d4af37]/20 text-[#d4af37] rounded-lg hover:bg-[#d4af37] hover:text-black transition-all"
                               title="Baixar Imagem"
                             >
@@ -3706,12 +3711,30 @@ function AppContent() {
                               {item.status === 'completed' ? 'OK' : item.status === 'failed' ? 'ERRO' : '...'}
                             </span>
                           </div>
-                          <button 
-                            onClick={() => handleDelete(item.id)}
-                            className="text-gray-600 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {(sessionPreviews[item.id] || item.previewUrl) && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id);
+                                }}
+                                className="text-gray-600 hover:text-[#d4af37] transition-colors"
+                                title="Baixar"
+                              >
+                                <Download size={12} />
+                              </button>
+                            )}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(item.id);
+                              }}
+                              className="text-gray-600 hover:text-red-500 transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
                         </div>
                       </motion.div>
                     );
@@ -4026,12 +4049,30 @@ function AppContent() {
                               {item.status === 'completed' ? 'Finalizado' : item.status === 'failed' ? 'Falhou' : 'Gerando'}
                             </span>
                           </div>
-                          <button 
-                            onClick={() => handleDelete(item.id)}
-                            className="text-gray-600 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex items-center gap-3">
+                            {(sessionPreviews[item.id] || item.previewUrl) && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id);
+                                }}
+                                className="text-gray-600 hover:text-[#d4af37] transition-colors"
+                                title="Baixar"
+                              >
+                                <Download size={14} />
+                              </button>
+                            )}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(item.id);
+                              }}
+                              className="text-gray-600 hover:text-red-500 transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
                       </motion.div>
                     );
@@ -4972,7 +5013,7 @@ function AppContent() {
                 className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDownload(selectedMedia.url, selectedMedia.id);
+                  handleDownload(selectedMedia.url, selectedMedia.id || 'preview');
                 }}
                 title="Download"
               >
@@ -5035,7 +5076,7 @@ function AppContent() {
             
             <div 
               className="relative max-w-full max-h-full flex items-center justify-center p-4"
-              onClick={() => setSelectedMedia(null)}
+              onClick={(e) => e.stopPropagation()}
             >
               {selectedMedia.type === 'video' ? (
                 <motion.video
@@ -5044,7 +5085,7 @@ function AppContent() {
                   src={selectedMedia.url}
                   controls
                   autoPlay
-                  className="max-w-full max-h-[85vh] rounded-xl shadow-2xl cursor-pointer"
+                  className="max-w-full max-h-[85vh] rounded-xl shadow-2xl"
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
@@ -5053,8 +5094,9 @@ function AppContent() {
                   animate={{ scale: 1, opacity: 1 }}
                   src={selectedMedia.url}
                   alt="Expanded view"
-                  className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl cursor-pointer"
+                  className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
                   referrerPolicy="no-referrer"
+                  onClick={(e) => e.stopPropagation()}
                 />
               )}
             </div>
