@@ -244,13 +244,81 @@ function Timer({ start, end, status }: { start: any; end?: any; status: string }
   );
 }
 
+// --- Terms of Use Modal ---
+function TermsModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="max-w-2xl w-full bg-[#111] border border-[#222] p-8 md:p-12 rounded-[48px] shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]"
+      >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#d4af37] via-[#f1c40f] to-[#d4af37]" />
+        
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Termos de Uso <span className="text-[#d4af37]">Lumina</span></h2>
+          <button onClick={onClose} className="p-2 text-gray-500 hover:text-white transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto pr-4 space-y-6 text-gray-400 text-sm leading-relaxed custom-scrollbar">
+          <section className="space-y-3">
+            <h3 className="text-white font-bold uppercase tracking-widest text-xs">1. Aceitação dos Termos</h3>
+            <p>Ao acessar e usar a Lumina Art Creator, você concorda em cumprir estes Termos de Uso. Se você não concordar com qualquer parte destes termos, não poderá usar nossos serviços.</p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-white font-bold uppercase tracking-widest text-xs">2. Descrição do Serviço</h3>
+            <p>A Lumina é uma plataforma de inteligência artificial que permite a geração de imagens, vídeos e sincronização labial (Lip Sync) para fins criativos e comerciais.</p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-white font-bold uppercase tracking-widest text-xs">3. Uso de Créditos</h3>
+            <p>O sistema opera baseado em créditos. Créditos podem ser adquiridos através de planos ou ganhos em promoções. Créditos utilizados em gerações não são reembolsáveis, exceto em casos de falha técnica comprovada do sistema.</p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-white font-bold uppercase tracking-widest text-xs">4. Propriedade Intelectual</h3>
+            <p>Você retém os direitos sobre as entradas (prompts e imagens de referência) fornecidas. As gerações produzidas pela IA podem ser usadas para fins comerciais, sujeitas às leis de direitos autorais vigentes e às políticas dos provedores de modelos de IA (Google Gemini).</p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-white font-bold uppercase tracking-widest text-xs">5. Conduta do Usuário</h3>
+            <p>É proibido usar a Lumina para gerar conteúdo ilegal, odioso, sexualmente explícito, violento ou que infrinja direitos de terceiros. O uso indevido resultará no banimento imediato da conta sem reembolso.</p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-white font-bold uppercase tracking-widest text-xs">6. Limitação de Responsabilidade</h3>
+            <p>A Lumina não garante que os resultados da IA serão perfeitos ou atenderão a todas as expectativas. O serviço é fornecido "como está".</p>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-white font-bold uppercase tracking-widest text-xs">7. Privacidade</h3>
+            <p>Seus dados são protegidos conforme nossa Política de Privacidade. Imagens de referência enviadas são processadas temporariamente para a geração e não são usadas para treinar modelos públicos sem seu consentimento.</p>
+          </section>
+        </div>
+
+        <button 
+          onClick={onClose}
+          className="w-full bg-[#1a1a1a] text-white font-black py-4 rounded-2xl border border-[#222] hover:bg-[#222] transition-all mt-8 uppercase tracking-widest text-xs"
+        >
+          Entendi e Aceito
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
 // --- Registration Modal ---
-function RegistrationModal({ data, onChange, onSubmit, isProcessing, onBack }: { 
+function RegistrationModal({ data, onChange, onSubmit, onGoogleLogin, isProcessing, onBack, onViewTerms }: { 
   data: { firstName: string, lastName: string, phone: string, email: string, password?: string }, 
   onChange: (field: string, value: string) => void,
   onSubmit: () => void,
+  onGoogleLogin?: () => void,
   isProcessing: boolean,
-  onBack?: () => void
+  onBack?: () => void,
+  onViewTerms?: () => void
 }) {
   const [showPass, setShowPass] = useState(false);
 
@@ -348,6 +416,30 @@ function RegistrationModal({ data, onChange, onSubmit, isProcessing, onBack }: {
             FINALIZAR CADASTRO
           </button>
 
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#222]"></div>
+            </div>
+            <div className="relative flex justify-center text-[8px] uppercase font-black tracking-widest">
+              <span className="bg-[#111] px-4 text-gray-500">Ou continue com</span>
+            </div>
+          </div>
+
+          <button 
+            type="button"
+            onClick={onGoogleLogin}
+            disabled={isProcessing}
+            className="w-full bg-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest disabled:opacity-50"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.39-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            Google
+          </button>
+
           {onBack && (
             <button 
               onClick={onBack}
@@ -358,7 +450,7 @@ function RegistrationModal({ data, onChange, onSubmit, isProcessing, onBack }: {
           )}
           
           <p className="text-[10px] text-gray-600 text-center mt-6 uppercase tracking-widest font-bold">
-            Ao se cadastrar, você concorda com nossos <span className="text-gray-400 underline cursor-pointer">Termos de Uso</span>.
+            Ao se cadastrar, você concorda com nossos <span onClick={onViewTerms} className="text-gray-400 underline cursor-pointer hover:text-[#d4af37] transition-colors">Termos de Uso</span>.
           </p>
         </div>
       </motion.div>
@@ -367,8 +459,9 @@ function RegistrationModal({ data, onChange, onSubmit, isProcessing, onBack }: {
 }
 
 // --- Login Modal ---
-function LoginModal({ onLogin, onSwitchToSignUp, onForgotPassword, isProcessing, isResetting }: { 
+function LoginModal({ onLogin, onGoogleLogin, onSwitchToSignUp, onForgotPassword, isProcessing, isResetting }: { 
   onLogin: (email: string, pass: string) => void,
+  onGoogleLogin?: () => void,
   onSwitchToSignUp: () => void,
   onForgotPassword: (email: string) => void,
   isProcessing: boolean,
@@ -443,6 +536,30 @@ function LoginModal({ onLogin, onSwitchToSignUp, onForgotPassword, isProcessing,
           >
             {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <ArrowRight size={20} />}
             ENTRAR NO SISTEMA
+          </button>
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#222]"></div>
+            </div>
+            <div className="relative flex justify-center text-[8px] uppercase font-black tracking-widest">
+              <span className="bg-[#111] px-4 text-gray-500">Ou continue com</span>
+            </div>
+          </div>
+
+          <button 
+            type="button"
+            onClick={onGoogleLogin}
+            disabled={isProcessing}
+            className="w-full bg-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest disabled:opacity-50"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.39-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            Google
           </button>
 
           <button 
@@ -565,6 +682,7 @@ function AppContent() {
   }[]>([]);
   const [activeBrandProfileId, setActiveBrandProfileId] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [registrationData, setRegistrationData] = useState({ firstName: '', lastName: '', phone: '', email: '', password: '' });
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
@@ -609,6 +727,7 @@ function AppContent() {
       await setDoc(userRef, initialData);
       setUserData(initialData as any);
       setShowRegistration(false);
+      setView('app');
       
       // Trigger OTP flow
       await sendOTP(registrationData.email);
@@ -963,15 +1082,15 @@ function AppContent() {
     }
   };
 
-  const handleLogin = async () => {
+  const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error: any) {
       console.error("Login failed:", error);
       if (error.code === 'auth/unauthorized-domain') {
-        alert("ERRO DE AUTENTICAÇÃO: Este domínio não está autorizado no seu projeto Firebase. \n\nPor favor, acesse o Console do Firebase > Authentication > Settings > Authorized Domains e adicione 'luminaaisolutions.com.br' e 'www.luminaaisolutions.com.br'.");
+        alert("ERRO DE AUTENTICAÇÃO: Este domínio não está autorizado no seu projeto Firebase. \n\nPor favor, acesse o Console do Firebase > Authentication > Settings > Authorized Domains e adicione os domínios da sua aplicação.");
       } else {
-        alert(`Erro ao entrar: ${error.message}`);
+        alert(`Erro ao entrar com Google: ${error.message}`);
       }
     }
   };
@@ -1328,8 +1447,8 @@ function AppContent() {
                 model: 'gemini-3-flash-preview',
                 prompt: `Enhance this prompt for professional and creative AI image generation: "${itemPrompt}". 
                 ${creativeContext}
-                ${hasRef ? 'CRITICAL: The user provided a persona reference image. Focus on preserving the person\'s facial features and identity, but allow the pose and background to change based on the prompt.' : ''}
-                ${hasProduct ? 'CRITICAL: The user provided a product reference image. The persona MUST be presenting/holding this EXACT product.' : ''}
+                ${hasRef ? 'CRITICAL: The user provided a persona reference image. You MUST maintain the EXACT facial features, identity, and ethnicity of the person in the reference image. This is a strict requirement.' : ''}
+                ${hasProduct ? 'CRITICAL: The user provided a product reference image. The final image MUST feature this EXACT product with 100% fidelity to its appearance, labels, and branding.' : ''}
                 Your goal is to be highly efficient, seeking rich references, intricate details, and novelties in the composition. 
                 Focus on cinematic lighting, hyper-realistic textures, and unique artistic perspectives.
                 IMPORTANT: Output ONLY the enhanced prompt in English.`
@@ -1387,13 +1506,14 @@ function AppContent() {
                     }
                   });
                   // Refined Persona Preservation Mode
-                  parts[0].text = `[SYSTEM: PERSONA PRESERVATION MODE]
+                  parts[0].text = `[SYSTEM: ABSOLUTE PERSONA FIDELITY MODE]
                   ACT AS A MASTER PORTRAIT ARTIST. 
                   REFERENCE IMAGE ATTACHED. 
-                  TASK: Generate a new image based on the prompt while maintaining the EXACT facial features and identity of the person in the reference image.
+                  TASK: Generate a new image based on the prompt while maintaining 100% EXACT facial features, identity, and ethnicity of the person in the reference image.
+                  DO NOT ALUCINATE NEW FACES. DO NOT CHANGE THE PERSON.
                   PRESERVE: Face shape, eyes, nose, lips, skin tone, and hair texture.
                   ADAPT: Pose, expression, clothing, and background to match the prompt: "${enhancedPrompt}".
-                  DO NOT copy the background or lighting from the reference image unless it matches the prompt.`;
+                  THE PERSON IN THE GENERATED IMAGE MUST BE RECOGNIZABLE AS THE SAME PERSON FROM THE REFERENCE.`;
                 }
 
                 if (currentProductAsset && currentProductAsset.type === 'image') {
@@ -1403,10 +1523,11 @@ function AppContent() {
                       mimeType: currentProductAsset.mimeType
                     }
                   });
-                  parts[0].text += `\n[SYSTEM: PRODUCT INTEGRATION]
+                  parts[0].text += `\n[SYSTEM: ABSOLUTE PRODUCT FIDELITY]
                   PRODUCT IMAGE ATTACHED. 
-                  TASK: The persona MUST be presenting the product shown in the reference image. 
-                  The product must look exactly as shown (shape, labels, colors). 
+                  TASK: The final image MUST feature the EXACT product shown in the reference image. 
+                  The product must look exactly as shown (shape, labels, colors, branding). 
+                  DO NOT INVENT NEW PRODUCTS. DO NOT CHANGE THE PRODUCT DESIGN.
                   The persona should hold or interact with the product naturally in the context of the prompt.`;
                 }
 
@@ -2227,6 +2348,7 @@ function AppContent() {
         {showLoginModal && (
           <LoginModal 
             onLogin={handleEmailLogin}
+            onGoogleLogin={handleGoogleLogin}
             onSwitchToSignUp={() => {
               setShowLoginModal(false);
               setShowRegistration(true);
@@ -2241,13 +2363,16 @@ function AppContent() {
             data={registrationData}
             onChange={(field, value) => setRegistrationData(prev => ({ ...prev, [field]: value }))}
             onSubmit={user ? handleRegister : handleEmailSignUp}
+            onGoogleLogin={handleGoogleLogin}
             isProcessing={isRegistering}
             onBack={() => {
               setShowRegistration(false);
               setShowLoginModal(true);
             }}
+            onViewTerms={() => setShowTerms(true)}
           />
         )}
+        {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
       </>
     );
   }
@@ -2262,6 +2387,7 @@ function AppContent() {
         {showLoginModal && (
           <LoginModal 
             onLogin={handleEmailLogin}
+            onGoogleLogin={handleGoogleLogin}
             onSwitchToSignUp={() => {
               setShowLoginModal(false);
               setShowRegistration(true);
@@ -2276,25 +2402,38 @@ function AppContent() {
             data={registrationData}
             onChange={(field, value) => setRegistrationData(prev => ({ ...prev, [field]: value }))}
             onSubmit={user ? handleRegister : handleEmailSignUp}
+            onGoogleLogin={handleGoogleLogin}
             isProcessing={isRegistering}
             onBack={() => {
               setShowRegistration(false);
               setShowLoginModal(true);
             }}
+            onViewTerms={() => setShowTerms(true)}
           />
         )}
+        {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
       </>
     );
   }
 
   if (showRegistration) {
     return (
-      <RegistrationModal 
-        data={registrationData}
-        onChange={(field, value) => setRegistrationData(prev => ({ ...prev, [field]: value }))}
-        onSubmit={handleRegister}
-        isProcessing={isRegistering}
-      />
+      <>
+        <RegistrationModal 
+          data={registrationData}
+          onChange={(field, value) => setRegistrationData(prev => ({ ...prev, [field]: value }))}
+          onSubmit={handleRegister}
+          onGoogleLogin={handleGoogleLogin}
+          isProcessing={isRegistering}
+          onBack={() => {
+            auth.signOut();
+            setShowRegistration(false);
+            setShowLoginModal(true);
+          }}
+          onViewTerms={() => setShowTerms(true)}
+        />
+        {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
+      </>
     );
   }
 
