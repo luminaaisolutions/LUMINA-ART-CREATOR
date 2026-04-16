@@ -45,7 +45,9 @@ import {
   CreditCard,
   Mail,
   ShieldCheck,
-  ExternalLink
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
@@ -349,7 +351,47 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'branding' | 'projects' | 'creative_studio' | 'lipsync' | 'library' | 'plans' | 'profile' | 'referrals' | 'faq'>('dashboard');
   const [libraryFilter, setLibraryFilter] = useState<'all' | 'image' | 'video'>('all');
   const [dragActive, setDragActive] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{ 
+    url: string; 
+    type: 'image' | 'video'; 
+    id?: string;
+    index?: number;
+    list?: any[];
+  } | null>(null);
+
+  const openPreview = (item: any, list: any[]) => {
+    const url = sessionPreviews[item.id] || item.previewUrl;
+    if (!url) return;
+    const index = list.findIndex(i => i.id === item.id);
+    setSelectedMedia({
+      url,
+      type: item.type === 'image' ? 'image' : 'video',
+      id: item.id,
+      index,
+      list
+    });
+  };
+
+  const navigatePreview = (direction: 'prev' | 'next', e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!selectedMedia) return;
+    const { index, list } = selectedMedia;
+    let newIndex = direction === 'next' ? index + 1 : index - 1;
+    
+    if (newIndex >= 0 && newIndex < list.length) {
+      const newItem = list[newIndex];
+      const url = sessionPreviews[newItem.id] || newItem.previewUrl;
+      if (url) {
+        setSelectedMedia({
+          url,
+          type: newItem.type === 'image' ? 'image' : 'video',
+          id: newItem.id,
+          index: newIndex,
+          list
+        });
+      }
+    }
+  };
   
   // Form State
   const [prompt, setPrompt] = useState('');
@@ -464,61 +506,84 @@ function AppContent() {
   const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
   const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any, method?: 'generateContent' | 'generateImages' | 'generateVideos' | 'getVideosOperation' | 'generateContentStream' }) => {
-    try {
-      const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
-      
-      if (!geminiApiKey) {
-        throw new Error("API Key do Gemini não encontrada. Configure GEMINI_API_KEY nas variáveis de ambiente.");
-      }
+    const maxRetries = 3;
+    let attempt = 0;
 
-      if (method === 'generateContent') {
-        const response = await ai.models.generateContent({
-          model,
-          contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
-          config
-        });
-        return response;
-      } else if (method === 'generateContentStream') {
-        return await ai.models.generateContentStream({
-          model,
-          contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
-          config
-        });
-      } else if (method === 'generateImages') {
-        // @ts-ignore
-        return await ai.models.generateImages({
-          model,
-          prompt,
-          config
-        });
-      } else if (method === 'generateVideos') {
-        // @ts-ignore
-        return await ai.models.generateVideos({
-          model,
-          prompt,
-          config: {
-            ...config,
-            // Handle both possible naming conventions for audio input
-            audioConfig: options.contents?.audioConfig || options.contents?.audio_input,
-            audio_input: options.contents?.audioConfig || options.contents?.audio_input
-          }
-        });
-      } else if (method === 'getVideosOperation') {
-        // @ts-ignore
-        return await ai.models.getVideosOperation({
-          name: (options as any).operation?.name || (options as any).operation
-        });
+    while (attempt < maxRetries) {
+      try {
+        const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
+        
+        if (!geminiApiKey) {
+          throw new Error("API Key do Gemini não encontrada. Configure GEMINI_API_KEY nas variáveis de ambiente.");
+        }
+
+        const tools = (config as any)?.tools;
+        const cleanConfig = { ...config };
+        if (cleanConfig.tools) delete cleanConfig.tools;
+
+        if (method === 'generateContent') {
+          const response = await ai.models.generateContent({
+            model,
+            contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
+            config: cleanConfig,
+            // @ts-ignore
+            tools
+          });
+          return response;
+        } else if (method === 'generateContentStream') {
+          return await ai.models.generateContentStream({
+            model,
+            contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
+            config: cleanConfig,
+            // @ts-ignore
+            tools
+          });
+        } else if (method === 'generateImages') {
+          // @ts-ignore
+          return await ai.models.generateImages({
+            model,
+            prompt,
+            config
+          });
+        } else if (method === 'generateVideos') {
+          // @ts-ignore
+          return await ai.models.generateVideos({
+            model,
+            prompt,
+            config: {
+              ...config,
+              // Handle both possible naming conventions for audio input
+              audioConfig: options.contents?.audioConfig || options.contents?.audio_input,
+              audio_input: options.contents?.audioConfig || options.contents?.audio_input
+            }
+          });
+        } else if (method === 'getVideosOperation') {
+          // @ts-ignore
+          return await ai.models.getVideosOperation({
+            name: (options as any).operation?.name || (options as any).operation
+          });
+        }
+        
+        throw new Error(`Método ${method} não suportado no frontend.`);
+      } catch (error: any) {
+        attempt++;
+        const is503 = error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('high demand');
+        
+        if (is503 && attempt < maxRetries) {
+          const delay = Math.pow(2, attempt) * 1000;
+          console.warn(`Gemini API em alta demanda (503). Tentativa ${attempt} de ${maxRetries}. Re-tentando em ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        console.error("Gemini API Error:", error);
+        
+        if (error.message?.includes('403') || error.message?.includes('PERMISSION_DENIED')) {
+          throw new Error("ACESSO NEGADO (403): Sua chave de API está bloqueada ou a API 'Generative Language' não está ativada no Google Cloud Console. Verifique suas configurações.");
+        }
+        
+        throw new Error(error.message || "Falha na comunicação com o Gemini API");
       }
-      
-      throw new Error(`Método ${method} não suportado no frontend.`);
-    } catch (error: any) {
-      console.error("Gemini API Error:", error);
-      
-      if (error.message?.includes('403') || error.message?.includes('PERMISSION_DENIED')) {
-        throw new Error("ACESSO NEGADO (403): Sua chave de API está bloqueada ou a API 'Generative Language' não está ativada no Google Cloud Console. Verifique suas configurações.");
-      }
-      
-      throw new Error(error.message || "Falha na comunicação com o Gemini API");
     }
   };
 
@@ -1296,8 +1361,8 @@ function AppContent() {
             prompt: enhancedPrompt,
             config: {
               numberOfVideos: 1,
-              resolution: (modelToUse === 'veo-3.1-generate-preview' || hasProductRef) ? '720p' : (currentResolution === '1080p' ? '1080p' : '720p'),
-              aspectRatio: (modelToUse === 'veo-3.1-generate-preview' || hasProductRef) ? '16:9' : (currentAspectRatio === '16:9' || currentAspectRatio === '9:16' ? currentAspectRatio : '9:16'),
+              resolution: (currentResolution === '1080p' || currentResolution === '2K' || currentResolution === '4K') ? '1080p' : '720p',
+              aspectRatio: currentAspectRatio === '1:1' ? '1:1' : (currentAspectRatio === '16:9' ? '16:9' : '9:16'),
               durationSeconds: Math.max(4, Math.min(8, Math.round(Number(currentVideoDuration) || 4)))
             }
           };
@@ -2364,10 +2429,7 @@ function AppContent() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.05 }}
                     className="aspect-[3/4] bg-[#111] rounded-2xl border border-[#222] overflow-hidden relative group cursor-pointer"
-                    onClick={() => {
-                      const url = sessionPreviews[item.id] || item.previewUrl;
-                      if (url) setSelectedMedia({ url, type: item.type === 'image' ? 'image' : 'video' });
-                    }}
+                    onClick={() => openPreview(item, batch.slice(0, 5))}
                   >
                     {sessionPreviews[item.id] || item.previewUrl ? (
                       item.type === 'video' || item.type === 'lipsync' ? (
@@ -2423,10 +2485,7 @@ function AppContent() {
                     >
                       <div 
                         className="w-24 h-24 rounded-xl bg-[#1a1a1a] overflow-hidden relative flex-shrink-0 group cursor-pointer"
-                        onClick={() => {
-                          const url = sessionPreviews[item.id] || item.previewUrl;
-                          if (url) setSelectedMedia({ url, type: item.type === 'image' ? 'image' : 'video' });
-                        }}
+                        onClick={() => openPreview(item, batch)}
                       >
                         {sessionPreviews[item.id] || item.previewUrl ? (
                           item.type === 'video' || item.type === 'lipsync' ? (
@@ -3298,21 +3357,20 @@ function AppContent() {
 
                 {batch.filter(item => item.sourceTab === 'creative_studio').length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {batch.filter(item => item.sourceTab === 'creative_studio').map((item, i) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="bg-[#111] rounded-[24px] border border-[#222] overflow-hidden group relative"
-                      >
-                        <div 
-                          className="aspect-[9/16] bg-black relative cursor-pointer overflow-hidden"
-                          onClick={() => {
-                            const url = sessionPreviews[item.id] || item.previewUrl;
-                            if (url) setSelectedMedia({ url, type: item.type === 'image' ? 'image' : 'video' });
-                          }}
+                    {batch.filter(item => item.sourceTab === 'creative_studio').map((item, i) => {
+                      const studioList = batch.filter(item => item.sourceTab === 'creative_studio');
+                      return (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="bg-[#111] rounded-[24px] border border-[#222] overflow-hidden group relative"
                         >
+                          <div 
+                            className="aspect-[9/16] bg-black relative cursor-pointer overflow-hidden"
+                            onClick={() => openPreview(item, studioList)}
+                          >
                           {sessionPreviews[item.id] || item.previewUrl ? (
                             item.type === 'video' ? (
                               <video 
@@ -3370,10 +3428,11 @@ function AppContent() {
                           </button>
                         </div>
                       </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-[#111] rounded-[40px] border border-[#222] border-dashed p-12 flex flex-col items-center justify-center text-center gap-4">
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="bg-[#111] rounded-[40px] border border-[#222] border-dashed p-12 flex flex-col items-center justify-center text-center gap-4">
                     <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center border border-[#222]">
                       <Sparkles size={24} className="text-gray-700" />
                     </div>
@@ -3627,21 +3686,20 @@ function AppContent() {
 
                 {batch.filter(item => item.sourceTab === 'lipsync').length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {batch.filter(item => item.sourceTab === 'lipsync').map((item, i) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="bg-[#111] rounded-[32px] border border-[#222] overflow-hidden group relative"
-                      >
-                        <div 
-                          className="aspect-[9/16] bg-black relative cursor-pointer overflow-hidden"
-                          onClick={() => {
-                            const url = sessionPreviews[item.id] || item.previewUrl;
-                            if (url) setSelectedMedia({ url, type: 'video' });
-                          }}
+                    {batch.filter(item => item.sourceTab === 'lipsync').map((item, i) => {
+                      const lipsyncList = batch.filter(item => item.sourceTab === 'lipsync');
+                      return (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="bg-[#111] rounded-[32px] border border-[#222] overflow-hidden group relative"
                         >
+                          <div 
+                            className="aspect-[9/16] bg-black relative cursor-pointer overflow-hidden"
+                            onClick={() => openPreview(item, lipsyncList)}
+                          >
                           {sessionPreviews[item.id] || item.previewUrl ? (
                             <video 
                               src={sessionPreviews[item.id] || item.previewUrl} 
@@ -3690,13 +3748,14 @@ function AppContent() {
                           </button>
                         </div>
                       </motion.div>
-                    ))}
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="bg-[#111] rounded-[40px] border border-[#222] border-dashed p-20 flex flex-col items-center justify-center text-center gap-6">
+                  <div className="w-20 h-20 bg-[#1a1a1a] rounded-full flex items-center justify-center border border-[#222]">
+                    <Mic size={32} className="text-gray-700" />
                   </div>
-                ) : (
-                  <div className="bg-[#111] rounded-[40px] border border-[#222] border-dashed p-20 flex flex-col items-center justify-center text-center gap-6">
-                    <div className="w-20 h-20 bg-[#1a1a1a] rounded-full flex items-center justify-center border border-[#222]">
-                      <Mic size={32} className="text-gray-700" />
-                    </div>
                     <div className="space-y-2">
                       <h4 className="text-lg font-bold text-gray-400">Nenhum LipSync gerado ainda</h4>
                       <p className="text-gray-600 text-sm max-w-xs mx-auto">Use o painel ao lado para criar sua primeira sincronização labial de alta fidelidade.</p>
@@ -3953,21 +4012,20 @@ function AppContent() {
 
                 {batch.filter(item => item.sourceTab === 'projects').length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {batch.filter(item => item.sourceTab === 'projects').map((item, i) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="bg-[#111] rounded-[32px] border border-[#222] overflow-hidden group relative"
-                      >
-                        <div 
-                          className="aspect-[9/16] bg-black relative cursor-pointer overflow-hidden"
-                          onClick={() => {
-                            const url = sessionPreviews[item.id] || item.previewUrl;
-                            if (url) setSelectedMedia({ url, type: item.type === 'image' ? 'image' : 'video' });
-                          }}
+                    {batch.filter(item => item.sourceTab === 'projects').map((item, i) => {
+                      const projectsList = batch.filter(item => item.sourceTab === 'projects');
+                      return (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="bg-[#111] rounded-[32px] border border-[#222] overflow-hidden group relative"
                         >
+                          <div 
+                            className="aspect-[9/16] bg-black relative cursor-pointer overflow-hidden"
+                            onClick={() => openPreview(item, projectsList)}
+                          >
                           {sessionPreviews[item.id] || item.previewUrl ? (
                             item.type === 'video' ? (
                               <video 
@@ -4025,13 +4083,14 @@ function AppContent() {
                           </button>
                         </div>
                       </motion.div>
-                    ))}
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="bg-[#111] rounded-[40px] border border-[#222] border-dashed p-20 flex flex-col items-center justify-center text-center gap-6">
+                  <div className="w-20 h-20 bg-[#1a1a1a] rounded-full flex items-center justify-center border border-[#222]">
+                    <Briefcase size={32} className="text-gray-700" />
                   </div>
-                ) : (
-                  <div className="bg-[#111] rounded-[40px] border border-[#222] border-dashed p-20 flex flex-col items-center justify-center text-center gap-6">
-                    <div className="w-20 h-20 bg-[#1a1a1a] rounded-full flex items-center justify-center border border-[#222]">
-                      <Briefcase size={32} className="text-gray-700" />
-                    </div>
                     <div className="space-y-2">
                       <h4 className="text-lg font-bold text-gray-400">Nenhum projeto gerado ainda</h4>
                       <p className="text-gray-600 text-sm max-w-xs mx-auto">Use o painel ao lado para começar a criar anúncios profissionais para sua marca.</p>
@@ -4066,16 +4125,17 @@ function AppContent() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {batch
-                .filter(item => item.status === 'completed')
-                .filter(item => {
-                  if (libraryFilter === 'all') return true;
-                  if (libraryFilter === 'image') return item.type === 'image';
-                  if (libraryFilter === 'video') return item.type === 'video';
-                  if (libraryFilter === 'lipsync') return item.type === 'lipsync';
-                  return false;
-                })
-                .map((item) => (
+              {(() => {
+                const filteredList = batch
+                  .filter(item => item.status === 'completed')
+                  .filter(item => {
+                    if (libraryFilter === 'all') return true;
+                    if (libraryFilter === 'image') return item.type === 'image';
+                    if (libraryFilter === 'video') return item.type === 'video';
+                    if (libraryFilter === 'lipsync') return item.type === 'lipsync';
+                    return false;
+                  });
+                return filteredList.map((item) => (
                   <motion.div
                     key={item.id}
                     layout
@@ -4084,10 +4144,7 @@ function AppContent() {
                     className="group bg-[#111] rounded-3xl border border-[#222] overflow-hidden hover:border-[#d4af37]/50 transition-all shadow-xl"
                   >
                     <div className="aspect-[9/16] relative bg-[#1a1a1a] overflow-hidden cursor-pointer"
-                      onClick={() => {
-                        const url = sessionPreviews[item.id] || item.previewUrl;
-                        if (url) setSelectedMedia({ url, type: item.type === 'image' ? 'image' : 'video' });
-                      }}
+                      onClick={() => openPreview(item, filteredList)}
                     >
                       {sessionPreviews[item.id] || item.previewUrl ? (
                         item.type === 'video' || item.type === 'lipsync' ? (
@@ -4156,7 +4213,8 @@ function AppContent() {
                       <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed italic">"{item.prompt}"</p>
                     </div>
                   </motion.div>
-                ))}
+                ));
+              })()}
             </div>
 
             {batch.filter(item => item.status === 'completed' && (libraryFilter === 'all' || item.type === libraryFilter)).length === 0 && (
@@ -4620,39 +4678,100 @@ function AppContent() {
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 md:p-12"
             onClick={() => setSelectedMedia(null)}
           >
-            <motion.button
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors z-[110]"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedMedia(null);
-              }}
-            >
-              <X size={24} />
-            </motion.button>
-            
-            {selectedMedia.type === 'video' ? (
-              <motion.video
-                initial={{ scale: 0.9, opacity: 0 }}
+            {/* Action Buttons */}
+            <div className="absolute top-6 right-6 flex items-center gap-3 z-[120]">
+              <motion.button
+                initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                src={selectedMedia.url}
-                controls
-                autoPlay
-                className="max-w-full max-h-full rounded-xl shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <motion.img
-                initial={{ scale: 0.9, opacity: 0 }}
+                className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownload(selectedMedia.url, selectedMedia.id);
+                }}
+                title="Download"
+              >
+                <Download size={20} />
+              </motion.button>
+
+              {selectedMedia.id && (
+                <motion.button
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="p-3 bg-red-500/10 hover:bg-red-500/20 rounded-full text-red-500 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm('Tem certeza que deseja excluir esta arte?')) {
+                      handleDelete(selectedMedia.id!);
+                      setSelectedMedia(null);
+                    }
+                  }}
+                  title="Excluir"
+                >
+                  <Trash2 size={20} />
+                </motion.button>
+              )}
+
+              <motion.button
+                initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                src={selectedMedia.url}
-                alt="Expanded view"
-                className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-                referrerPolicy="no-referrer"
-              />
+                className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedMedia(null);
+                }}
+                title="Fechar"
+              >
+                <X size={20} />
+              </motion.button>
+            </div>
+
+            {/* Carousel Navigation */}
+            {selectedMedia.list && selectedMedia.list.length > 1 && selectedMedia.index !== undefined && (
+              <>
+                {selectedMedia.index > 0 && (
+                  <button
+                    className="absolute left-6 p-3 bg-white/5 hover:bg-white/10 rounded-full text-white transition-all z-[110] hover:scale-110"
+                    onClick={(e) => navigatePreview('prev', e)}
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                )}
+                {selectedMedia.index < selectedMedia.list.length - 1 && (
+                  <button
+                    className="absolute right-6 p-3 bg-white/5 hover:bg-white/10 rounded-full text-white transition-all z-[110] hover:scale-110"
+                    onClick={(e) => navigatePreview('next', e)}
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                )}
+              </>
             )}
+            
+            <div 
+              className="relative max-w-full max-h-full flex items-center justify-center p-4"
+              onClick={() => setSelectedMedia(null)}
+            >
+              {selectedMedia.type === 'video' ? (
+                <motion.video
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  src={selectedMedia.url}
+                  controls
+                  autoPlay
+                  className="max-w-full max-h-[85vh] rounded-xl shadow-2xl cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <motion.img
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  src={selectedMedia.url}
+                  alt="Expanded view"
+                  className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl cursor-pointer"
+                  referrerPolicy="no-referrer"
+                />
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
