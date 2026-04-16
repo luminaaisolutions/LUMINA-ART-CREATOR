@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Zap, 
   Video, 
@@ -20,6 +20,32 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignUp }) => {
+  const [activeShowcase, setActiveShowcase] = React.useState(0);
+  const showcaseItems = [
+    {
+      url: "https://picsum.photos/seed/cyber/1280/720",
+      prompt: "[Produto] Perfume de luxo em uma metrópole Cyberpunk, luzes neon, reflexos de chuva, 8k.",
+      label: "PRODUTO + AMBIENTE"
+    },
+    {
+      url: "https://picsum.photos/seed/model1/1280/720",
+      prompt: "[Ator/Referência] Modelo feminina em desfile de alta costura, iluminação dramática, estilo cinematográfico.",
+      label: "PERSONA E MODA"
+    },
+    {
+      url: "https://picsum.photos/seed/nature/1280/720",
+      prompt: "Paisagem de montanhas suíças ao pôr do sol, ultra-realismo, lente 35mm, cores vibrantes.",
+      label: "PAISAGISMOS"
+    }
+  ];
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveShowcase(prev => (prev + 1) % showcaseItems.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-[#d4af37] selection:text-black">
       {/* --- Navbar --- */}
@@ -153,19 +179,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignUp }) =
             </div>
             <div className="flex-1 w-full">
               <div className="relative aspect-video bg-[#111] rounded-[3rem] border border-[#222] overflow-hidden shadow-2xl group">
-                <img 
-                  src="https://picsum.photos/seed/lumina-ai/1280/720" 
-                  alt="Showcase" 
-                  className="w-full h-full object-cover opacity-50 group-hover:scale-105 transition-transform duration-700"
-                  referrerPolicy="no-referrer"
-                />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeShowcase}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 0.6, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="absolute inset-0"
+                  >
+                    <img 
+                      src={showcaseItems[activeShowcase].url} 
+                      alt="Showcase" 
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  </motion.div>
+                </AnimatePresence>
+                
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-20 h-20 bg-[#d4af37] rounded-full flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-all">
+                  <div className="w-20 h-20 bg-[#d4af37] rounded-full flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-all z-10">
                     <Play size={32} className="text-black fill-current ml-1" />
                   </div>
                 </div>
-                <div className="absolute bottom-8 left-8 right-8 p-6 bg-black/60 backdrop-blur-md rounded-2xl border border-white/10">
-                  <p className="text-sm font-mono text-[#d4af37]">PROMPT: "Cinematic shot of a futuristic neon city, 8k, highly detailed..."</p>
+
+                <div className="absolute top-8 left-8 z-20">
+                  <span className="px-4 py-1.5 bg-[#d4af37] text-black text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg">
+                    {showcaseItems[activeShowcase].label}
+                  </span>
+                </div>
+
+                <motion.div 
+                  key={`prompt-${activeShowcase}`}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  className="absolute bottom-8 left-8 right-8 p-6 bg-black/60 backdrop-blur-md rounded-2xl border border-white/10 z-20"
+                >
+                  <p className="text-sm font-mono text-[#d4af37] leading-relaxed">
+                    <span className="text-white/40 mr-2">PROMPT:</span>
+                    "{showcaseItems[activeShowcase].prompt}"
+                  </p>
+                </motion.div>
+
+                {/* Progress Indicators */}
+                <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20">
+                  {showcaseItems.map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`w-1 h-8 rounded-full transition-all duration-500 ${activeShowcase === i ? 'bg-[#d4af37] h-12' : 'bg-white/10'}`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
