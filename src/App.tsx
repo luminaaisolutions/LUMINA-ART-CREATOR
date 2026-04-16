@@ -47,7 +47,10 @@ import {
   ShieldCheck,
   ExternalLink,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Eye,
+  EyeOff,
+  KeyRound
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
@@ -138,7 +141,10 @@ import {
   ref,
   uploadBytes,
   uploadString,
-  getDownloadURL
+  getDownloadURL,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail
 } from './firebase';
 
 // --- Types ---
@@ -239,12 +245,15 @@ function Timer({ start, end, status }: { start: any; end?: any; status: string }
 }
 
 // --- Registration Modal ---
-function RegistrationModal({ data, onChange, onSubmit, isProcessing }: { 
-  data: { firstName: string, lastName: string, phone: string, email: string }, 
+function RegistrationModal({ data, onChange, onSubmit, isProcessing, onBack }: { 
+  data: { firstName: string, lastName: string, phone: string, email: string, password?: string }, 
   onChange: (field: string, value: string) => void,
   onSubmit: () => void,
-  isProcessing: boolean
+  isProcessing: boolean,
+  onBack?: () => void
 }) {
+  const [showPass, setShowPass] = useState(false);
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
       <motion.div 
@@ -297,6 +306,28 @@ function RegistrationModal({ data, onChange, onSubmit, isProcessing }: {
             />
           </div>
 
+          {onBack && (
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Senha</label>
+              <div className="relative">
+                <input 
+                  type={showPass ? "text" : "password"} 
+                  value={data.password || ''}
+                  onChange={(e) => onChange('password', e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-4 pr-12 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-all"
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                >
+                  {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Telefone / WhatsApp</label>
             <input 
@@ -310,16 +341,116 @@ function RegistrationModal({ data, onChange, onSubmit, isProcessing }: {
 
           <button 
             onClick={onSubmit}
-            disabled={isProcessing || !data.firstName || !data.lastName || !data.phone || !data.email}
+            disabled={isProcessing || !data.firstName || !data.lastName || !data.phone || !data.email || (onBack && !data.password)}
             className="w-full bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black py-5 rounded-2xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest mt-4 disabled:opacity-50 disabled:hover:scale-100"
           >
             {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={20} />}
             FINALIZAR CADASTRO
           </button>
+
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="w-full text-gray-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all"
+            >
+              Já tenho uma conta? Entrar
+            </button>
+          )}
           
           <p className="text-[10px] text-gray-600 text-center mt-6 uppercase tracking-widest font-bold">
             Ao se cadastrar, você concorda com nossos <span className="text-gray-400 underline cursor-pointer">Termos de Uso</span>.
           </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// --- Login Modal ---
+function LoginModal({ onLogin, onSwitchToSignUp, onForgotPassword, isProcessing, isResetting }: { 
+  onLogin: (email: string, pass: string) => void,
+  onSwitchToSignUp: () => void,
+  onForgotPassword: (email: string) => void,
+  isProcessing: boolean,
+  isResetting: boolean
+}) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="max-w-md w-full bg-[#111] border border-[#222] p-10 rounded-[48px] shadow-2xl relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#d4af37] via-[#f1c40f] to-[#d4af37]" />
+        
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-[#d4af37]/10 text-[#d4af37] rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3 hover:rotate-0 transition-all duration-500">
+            <Zap size={40} />
+          </div>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2">Bem-vindo de volta à <br/><span className="text-[#d4af37]">LUMINA</span></h2>
+          <p className="text-gray-500 text-sm">Entre com seu e-mail e senha para continuar criando.</p>
+        </div>
+
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">E-mail</label>
+            <input 
+              type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+              className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-4 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-all"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center px-1">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Senha</label>
+              <button 
+                onClick={() => onForgotPassword(email)}
+                disabled={isResetting}
+                className="text-[10px] font-bold text-[#d4af37] hover:underline uppercase tracking-widest disabled:opacity-50"
+              >
+                {isResetting ? 'Enviando...' : 'Esqueceu a senha?'}
+              </button>
+            </div>
+            <div className="relative">
+              <input 
+                type={showPass ? "text" : "password"} 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-4 pr-12 text-sm text-white focus:outline-none focus:border-[#d4af37] transition-all"
+              />
+              <button 
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+              >
+                {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => onLogin(email, password)}
+            disabled={isProcessing || !email || !password}
+            className="w-full bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black py-5 rounded-2xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest mt-4 disabled:opacity-50 disabled:hover:scale-100"
+          >
+            {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <ArrowRight size={20} />}
+            ENTRAR NO SISTEMA
+          </button>
+
+          <button 
+            onClick={onSwitchToSignUp}
+            className="w-full text-gray-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all"
+          >
+            Não tem uma conta? Cadastre-se
+          </button>
         </div>
       </motion.div>
     </div>
@@ -434,15 +565,105 @@ function AppContent() {
   }[]>([]);
   const [activeBrandProfileId, setActiveBrandProfileId] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
-  const [registrationData, setRegistrationData] = useState({ firstName: '', lastName: '', phone: '', email: '' });
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [registrationData, setRegistrationData] = useState({ firstName: '', lastName: '', phone: '', email: '', password: '' });
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const registrationInitialized = useRef(false);
   const isSubmittingRegistration = useRef(false);
   const unsubUserRef = useRef<(() => void) | null>(null);
   const unsubBatchRef = useRef<(() => void) | null>(null);
 
+  const handleEmailSignUp = async () => {
+    if (!registrationData.email || !registrationData.password) return;
+    setIsRegistering(true);
+    isSubmittingRegistration.current = true;
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, registrationData.email, registrationData.password);
+      const newUser = userCredential.user;
+      
+      const userRef = doc(db, 'users', newUser.uid);
+      const refCode = Math.random().toString(36).substring(2, 9);
+      const referredBy = localStorage.getItem('referredBy') || null;
+      
+      const initialData = {
+        uid: newUser.uid,
+        email: registrationData.email,
+        displayName: `${registrationData.firstName} ${registrationData.lastName}`,
+        firstName: registrationData.firstName,
+        lastName: registrationData.lastName,
+        phone: registrationData.phone,
+        photoURL: null,
+        role: registrationData.email === 'luminaaisolutions@gmail.com' ? 'admin' : 'user',
+        credits: 0, 
+        plan: 'trial',
+        createdAt: new Date(),
+        isVerified: false,
+        referralCode: refCode,
+        referredBy: referredBy,
+        referralCount: 0
+      };
+      
+      await setDoc(userRef, initialData);
+      setUserData(initialData as any);
+      setShowRegistration(false);
+      
+      // Trigger OTP flow
+      await sendOTP(registrationData.email);
+      localStorage.removeItem('referredBy');
+    } catch (error: any) {
+      console.error("Sign up failed:", error);
+      alert(`Erro ao criar conta: ${error.message}`);
+    } finally {
+      setIsRegistering(false);
+      setTimeout(() => {
+        isSubmittingRegistration.current = false;
+      }, 3000);
+    }
+  };
+
+  const handleEmailLogin = async (email: string, pass: string) => {
+    setIsLoggingIn(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      setShowLoginModal(false);
+      setView('app');
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      let message = "Erro ao entrar. Verifique suas credenciais.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        message = "E-mail ou senha incorretos.";
+      } else if (error.code === 'auth/too-many-requests') {
+        message = "Muitas tentativas. Tente novamente mais tarde.";
+      }
+      alert(message);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleForgotPassword = async (email: string) => {
+    if (!email) {
+      alert("Por favor, digite seu e-mail primeiro.");
+      return;
+    }
+    setIsResettingPassword(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      alert("E-mail de redefinição de senha enviado! Verifique sua caixa de entrada.");
+    } catch (error: any) {
+      console.error("Reset failed:", error);
+      alert(`Erro ao enviar e-mail: ${error.message}`);
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   const handleRegister = async () => {
+    // This is now handled by handleEmailSignUp for new users
+    // or updateDoc for existing users who logged in via Google but have missing data
     if (!user || !userData) return;
     setIsRegistering(true);
     isSubmittingRegistration.current = true;
@@ -454,20 +675,18 @@ function AppContent() {
         phone: registrationData.phone,
         email: registrationData.email,
         displayName: `${registrationData.firstName} ${registrationData.lastName}`,
-        credits: 0, // No credits until email verification
+        credits: 0, 
         plan: 'trial'
       };
       await updateDoc(userRef, updateData);
       setUserData(prev => prev ? { ...prev, ...updateData } : null);
       setShowRegistration(false);
       
-      // Trigger OTP flow with the email just registered
       await sendOTP(registrationData.email);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
     } finally {
       setIsRegistering(false);
-      // Keep isSubmittingRegistration true for a bit to let onSnapshot settle
       setTimeout(() => {
         isSubmittingRegistration.current = false;
       }, 3000);
@@ -635,7 +854,8 @@ function AppContent() {
                   firstName: data.firstName || '',
                   lastName: data.lastName || '',
                   phone: data.phone || '',
-                  email: data.email || currentUser.email || ''
+                  email: data.email || currentUser.email || '',
+                  password: ''
                 });
                 registrationInitialized.current = true;
               }
@@ -673,7 +893,8 @@ function AppContent() {
                 firstName: '',
                 lastName: '',
                 phone: '',
-                email: currentUser.email || ''
+                email: currentUser.email || '',
+                password: ''
               });
               registrationInitialized.current = true;
             }
@@ -1995,18 +2216,73 @@ function AppContent() {
   }
 
   if (view === 'landing') {
-    return <LandingPage onLogin={async () => {
-      if (user) {
-        setView('app');
-      } else {
-        await handleLogin();
-        setView('app');
-      }
-    }} />;
+    return (
+      <>
+        <LandingPage 
+          onLogin={() => setShowLoginModal(true)} 
+          onSignUp={() => setShowRegistration(true)}
+        />
+        {showLoginModal && (
+          <LoginModal 
+            onLogin={handleEmailLogin}
+            onSwitchToSignUp={() => {
+              setShowLoginModal(false);
+              setShowRegistration(true);
+            }}
+            onForgotPassword={handleForgotPassword}
+            isProcessing={isLoggingIn}
+            isResetting={isResettingPassword}
+          />
+        )}
+        {showRegistration && (
+          <RegistrationModal 
+            data={registrationData}
+            onChange={(field, value) => setRegistrationData(prev => ({ ...prev, [field]: value }))}
+            onSubmit={user ? handleRegister : handleEmailSignUp}
+            isProcessing={isRegistering}
+            onBack={() => {
+              setShowRegistration(false);
+              setShowLoginModal(true);
+            }}
+          />
+        )}
+      </>
+    );
   }
 
   if (!user) {
-    return <LandingPage onLogin={handleLogin} />;
+    return (
+      <>
+        <LandingPage 
+          onLogin={() => setShowLoginModal(true)} 
+          onSignUp={() => setShowRegistration(true)}
+        />
+        {showLoginModal && (
+          <LoginModal 
+            onLogin={handleEmailLogin}
+            onSwitchToSignUp={() => {
+              setShowLoginModal(false);
+              setShowRegistration(true);
+            }}
+            onForgotPassword={handleForgotPassword}
+            isProcessing={isLoggingIn}
+            isResetting={isResettingPassword}
+          />
+        )}
+        {showRegistration && (
+          <RegistrationModal 
+            data={registrationData}
+            onChange={(field, value) => setRegistrationData(prev => ({ ...prev, [field]: value }))}
+            onSubmit={user ? handleRegister : handleEmailSignUp}
+            isProcessing={isRegistering}
+            onBack={() => {
+              setShowRegistration(false);
+              setShowLoginModal(true);
+            }}
+          />
+        )}
+      </>
+    );
   }
 
   if (showRegistration) {

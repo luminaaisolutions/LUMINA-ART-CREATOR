@@ -16,9 +16,10 @@ import {
 
 interface LandingPageProps {
   onLogin: () => void;
+  onSignUp: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignUp }) => {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-[#d4af37] selection:text-black">
       {/* --- Navbar --- */}
@@ -32,12 +33,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
               LUMINA <span className="text-[#d4af37]">ART CREATOR</span>
             </span>
           </div>
-          <button 
-            onClick={onLogin}
-            className="bg-white text-black px-6 py-2.5 rounded-full font-bold text-sm hover:scale-105 transition-all shadow-lg"
-          >
-            ENTRAR
-          </button>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={onLogin}
+              className="text-white px-4 py-2 text-sm font-bold hover:text-[#d4af37] transition-colors"
+            >
+              ENTRAR
+            </button>
+            <button 
+              onClick={onSignUp}
+              className="bg-white text-black px-6 py-2.5 rounded-full font-bold text-sm hover:scale-105 transition-all shadow-lg"
+            >
+              CADASTRAR
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -64,7 +73,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <button 
-                onClick={onLogin}
+                onClick={onSignUp}
                 className="w-full sm:w-auto bg-[#d4af37] text-black px-10 py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-2xl shadow-[#d4af37]/20"
               >
                 COMEÇAR AGORA (40 CRÉDITOS GRÁTIS)
@@ -216,7 +225,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
                 ))}
               </div>
               <button 
-                onClick={onLogin}
+                onClick={onSignUp}
                 className={`w-full py-4 rounded-2xl font-black transition-all ${plan.popular ? 'bg-[#d4af37] text-black hover:scale-[1.02]' : 'bg-[#222] text-white hover:bg-[#333]'}`}
               >
                 {plan.cta}
@@ -280,7 +289,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin }) => {
           <h2 className="text-5xl font-black tracking-tighter mb-8">PRONTO PARA DOMINAR O <span className="text-[#d4af37]">ALGORITMO?</span></h2>
           <p className="text-gray-400 mb-12 text-lg">Junte-se a mais de 500 criadores de elite que já estão escalando sua produção com a Lumina.</p>
           <button 
-            onClick={onLogin}
+            onClick={onSignUp}
             className="bg-white text-black px-12 py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-2xl"
           >
             CRIAR MINHA CONTA (40 CRÉDITOS)
