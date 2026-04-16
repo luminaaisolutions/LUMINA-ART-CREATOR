@@ -895,26 +895,41 @@ function AppContent() {
 
   // Initialize Gemini AI
   const geminiApiKey = process.env.GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
-  const ai = new GoogleGenAI({ apiKey: geminiApiKey });
 
   const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any, method?: 'generateContent' | 'generateImages' | 'generateVideos' | 'getVideosOperation' | 'generateContentStream' }) => {
     const maxRetries = 3;
     let attempt = 0;
 
+    // Helper to get the most recent valid key
+    const getActiveKey = async () => {
+      if (typeof window !== 'undefined' && (window as any).aistudio) {
+        try {
+          const platformKey = await (window as any).aistudio.getApiKey?.();
+          if (platformKey && platformKey.length > 5) return platformKey;
+        } catch (e) {
+          console.warn("Plataforma falhou ao retornar chave:", e);
+        }
+      }
+      return geminiApiKey;
+    };
+
     while (attempt < maxRetries) {
       try {
-        const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
+        const activeKey = await getActiveKey();
         
-        if (!geminiApiKey) {
-          throw new Error("API Key do Gemini não encontrada. Configure GEMINI_API_KEY nas variáveis de ambiente.");
+        if (!activeKey || activeKey === 'YOUR_API_KEY' || activeKey === '') {
+          throw new Error("API Key do Gemini não encontrada ou inválida. Por favor, clique no seletor de chaves no topo do painel e selecione sua chave.");
         }
+
+        const dynamicAi = new GoogleGenAI({ apiKey: activeKey });
+        const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
 
         const tools = (config as any)?.tools;
         const cleanConfig = { ...config };
         if (cleanConfig.tools) delete cleanConfig.tools;
 
         if (method === 'generateContent') {
-          const response = await ai.models.generateContent({
+          const response = await dynamicAi.models.generateContent({
             model,
             contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
             config: cleanConfig,
@@ -923,7 +938,7 @@ function AppContent() {
           });
           return response;
         } else if (method === 'generateContentStream') {
-          return await ai.models.generateContentStream({
+          return await dynamicAi.models.generateContentStream({
             model,
             contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
             config: cleanConfig,
@@ -932,14 +947,14 @@ function AppContent() {
           });
         } else if (method === 'generateImages') {
           // @ts-ignore
-          return await ai.models.generateImages({
+          return await dynamicAi.models.generateImages({
             model,
             prompt,
             config
           });
         } else if (method === 'generateVideos') {
           // @ts-ignore
-          return await ai.models.generateVideos({
+          return await dynamicAi.models.generateVideos({
             model,
             prompt,
             config: {
@@ -951,7 +966,7 @@ function AppContent() {
           });
         } else if (method === 'getVideosOperation') {
           // @ts-ignore
-          return await ai.models.getVideosOperation({
+          return await dynamicAi.models.getVideosOperation({
             name: (options as any).operation?.name || (options as any).operation
           });
         }
