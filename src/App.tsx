@@ -48,6 +48,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI } from "@google/genai";
 import { LandingPage } from './components/LandingPage';
 
 // --- Error Boundary Component ---
@@ -458,50 +459,66 @@ function AppContent() {
     details?: string
   } | null>(null);
 
-  const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any, method?: 'generateContent' | 'generateImages' }) => {
+  // Initialize Gemini AI
+  const geminiApiKey = process.env.GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
+  const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+
+  const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any, method?: 'generateContent' | 'generateImages' | 'generateVideos' | 'getVideosOperation' | 'generateContentStream' }) => {
     try {
       const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
       
-      const args: any = { model, config };
-      if (method === 'generateImages') {
-        args.prompt = prompt;
-      } else {
-        args.contents = contents || [{ role: 'user', parts: [{ text: prompt || "" }] }];
+      if (!geminiApiKey) {
+        throw new Error("API Key do Gemini não encontrada. Configure GEMINI_API_KEY nas variáveis de ambiente.");
       }
 
-      const res = await fetch('/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          method,
-          args
-        })
-      });
-
-      if (!res.ok) {
-        const contentType = res.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const err = await res.json();
-          throw new Error(err.error || "Failed to call Gemini API");
-        } else {
-          const text = await res.text();
-          console.error("Non-JSON error response:", text);
-          if (res.status === 403) {
-            throw new Error("ACESSO NEGADO (403): Sua chave de API está bloqueada ou a API não está ativada. Verifique o Google Cloud Console.");
+      if (method === 'generateContent') {
+        const response = await ai.models.generateContent({
+          model,
+          contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
+          config
+        });
+        return response;
+      } else if (method === 'generateContentStream') {
+        return await ai.models.generateContentStream({
+          model,
+          contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
+          config
+        });
+      } else if (method === 'generateImages') {
+        // @ts-ignore
+        return await ai.models.generateImages({
+          model,
+          prompt,
+          config
+        });
+      } else if (method === 'generateVideos') {
+        // @ts-ignore
+        return await ai.models.generateVideos({
+          model,
+          prompt,
+          config: {
+            ...config,
+            // Handle both possible naming conventions for audio input
+            audioConfig: options.contents?.audioConfig || options.contents?.audio_input,
+            audio_input: options.contents?.audioConfig || options.contents?.audio_input
           }
-          throw new Error(`Erro no servidor (${res.status}): O servidor não retornou um JSON válido.`);
-        }
+        });
+      } else if (method === 'getVideosOperation') {
+        // @ts-ignore
+        return await ai.models.getVideosOperation({
+          name: (options as any).operation?.name || (options as any).operation
+        });
       }
-
-      const contentType = res.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        return await res.json();
-      } else {
-        throw new Error("O servidor retornou uma resposta inesperada (não-JSON).");
-      }
+      
+      throw new Error(`Método ${method} não suportado no frontend.`);
     } catch (error: any) {
       console.error("Gemini API Error:", error);
-      throw new Error(error.message || "Failed to call Gemini API");
+      
+      if (error.message?.includes('403') || error.message?.includes('PERMISSION_DENIED')) {
+        throw new Error("ACESSO NEGADO (403): Sua chave de API está bloqueada ou a API 'Generative Language' não está ativada no Google Cloud Console. Verifique suas configurações.");
+      }
+      
+      throw new Error(error.message || "Falha na comunicação com o Gemini API");
     }
   };
 
