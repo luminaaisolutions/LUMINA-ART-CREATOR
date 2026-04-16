@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import { Resend } from 'resend';
 import { fileURLToPath } from "url";
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import admin from 'firebase-admin';
@@ -33,6 +34,7 @@ const mpClient = new MercadoPagoConfig({
 
 async function createServer() {
   const app = express();
+  const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
   app.use(express.json({ limit: '50mb' }));
 
   console.log("=== SERVER STARTUP ===");
@@ -155,10 +157,34 @@ async function createServer() {
   app.post("/api/send-otp", async (req, res) => {
     try {
       const { email, code } = req.body;
-      console.log(`[MOCK EMAIL] Enviando código ${code} para ${email}`);
-      // Em produção, aqui usaria Resend, SendGrid ou similar.
-      res.json({ success: true, message: "Código enviado com sucesso (simulado)" });
+      console.log(`[OTP] Enviando código ${code} para ${email}`);
+      
+      if (resend) {
+        await resend.emails.send({
+          from: 'Lumina <noreply@luminaaisolutions.com.br>',
+          to: email,
+          subject: 'Seu Código de Verificação - Lumina',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #d4af37; text-align: center;">Bem-vindo à LUMINA</h2>
+              <p>Olá,</p>
+              <p>Obrigado por se cadastrar na Lumina. Use o código abaixo para verificar sua conta:</p>
+              <div style="background: #f9f9f9; padding: 20px; border-radius: 10px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #111; margin: 20px 0;">
+                ${code}
+              </div>
+              <p style="font-size: 12px; color: #777;">Este código expira em 10 minutos. Se você não solicitou este código, por favor ignore este email.</p>
+              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+              <p style="text-align: center; font-size: 14px; color: #999;">&copy; 2026 Lumina Art Creator</p>
+            </div>
+          `
+        });
+        res.json({ success: true, message: "Código enviado com sucesso via Resend" });
+      } else {
+        console.warn("[MOCK EMAIL] RESEND_API_KEY não configurada. Simulando envio.");
+        res.json({ success: true, message: "Código enviado com sucesso (simulado)" });
+      }
     } catch (error: any) {
+      console.error("Erro ao enviar OTP:", error);
       res.status(500).json({ error: error.message });
     }
   });

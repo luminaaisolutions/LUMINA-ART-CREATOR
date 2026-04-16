@@ -726,8 +726,12 @@ function AppContent() {
       
       await setDoc(userRef, initialData);
       setUserData(initialData as any);
-      setShowRegistration(false);
-      setView('app');
+      
+      // Delay UI switch slightly to ensure state is committed
+      setTimeout(() => {
+        setShowRegistration(false);
+        setView('app');
+      }, 500);
       
       // Trigger OTP flow
       await sendOTP(registrationData.email);
@@ -2338,51 +2342,18 @@ function AppContent() {
     );
   }
 
-  if (view === 'landing') {
+  if (view === 'landing' || !user) {
     return (
       <>
         <LandingPage 
-          onLogin={() => setShowLoginModal(true)} 
-          onSignUp={() => setShowRegistration(true)}
-        />
-        {showLoginModal && (
-          <LoginModal 
-            onLogin={handleEmailLogin}
-            onGoogleLogin={handleGoogleLogin}
-            onSwitchToSignUp={() => {
-              setShowLoginModal(false);
-              setShowRegistration(true);
-            }}
-            onForgotPassword={handleForgotPassword}
-            isProcessing={isLoggingIn}
-            isResetting={isResettingPassword}
-          />
-        )}
-        {showRegistration && (
-          <RegistrationModal 
-            data={registrationData}
-            onChange={(field, value) => setRegistrationData(prev => ({ ...prev, [field]: value }))}
-            onSubmit={user ? handleRegister : handleEmailSignUp}
-            onGoogleLogin={handleGoogleLogin}
-            isProcessing={isRegistering}
-            onBack={() => {
-              setShowRegistration(false);
-              setShowLoginModal(true);
-            }}
-            onViewTerms={() => setShowTerms(true)}
-          />
-        )}
-        {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
-      </>
-    );
-  }
-
-  if (!user) {
-    return (
-      <>
-        <LandingPage 
-          onLogin={() => setShowLoginModal(true)} 
-          onSignUp={() => setShowRegistration(true)}
+          onLogin={() => {
+            setShowRegistration(false);
+            setShowLoginModal(true);
+          }} 
+          onSignUp={() => {
+            setShowLoginModal(false);
+            setShowRegistration(true);
+          }}
         />
         {showLoginModal && (
           <LoginModal 
@@ -2437,7 +2408,15 @@ function AppContent() {
     );
   }
 
-  if (userData && !userData.isVerified) {
+  if (!userData) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!userData.isVerified) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center p-6 font-sans">
         <motion.div 
