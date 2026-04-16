@@ -830,6 +830,48 @@ function AppContent() {
   const [isDomainAuthorized, setIsDomainAuthorized] = useState(true);
   const [userData, setUserData] = useState<UserProfile | null>(null);
   
+  // --- Auto-tag Prompt based on Assets ---
+  useEffect(() => {
+    setPrompt(prev => {
+      let result = prev;
+      const actorTag = '[Ator/Referência]';
+      const productTag = '[Produto]';
+
+      // Clean existing tags to avoid duplicates or messy formatting
+      result = result.replace(actorTag, '').replace(productTag, '').trim();
+      if (result.startsWith(',')) result = result.substring(1).trim();
+
+      let prefix = '';
+      if (refAsset) prefix += actorTag;
+      if (productAsset) prefix += productTag;
+      
+      if (prefix) {
+        return result ? `${prefix}, ${result}` : prefix;
+      }
+      return result;
+    });
+  }, [refAsset, productAsset]);
+
+  useEffect(() => {
+    setCreativePrompt(prev => {
+      let result = prev;
+      const actorTag = '[Ator/Referência]';
+      const productTag = '[Produto]';
+
+      result = result.replace(actorTag, '').replace(productTag, '').trim();
+      if (result.startsWith(',')) result = result.substring(1).trim();
+
+      let prefix = '';
+      if (refAsset) prefix += actorTag;
+      if (productAsset) prefix += productTag;
+      
+      if (prefix) {
+        return result ? `${prefix}, ${result}` : prefix;
+      }
+      return result;
+    });
+  }, [refAsset, productAsset]);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const refAssetInputRef = useRef<HTMLInputElement | null>(null);
   const productAssetInputRef = useRef<HTMLInputElement | null>(null);
@@ -1451,8 +1493,8 @@ function AppContent() {
                 model: 'gemini-3-flash-preview',
                 prompt: `Enhance this prompt for professional and creative AI image generation: "${itemPrompt}". 
                 ${creativeContext}
-                ${hasRef ? 'CRITICAL: The user provided a persona reference image. You MUST maintain the EXACT facial features, identity, and ethnicity of the person in the reference image. This is a strict requirement.' : ''}
-                ${hasProduct ? 'CRITICAL: The user provided a product reference image. The final image MUST feature this EXACT product with 100% fidelity to its appearance, labels, and branding.' : ''}
+                ${hasRef || itemPrompt.includes('[Ator/Referência]') ? 'CRITICAL: The user provided a persona reference image. You MUST maintain the EXACT facial features, identity, and ethnicity of the person in the reference image. This is a strict requirement.' : ''}
+                ${hasProduct || itemPrompt.includes('[Produto]') ? 'CRITICAL: The user provided a product reference image. The final image MUST feature this EXACT product with 100% fidelity to its appearance, labels, and branding.' : ''}
                 Your goal is to be highly efficient, seeking rich references, intricate details, and novelties in the composition. 
                 Focus on cinematic lighting, hyper-realistic textures, and unique artistic perspectives.
                 IMPORTANT: Output ONLY the enhanced prompt in English.`
