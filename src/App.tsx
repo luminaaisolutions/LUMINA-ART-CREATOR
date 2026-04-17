@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Video, 
   Image as ImageIcon, 
@@ -577,7 +577,7 @@ function LoginModal({ onLogin, onGoogleLogin, onSwitchToSignUp, onForgotPassword
 function AppContent() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [view, setView] = useState<'landing' | 'app'>('landing');
+  const [view, setView] = useState<'landing' | 'app'>(localStorage.getItem('lumina_view') as any || 'landing');
   const [batch, setBatch] = useState<BatchItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
@@ -588,6 +588,10 @@ function AppContent() {
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [referralCode, setReferralCode] = useState('');
 
+  useEffect(() => {
+    localStorage.setItem('lumina_view', view);
+  }, [view]);
+
   // --- Referral Check ---
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -596,7 +600,12 @@ function AppContent() {
       localStorage.setItem('referredBy', ref);
     }
   }, []);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'branding' | 'projects' | 'creative_studio' | 'lipsync' | 'library' | 'plans' | 'profile' | 'referrals' | 'faq'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'branding' | 'projects' | 'creative_studio' | 'lipsync' | 'library' | 'plans' | 'profile' | 'referrals' | 'faq'>(localStorage.getItem('lumina_activeTab') as any || 'dashboard');
+
+  useEffect(() => {
+    localStorage.setItem('lumina_activeTab', activeTab);
+  }, [activeTab]);
+
   const [libraryFilter, setLibraryFilter] = useState<'all' | 'image' | 'video'>('all');
   const [dragActive, setDragActive] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<{ 
@@ -896,29 +905,55 @@ function AppContent() {
   // Initialize Gemini AI
   const geminiApiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
 
+  // Helper to get the most recent valid key
+  const getActiveKey = useCallback(async () => {
+    let key = geminiApiKey;
+    
+    if (key) {
+      key = key.toString().trim();
+      // Remove quotes if the user accidentally included them
+      if (key.startsWith('"') && key.endsWith('"')) key = key.substring(1, key.length - 1);
+      if (key.startsWith("'") && key.endsWith("'")) key = key.substring(1, key.length - 1);
+    }
+    
+    // Clean up placeholder keys aggressively
+    const isPlaceholder = (k: string) => {
+      if (!k) return true;
+      const upper = k.toUpperCase();
+      return (
+        upper.startsWith('YOUR_') || 
+        upper.startsWith('TODO_') || 
+        upper.includes('INSERT_HERE') || 
+        upper.includes('API_KEY_HERE') ||
+        upper.includes('EXAMPLE') ||
+        upper.includes('DEFAULT') ||
+        k.length < 10
+      );
+    };
+
+    if (key && isPlaceholder(key)) {
+      key = '';
+    }
+
+    // Try platform key first
+    if (typeof window !== 'undefined' && (window as any).aistudio) {
+      try {
+        const platformKey = await (window as any).aistudio.getApiKey?.();
+        if (platformKey && platformKey.length > 5) {
+          key = platformKey;
+        }
+      } catch (e) {
+        console.warn("Plataforma falhou ao retornar chave:", e);
+      }
+    }
+    
+    return key;
+  }, [geminiApiKey]);
+
   const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any, method?: 'generateContent' | 'generateImages' | 'generateVideos' | 'getVideosOperation' | 'generateContentStream' }) => {
     const maxRetries = 3;
     let attempt = 0;
     const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
-
-    // Helper to get the most recent valid key
-    const getActiveKey = async () => {
-      let key = geminiApiKey;
-      
-      // Try platform key first
-      if (typeof window !== 'undefined' && (window as any).aistudio) {
-        try {
-          const platformKey = await (window as any).aistudio.getApiKey?.();
-          if (platformKey && platformKey.length > 5) {
-            key = platformKey;
-          }
-        } catch (e) {
-          console.warn("Plataforma falhou ao retornar chave:", e);
-        }
-      }
-      
-      return key;
-    };
 
     while (attempt < maxRetries) {
       try {
@@ -1027,6 +1062,9 @@ function AppContent() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        setView('app');
+      }
       setIsAuthReady(true);
       registrationInitialized.current = false;
 
@@ -1181,6 +1219,8 @@ function AppContent() {
       setSessionPreviews({});
       setShowUserMenu(false);
       setView('landing');
+      localStorage.removeItem('lumina_view');
+      localStorage.removeItem('lumina_activeTab');
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -1750,8 +1790,10 @@ function AppContent() {
           // 3. Generate Video
           // Use current state-of-the-art models recommended in documentation
           const isLipsyncJob = isLipsync;
-          const modelToUse = isLipsyncJob ? 'veo-3.1-generate-preview' : 'veo-3.1-lite-generate-preview';
+          const modelToUse = isLipsyncJob ? 'models/veo-3.1-generate-preview' : 'models/veo-3.1-lite-generate-preview';
           
+          const activeKey = await getActiveKey();
+
           const videoParams: any = {
             model: modelToUse,
             prompt: enhancedPrompt,
@@ -1816,6 +1858,7 @@ function AppContent() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               method: 'generateVideos',
+              apiKey: activeKey,
               args: {
                 model: modelToUse,
                 prompt: videoParams.prompt,
@@ -1829,12 +1872,19 @@ function AppContent() {
             })
           });
 
-          if (!videoGenRes.ok) {
-            const err = await videoGenRes.json();
-            throw new Error(err.error || "Erro na geração do vídeo.");
+          const videoGenText = await videoGenRes.text();
+          let videoGenData;
+          try {
+            videoGenData = videoGenText ? JSON.parse(videoGenText) : {};
+          } catch (e) {
+            throw new Error(`Resposta do servidor malformada ao iniciar geração: ${videoGenText.substring(0, 100)}...`);
           }
 
-          let operation = await videoGenRes.json();
+          if (!videoGenRes.ok) {
+            throw new Error(videoGenData.error || videoGenData.message || "Erro na geração do vídeo.");
+          }
+
+          let operation = videoGenData;
 
           // 3. Polling
           let pollCount = 0;
@@ -1850,16 +1900,27 @@ function AppContent() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 method: 'getVideosOperation',
+                apiKey: activeKey,
                 args: { operation }
               })
             });
 
-            if (!pollRes.ok) {
-              const err = await pollRes.json();
-              throw new Error(err.error || "Erro ao verificar status do vídeo.");
+            const pollText = await pollRes.text();
+            let pollData;
+            try {
+              pollData = pollText ? JSON.parse(pollText) : {};
+            } catch (e) {
+              // On poll failure, don't crash the whole thing immediately, maybe it's a transient network error
+              console.error("Poll parse error:", pollText);
+              await new Promise(resolve => setTimeout(resolve, 5000));
+              continue; 
             }
 
-            operation = await pollRes.json();
+            if (!pollRes.ok) {
+              throw new Error(pollData.error || pollData.message || "Erro ao verificar status do vídeo.");
+            }
+
+            operation = pollData;
           }
 
           if (operation.error) {

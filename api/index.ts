@@ -4,6 +4,7 @@ import { Resend } from 'resend';
 import { fileURLToPath } from "url";
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import admin from 'firebase-admin';
+import { GoogleGenAI } from "@google/genai";
 
 if (!process.env.VERCEL) {
   try {
@@ -18,13 +19,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Initialize Firebase Admin
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    projectId: process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0723352507'
-  });
+let dbAdmin: any = null;
+try {
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: process.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_I || 'gen-lang-client-0723352507'
+    });
+  }
+  dbAdmin = admin.firestore();
+} catch (e) {
+  console.error("[Startup] Firebase Admin failed to initialize:", e);
 }
-const dbAdmin = admin.firestore();
 
 // Initialize Mercado Pago
 const mpClient = new MercadoPagoConfig({ 
@@ -222,44 +228,83 @@ async function createServer() {
   // Proxy for video generation and polling
   app.post("/api/gemini", async (req, res) => {
     try {
-      const { method, args } = req.body;
-      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
+      const { method, args, apiKey: clientApiKey } = req.body;
+      let apiKey = clientApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
       
-      if (!apiKey) {
-        return res.status(500).json({ error: "Gemini API Key not configured on server." });
+      if (apiKey) {
+        apiKey = apiKey.toString().trim();
+        // Remove quotes if the user accidentally included them in the env var
+        if (apiKey.startsWith('"') && apiKey.endsWith('"')) apiKey = apiKey.substring(1, apiKey.length - 1);
+        if (apiKey.startsWith("'") && apiKey.endsWith("'")) apiKey = apiKey.substring(1, apiKey.length - 1);
+      }
+      
+      // Clean up placeholder keys aggressively
+      const isPlaceholder = (key: string) => {
+        if (!key) return true;
+        const upper = key.toUpperCase();
+        return (
+          upper.startsWith('YOUR_') || 
+          upper.startsWith('TODO_') || 
+          upper.includes('INSERT_HERE') || 
+          upper.includes('API_KEY_HERE') ||
+          upper.includes('EXAMPLE') ||
+          upper.includes('DEFAULT') || // Evita usar a string "Default Gemini API Key" como chave literal
+          key.length < 10 // Real Gemini keys are long
+        );
+      };
+
+      if (apiKey && isPlaceholder(apiKey)) {
+        console.warn("[Gemini Proxy] Key placeholder detected and ignored.");
+        apiKey = null;
       }
 
-      let url = "";
-      let body: any = null;
+      if (!apiKey) {
+        console.error("[Gemini Proxy] No valid API Key found.");
+        return res.status(401).json({ 
+          error: "Gemini API Key não configurada ou inválida.", 
+          message: "Por favor, configure sua GEMINI_API_KEY nas configurações do projeto (Settings > Secrets) ou no Studio." 
+        });
+      }
+
+      const client = new GoogleGenAI({ apiKey });
 
       if (method === 'generateVideos') {
-        url = `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideos?key=${apiKey}`;
-        body = {
+        console.log(`[Gemini Proxy] Calling generateVideos for ${args.model}`);
+        const result = await (client as any).models.generateVideos({
+          model: args.model,
           prompt: args.prompt,
-          videoConfig: args.config,
+          config: args.config,
           image: args.image,
           audio_input: args.audio_input
-        };
+        });
+        return res.json(result);
       } else if (method === 'getVideosOperation') {
-        url = `https://generativelanguage.googleapis.com/v1beta/${args.operation.name}?key=${apiKey}`;
+        const opName = args.operation?.name || args.operation;
+        console.log(`[Gemini Proxy] Getting operation status: ${opName}`);
+        
+        // We use a manual fetch for operations because the SDK's internal operations 
+        // handling is sometimes tricky to proxy if it tries to follow links automatically.
+        const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
+        const response = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+        const data = await response.json();
+        if (!response.ok) return res.status(response.status).json(data);
+        return res.json(data);
+      } else if (method === 'generateContent') {
+        const result = await client.models.generateContent({
+          model: args.model,
+          contents: args.contents,
+          config: args.config
+        });
+        return res.json(result);
       } else {
         return res.status(400).json({ error: "Invalid method" });
       }
-
-      const response = await fetch(url, {
-        method: method === 'generateVideos' ? 'POST' : 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        body: body ? JSON.stringify(body) : undefined
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return res.status(response.status).json(data);
-      }
-      res.json(data);
     } catch (error: any) {
-      console.error("Gemini API Proxy Error:", error);
-      res.status(500).json({ error: error.message });
+      console.error("Gemini API Proxy Exception:", error);
+      res.status(500).json({ 
+        error: error.message || "Interal Proxy Error",
+        details: error.stack
+      });
     }
   });
 
@@ -284,23 +329,47 @@ async function createServer() {
   });
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
+  const isDev = process.env.NODE_ENV !== "production";
+  console.log(`[Startup] Mode: ${isDev ? 'Development' : 'Production'}`);
+
+  if (isDev && !process.env.VERCEL) {
+    try {
+      console.log("[Startup] Initializing Vite middleware...");
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+      console.log("[Startup] Vite middleware initialized.");
+    } catch (e) {
+      console.error("[Startup] Failed to initialize Vite middleware:", e);
+    }
+  } else if (!process.env.VERCEL) {
     const distPath = path.join(process.cwd(), 'dist');
+    console.log(`[Startup] Serving static files from: ${distPath}`);
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
+  // Handle errors
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error("[Runtime Error]:", err);
+    res.status(500).json({ error: "Internal Server Error", message: err.message });
+  });
+
   return app;
 }
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Unhandled Rejection] at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception] thrown:', err);
+});
 
 const appPromise = createServer();
 
