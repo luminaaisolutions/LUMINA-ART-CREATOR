@@ -1265,8 +1265,13 @@ function AppContent() {
       const response = await callGeminiAPI({
         model: "gemini-3-flash-preview",
         contents: [
-          { text: "Analise esta logomarca e identifique as 3 cores principais em formato HEX (ex: #FF0000). Retorne APENAS os códigos HEX separados por vírgula, sem explicações." },
-          { inlineData: { data: base64, mimeType } }
+          { 
+            role: "user",
+            parts: [
+              { text: "Analise esta logomarca e identifique as 3 cores principais em formato HEX (ex: #FF0000). Retorne APENAS os códigos HEX separados por vírgula, sem explicações." },
+              { inlineData: { data: base64, mimeType } }
+            ]
+          }
         ]
       });
       
@@ -1605,9 +1610,9 @@ function AppContent() {
               const response = await callGeminiAPI({
                 model: modelName, 
                 method: methodToUse,
-                prompt: modelType === 'imagen' ? promptText : undefined,
-                contents: modelType === 'imagen' ? undefined : [{ role: 'user', parts }],
-                config: modelType === 'imagen' ? {
+                prompt: currentModelType === 'imagen' ? promptText : undefined,
+                contents: currentModelType === 'imagen' ? undefined : [{ role: 'user', parts }],
+                config: currentModelType === 'imagen' ? {
                   numberOfImages: 1,
                   aspectRatio: currentAspectRatio as any,
                 } : {
@@ -1757,7 +1762,7 @@ function AppContent() {
           // 3. Generate Video
           // Use current state-of-the-art models recommended in documentation
           const isLipsyncJob = isLipsync;
-          const modelToUse = isLipsyncJob ? 'models/veo-3.1-generate-preview' : 'models/veo-3.1-lite-generate-preview';
+          const modelToUse = isLipsyncJob ? 'veo-3.1-generate-preview' : 'veo-3.1-lite-generate-preview';
           
           const activeKey = await getActiveKey();
 
@@ -1895,7 +1900,15 @@ function AppContent() {
           }
 
           // 4. Handle result
-          const videoUri = operation.response?.generatedVideos?.[0]?.video?.uri;
+          console.log("Video Operation Result:", operation);
+          
+          // Try multiple possible paths for the video URI to be as robust as possible
+          const videoUri = 
+            operation.response?.generatedVideos?.[0]?.video?.uri || 
+            operation.response?.generated_videos?.[0]?.video?.uri ||
+            operation.response?.video?.uri ||
+            operation.response?.video_uri;
+
           if (videoUri) {
             await updateDoc(doc(db, itemPath), { progress: 95 });
             

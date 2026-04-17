@@ -310,9 +310,12 @@ async function createServer() {
         });
         return res.json(result);
       } else if (method === 'generateContent') {
+        // Construct contents from prompt if needed (SDK requirement)
+        const contents = args.contents || [{ role: 'user', parts: [{ text: args.prompt || "" }] }];
+        
         const result = await client.models.generateContent({
           model: args.model,
-          contents: args.contents,
+          contents: contents,
           config: args.config
         });
         return res.json(result);
@@ -331,11 +334,23 @@ async function createServer() {
   // Proxy for video files
   app.get("/api/proxy-video", async (req, res) => {
     try {
-      const { url } = req.query;
+      let { url } = req.query;
       if (!url) return res.status(400).json({ error: "URL is required" });
       
-      const response = await fetch(url as string);
-      if (!response.ok) throw new Error(`Failed to fetch video: ${response.statusText}`);
+      let targetUrl = url as string;
+      
+      // If it's a Google API URL, we must append the API Key to authorize the download
+      if (targetUrl.includes("generativelanguage.googleapis.com")) {
+        const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
+        if (apiKey) {
+          const separator = targetUrl.includes("?") ? "&" : "?";
+          targetUrl = `${targetUrl}${separator}key=${apiKey.trim()}`;
+        }
+      }
+      
+      console.log(`[Proxy] Fetching video from: ${targetUrl.split('?')[0]}...`);
+      const response = await fetch(targetUrl);
+      if (!response.ok) throw new Error(`Failed to fetch video: ${response.statusText} (${response.status})`);
       
       const contentType = response.headers.get("content-type");
       if (contentType) res.setHeader("Content-Type", contentType);
