@@ -993,7 +993,16 @@ function AppContent() {
           })
         });
 
-        const data = await response.json();
+        const responseText = await response.text();
+        let data;
+        try {
+          data = responseText ? JSON.parse(responseText) : {};
+        } catch (e) {
+          if (response.status === 413) {
+            throw new Error("O arquivo ou imagem enviada é muito grande para o servidor. Tente uma imagem menor.");
+          }
+          throw new Error(`Erro inesperado do servidor (${response.status}): ${responseText.substring(0, 100)}`);
+        }
 
         if (!response.ok) {
           // Se for erro de autenticação, lançar erro específico para o usuário
