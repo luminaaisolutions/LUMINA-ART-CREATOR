@@ -324,8 +324,9 @@ async function createServer() {
       }
     } catch (error: any) {
       console.error("Gemini API Proxy Exception:", error);
+      console.error("Failed Request Body (Truncated):", JSON.stringify({ ...req.body, apiKey: '***' }).substring(0, 1000));
       res.status(500).json({ 
-        error: error.message || "Interal Proxy Error",
+        error: error.message || "Internal Proxy Error",
         details: error.stack
       });
     }

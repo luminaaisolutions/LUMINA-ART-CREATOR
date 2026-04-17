@@ -1770,19 +1770,25 @@ function AppContent() {
 
           // 3. Generate Video
           // Use current state-of-the-art models recommended in documentation
-          const isLipsyncJob = isLipsync;
+          const isLipsyncJob = currentUseLipsync;
           const modelToUse = isLipsyncJob ? 'veo-3.1-generate-preview' : 'veo-3.1-lite-generate-preview';
           
           const activeKey = await getActiveKey();
+
+          const isHighRes = currentResolution === '1080p' || currentResolution === '2K' || currentResolution === '4K';
+          const finalResolution = isHighRes ? '1080p' : '720p';
+          // Veo 3.1 1080p requires exactly 8 seconds. 720p can be 4 or 8.
+          // We force 8s for 1080p to satisfy API constraints regardless of user selection.
+          const finalDuration = isHighRes ? 8 : (currentVideoDuration === 8 ? 8 : 4);
 
           const videoParams: any = {
             model: modelToUse,
             prompt: enhancedPrompt,
             config: {
               numberOfVideos: 1,
-              resolution: (currentResolution === '1080p' || currentResolution === '2K' || currentResolution === '4K') ? '1080p' : '720p',
+              resolution: finalResolution,
               aspectRatio: currentAspectRatio === '1:1' ? '1:1' : (currentAspectRatio === '16:9' ? '16:9' : '9:16'),
-              durationSeconds: Math.max(4, Math.min(8, Math.round(Number(currentVideoDuration) || 4)))
+              durationSeconds: finalDuration
             }
           };
 
