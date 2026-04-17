@@ -894,23 +894,30 @@ function AppContent() {
   } | null>(null);
 
   // Initialize Gemini AI
-  const geminiApiKey = process.env.GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY;
+  const geminiApiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : '');
 
   const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any, method?: 'generateContent' | 'generateImages' | 'generateVideos' | 'getVideosOperation' | 'generateContentStream' }) => {
     const maxRetries = 3;
     let attempt = 0;
+    const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
 
     // Helper to get the most recent valid key
     const getActiveKey = async () => {
+      let key = geminiApiKey;
+      
+      // Try platform key first
       if (typeof window !== 'undefined' && (window as any).aistudio) {
         try {
           const platformKey = await (window as any).aistudio.getApiKey?.();
-          if (platformKey && platformKey.length > 5) return platformKey;
+          if (platformKey && platformKey.length > 5) {
+            key = platformKey;
+          }
         } catch (e) {
           console.warn("Plataforma falhou ao retornar chave:", e);
         }
       }
-      return geminiApiKey;
+      
+      return key;
     };
 
     while (attempt < maxRetries) {
@@ -918,11 +925,11 @@ function AppContent() {
         const activeKey = await getActiveKey();
         
         if (!activeKey || activeKey === 'YOUR_API_KEY' || activeKey === '') {
-          throw new Error("API Key do Gemini não encontrada ou inválida. Por favor, clique no seletor de chaves no topo do painel e selecione sua chave.");
+          console.error("ERRO DE CHAVE: Nenhuma API Key encontrada no ambiente ou na plataforma.");
+          throw new Error("Lumina: API Key não configurada. Por favor, adicione uma GEMINI_API_KEY nas configurações do projeto (Settings > Secrets).");
         }
 
         const dynamicAi = new GoogleGenAI({ apiKey: activeKey });
-        const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
 
         const tools = (config as any)?.tools;
         const cleanConfig = { ...config };
@@ -972,11 +979,23 @@ function AppContent() {
         }
         
         throw new Error(`Método ${method} não suportado no frontend.`);
-      } catch (error: any) {
-        attempt++;
-        const is503 = error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('high demand');
-        
-        if (is503 && attempt < maxRetries) {
+    } catch (error: any) {
+      console.error("Gemini API Error Detail:", {
+        message: error.message,
+        status: error.status,
+        reason: error.reason,
+        method: method
+      });
+
+      attempt++;
+      const is503 = error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('high demand');
+      const isQuota = error.message?.includes('429') || error.message?.toLowerCase().includes('quota');
+      
+      if (isQuota) {
+        throw new Error("Limite de gerações atingido para esta chave (Quota Exceeded). Tente novamente em alguns minutos ou use uma chave com maior limite.");
+      }
+
+      if (is503 && attempt < maxRetries) {
           const delay = Math.pow(2, attempt) * 1000;
           console.warn(`Gemini API em alta demanda (503). Tentativa ${attempt} de ${maxRetries}. Re-tentando em ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -1400,6 +1419,7 @@ function AppContent() {
     const currentLipsyncAsset = lipsyncAsset;
     const currentLipsyncProductAsset = lipsyncProductAsset;
     const currentModelType = modelType;
+    const currentStyle = selectedStyle;
     const currentLipsyncAudio = lipsyncAudio;
     const currentLipsyncAudioPrompt = lipsyncAudioPrompt;
     const currentUseLipsync = isLipsyncActive;
@@ -1504,15 +1524,23 @@ function AppContent() {
               Ensure the brand identity feels native to the platform (Instagram, TikTok, etc.).
               ` : '';
 
+              const styleContext = currentStyle ? `[ESTILO OBRIGATÓRIO: ${currentStyle}]` : '';
+              
               const enhancerRes = await callGeminiAPI({
                 model: 'gemini-3-flash-preview',
-                prompt: `Enhance this prompt for professional and creative AI image generation: "${itemPrompt}". 
+                prompt: `Você é um Engenheiro de Prompt especialista em IAs de imagem de elite.
+                Sua tarefa é expandir o prompt do usuário para qualidade cinematográfica absoluta, seguindo RIGIDAMENTE as seleções abaixo.
+
+                PROMPT DO USUÁRIO: "${itemPrompt}"
+                ${styleContext}
                 ${creativeContext}
-                ${hasRef || itemPrompt.includes('[Ator/Referência]') ? 'CRITICAL: The user provided a persona reference image. You MUST maintain the EXACT facial features, identity, and ethnicity of the person in the reference image. This is a strict requirement.' : ''}
-                ${hasProduct || itemPrompt.includes('[Produto]') ? 'CRITICAL: The user provided a product reference image. The final image MUST feature this EXACT product with 100% fidelity to its appearance, labels, and branding.' : ''}
-                Your goal is to be highly efficient, seeking rich references, intricate details, and novelties in the composition. 
-                Focus on cinematic lighting, hyper-realistic textures, and unique artistic perspectives.
-                IMPORTANT: Output ONLY the enhanced prompt in English.`
+                
+                REGRAS DE OURO:
+                1. ${hasRef || itemPrompt.includes('[Ator/Referência]') ? 'FIDELIDADE DE ATOR: O personagem na cena DEVE ser a pessoa da imagem de referência. Mantenha traços faciais e identidade 100%.' : ''}
+                2. ${hasProduct || itemPrompt.includes('[Produto]') ? 'FIDELIDADE DE PRODUTO: O produto da imagem de referência DEVE ser o centro da cena com fidelidade máxima.' : ''}
+                3. ${currentStyle ? `ESTILO: A imagem DEVE seguir estritamente a estética "${currentStyle}".` : ''}
+                4. QUALIDADE: Use termos técnicos como "octane render", "8k", "volumetric lighting", "ray tracing".
+                5. IDIOMA: Saída APENAS do prompt expandido em INGLÊS.`
               });
               
               if (enhancerRes && enhancerRes.text) {
@@ -1533,110 +1561,72 @@ function AppContent() {
 
           while (imageAttempt <= maxImageAttempts && !base64Data) {
             try {
-              if (currentModelType === 'imagen') {
-                let promptText = currentRefAsset && currentRefAsset.type === 'image' 
-                  ? `EXACT PERSONA FIDELITY. DO NOT CHANGE FACE. MAINTAIN IDENTITY. ${enhancedPrompt}`
-                  : enhancedPrompt;
+              // Respect user model choice (Nano = Gemini 3.1 Flash Image, Imagen = Imagen 3.0)
+              const modelName = currentModelType === 'imagen' ? 'imagen-3.0-generate-001' : 'gemini-3.1-flash-image-preview'; 
+              const methodToUse = currentModelType === 'imagen' ? 'generateImages' : 'generateContent';
+              
+              let promptText = currentRefAsset && currentRefAsset.type === 'image' 
+                ? `REFERENCE PERSON IDENTITY: Maintain the person from the reference image. ${enhancedPrompt}`
+                : enhancedPrompt;
 
-                if (currentUseCreativeStudio) {
-                  promptText = `[CREATIVE AD MODE] BRAND COLORS: ${currentCreativeColors.join(', ')}. STYLE: ${currentCreativeTypography}. FORMAT: ${currentCreativeFormat}. ${promptText}`;
-                }
+              if (currentUseCreativeStudio) {
+                promptText = `[ESTÚDIO LUMINA] ESTRATÉGIA: ${currentCreativeStrategy}. ESTÉTICA: ${currentCreativeAesthetic}. ${promptText}`;
+              }
 
-                const response = await callGeminiAPI({
-                  model: 'imagen-3.0-generate-001', 
-                  method: 'generateImages',
-                  prompt: promptText,
-                  config: {
-                    numberOfImages: 1,
-                    aspectRatio: currentAspectRatio as any,
-                  }
-                });
-                
-                base64Data = response.generatedImages?.[0]?.image?.imageBytes;
-              } else {
-                const isHighRes = currentResolution === '2K' || currentResolution === '4K';
-                // Use a proper image generation model
-                const modelName = isHighRes ? 'gemini-3.1-flash-image-preview' : 'gemini-2.5-flash-image'; 
-                
-                const parts: any[] = [{ text: enhancedPrompt }];
-                if (currentRefAsset && currentRefAsset.type === 'image') {
-                  parts.push({
+              // Build contents for multimodal support (Reference Images)
+              const parts: any[] = [{ text: promptText }];
+              
+              if (currentModelType !== 'imagen') {
+                if (currentRefAsset && currentRefAsset.data) {
+                  parts.unshift({
                     inlineData: {
                       data: currentRefAsset.data,
-                      mimeType: currentRefAsset.mimeType
+                      mimeType: currentRefAsset.mimeType || 'image/png'
                     }
                   });
-                  // Refined Persona Preservation Mode
-                  parts[0].text = `[SYSTEM: ABSOLUTE PERSONA FIDELITY MODE]
-                  ACT AS A MASTER PORTRAIT ARTIST. 
-                  REFERENCE IMAGE ATTACHED. 
-                  TASK: Generate a new image based on the prompt while maintaining 100% EXACT facial features, identity, and ethnicity of the person in the reference image.
-                  DO NOT ALUCINATE NEW FACES. DO NOT CHANGE THE PERSON.
-                  PRESERVE: Face shape, eyes, nose, lips, skin tone, and hair texture.
-                  ADAPT: Pose, expression, clothing, and background to match the prompt: "${enhancedPrompt}".
-                  THE PERSON IN THE GENERATED IMAGE MUST BE RECOGNIZABLE AS THE SAME PERSON FROM THE REFERENCE.`;
                 }
-
-                if (currentProductAsset && currentProductAsset.type === 'image') {
-                  parts.push({
+                if (currentProductAsset && currentProductAsset.data) {
+                  parts.unshift({
                     inlineData: {
                       data: currentProductAsset.data,
-                      mimeType: currentProductAsset.mimeType
+                      mimeType: currentProductAsset.mimeType || 'image/png'
                     }
                   });
-                  parts[0].text += `\n[SYSTEM: ABSOLUTE PRODUCT FIDELITY]
-                  PRODUCT IMAGE ATTACHED. 
-                  TASK: The final image MUST feature the EXACT product shown in the reference image. 
-                  The product must look exactly as shown (shape, labels, colors, branding). 
-                  DO NOT INVENT NEW PRODUCTS. DO NOT CHANGE THE PRODUCT DESIGN.
-                  The persona should hold or interact with the product naturally in the context of the prompt.`;
-                }
-
-                if (currentUseCreativeStudio && currentCreativeLogo) {
-                  parts.push({
-                    inlineData: {
-                      data: currentCreativeLogo.data,
-                      mimeType: currentCreativeLogo.mimeType
-                    }
-                  });
-                  parts[0].text += `\n[SYSTEM: BRAND INTEGRATION]
-                  LOGO ATTACHED. 
-                  TASK: Integrate this logo and the brand colors (${currentCreativeColors.join(', ')}) into the creative. 
-                  The typography should follow a ${currentCreativeTypography} style. 
-                  The final image MUST be a professional ${currentCreativeFormat}.`;
-                }
-
-                const response = await callGeminiAPI({
-                  model: modelName,
-                  contents: [{ role: 'user', parts }],
-                  config: {
-                    tools: currentUseGrounding && (modelName === 'gemini-3.1-flash-image-preview') ? [{ googleSearch: {} }] : undefined,
-                    imageConfig: {
-                      aspectRatio: currentAspectRatio as any,
-                      ...(isHighRes && modelName === 'gemini-3.1-flash-image-preview' ? { imageSize: currentResolution as any } : {})
-                    },
-                    safetySettings: [
-                      { category: 'HARM_CATEGORY_HATE_SPEECH' as any, threshold: 'BLOCK_NONE' as any },
-                      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT' as any, threshold: 'BLOCK_NONE' as any },
-                      { category: 'HARM_CATEGORY_HARASSMENT' as any, threshold: 'BLOCK_NONE' as any },
-                      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT' as any, threshold: 'BLOCK_NONE' as any }
-                    ],
-                    temperature: currentRefAsset ? 0.4 : 0.7,
-                    topP: 0.9,
-                    topK: 40
-                  }
-                });
-                
-                // Find the image part in the response candidates
-                const responseParts = response.candidates?.[0]?.content?.parts;
-                if (responseParts) {
-                  const imagePart = responseParts.find((p: any) => p.inlineData);
-                  if (imagePart) {
-                    base64Data = imagePart.inlineData.data;
-                    mimeType = imagePart.inlineData.mimeType || 'image/png';
-                  }
                 }
               }
+
+              const response = await callGeminiAPI({
+                model: modelName, 
+                method: methodToUse,
+                prompt: modelType === 'imagen' ? promptText : undefined,
+                contents: modelType === 'imagen' ? undefined : [{ role: 'user', parts }],
+                config: modelType === 'imagen' ? {
+                  numberOfImages: 1,
+                  aspectRatio: currentAspectRatio as any,
+                } : {
+                  imageConfig: {
+                    aspectRatio: currentAspectRatio as any,
+                    imageSize: (currentResolution === '2K' || currentResolution === '4K') ? currentResolution as any : '1K'
+                  }
+                }
+              });
+              
+              if (response.generatedImages?.[0]?.image?.imageBytes) {
+                base64Data = response.generatedImages[0].image.imageBytes;
+                mimeType = response.generatedImages[0].image.mimeType || 'image/png';
+              } else if (response.candidates?.[0]?.content?.parts) {
+                // Fallback for different API response shapes
+                const imagePart = response.candidates[0].content.parts.find((p: any) => p.inlineData);
+                if (imagePart) {
+                  base64Data = imagePart.inlineData.data;
+                  mimeType = imagePart.inlineData.mimeType || 'image/png';
+                }
+              }
+
+              if (!base64Data) {
+                throw new Error("Resposta da API não conteve dados de imagem válidos.");
+              }
+
             } catch (e: any) {
               console.warn(`Image generation attempt ${imageAttempt} failed:`, e);
               if (imageAttempt < maxImageAttempts && !e?.message?.includes('429')) {
@@ -1758,11 +1748,9 @@ function AppContent() {
           await updateDoc(doc(db, itemPath), { progress: 30, status: 'processing' });
 
           // 3. Generate Video
-          // CRITICAL: Lip Sync REQUIRES veo-3.1-lite-generate-preview
-          // Multiple References REQUIRES veo-3.1-generate-preview
-          // If both are present, we MUST prioritize Lip Sync (lite model) and use a single image ref
+          // Use current state-of-the-art models recommended in documentation
           const isLipsyncJob = isLipsync;
-          const modelToUse = isLipsyncJob ? 'veo-3.1-lite-generate-preview' : (hasProductRef ? 'veo-3.1-generate-preview' : 'veo-3.1-lite-generate-preview');
+          const modelToUse = isLipsyncJob ? 'veo-3.1-generate-preview' : 'veo-3.1-lite-generate-preview';
           
           const videoParams: any = {
             model: modelToUse,
@@ -1775,7 +1763,7 @@ function AppContent() {
             }
           };
 
-          if (modelToUse === 'veo-3.1-generate-preview') {
+          if (hasProductRef) {
             // Use multiple references
             const referenceImages: any[] = [];
             if (hasImageRef) {
@@ -2042,8 +2030,12 @@ function AppContent() {
   const handleDownload = async (url: string, id: string) => {
     try {
       // Use proxy to avoid CORS issues if it's an external URL
-      const downloadUrl = url.startsWith('blob:') ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`;
+      // If the URL is already a data: or blob:, use it directly
+      const downloadUrl = (url.startsWith('blob:') || url.startsWith('data:')) ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`;
+      
       const response = await fetch(downloadUrl);
+      if (!response.ok) throw new Error("Falha ao baixar arquivo via proxy");
+      
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -2053,11 +2045,12 @@ function AppContent() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
     } catch (error) {
-      console.error("Download failed:", error);
+      console.error("Download failed, opening in new tab:", error);
       // Fallback: open in new tab
-      window.open(url, '_blank');
+      const win = window.open(url, '_blank');
+      if (win) win.focus();
     }
   };
 

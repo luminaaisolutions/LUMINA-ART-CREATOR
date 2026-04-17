@@ -195,11 +195,21 @@ async function createServer() {
       const { url } = req.query;
       if (!url) return res.status(400).json({ error: "URL is required" });
       
-      const response = await fetch(url as string);
+      const response = await fetch(url as string, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        },
+        redirect: 'follow'
+      });
+
       if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
       
       const contentType = response.headers.get("content-type");
       if (contentType) res.setHeader("Content-Type", contentType);
+      
+      // Force download behavior
+      res.setHeader("Content-Disposition", "attachment");
+      res.setHeader("Access-Control-Allow-Origin", "*");
       
       const buffer = await response.arrayBuffer();
       res.send(Buffer.from(buffer));
@@ -223,7 +233,7 @@ async function createServer() {
       let body: any = null;
 
       if (method === 'generateVideos') {
-        url = `https://generativelanguage.googleapis.com/v1alpha/models/${args.model}:generateVideos?key=${apiKey}`;
+        url = `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideos?key=${apiKey}`;
         body = {
           prompt: args.prompt,
           videoConfig: args.config,
@@ -231,7 +241,7 @@ async function createServer() {
           audio_input: args.audio_input
         };
       } else if (method === 'getVideosOperation') {
-        url = `https://generativelanguage.googleapis.com/v1alpha/${args.operation.name}?key=${apiKey}`;
+        url = `https://generativelanguage.googleapis.com/v1beta/${args.operation.name}?key=${apiKey}`;
       } else {
         return res.status(400).json({ error: "Invalid method" });
       }
