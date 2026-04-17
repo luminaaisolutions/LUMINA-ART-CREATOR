@@ -51,7 +51,9 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  Home
+  Home,
+  Target,
+  TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
@@ -693,6 +695,9 @@ function AppContent() {
   const [creativePrompt, setCreativePrompt] = useState('');
   const [creativeStrategy, setCreativeStrategy] = useState('Oferta Direta');
   const [creativeAesthetic, setCreativeAesthetic] = useState('Minimalista');
+  const [adGoal, setAdGoal] = useState<'conversoes' | 'awareness' | 'engajamento' | 'lead'>('conversoes');
+  const [adTrigger, setAdTrigger] = useState<'escassez' | 'autoridade' | 'curiosidade' | 'urgencia' | 'prova_social' | 'desejo'>('desejo');
+  const [adPlatform, setAdPlatform] = useState<'tiktok' | 'instagram' | 'youtube' | 'facebook'>('instagram');
   const [isAnalyzingLogo, setIsAnalyzingLogo] = useState(false);
   const [brandProfiles, setBrandProfiles] = useState<{ 
     id: string, 
@@ -704,8 +709,12 @@ function AppContent() {
     mission?: string,
     niche?: string,
     contact?: string,
-    description?: string
+    description?: string,
+    styleAnalysis?: string,
+    toneOfVoice?: string,
+    detectedPalette?: string[]
   }[]>([]);
+  const [isAnalyzingBrand, setIsAnalyzingBrand] = useState(false);
   const [activeBrandProfileId, setActiveBrandProfileId] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
@@ -1317,6 +1326,68 @@ function AppContent() {
     }
   };
 
+  const handleDeepBrandAnalysis = async () => {
+    if (!editingBrand || isAnalyzingBrand) return;
+    setIsAnalyzingBrand(true);
+    
+    try {
+      const assets = [...editingBrand.logos, ...editingBrand.images].slice(0, 4);
+      if (assets.length === 0) {
+        alert("Suba pelo menos um logotipo ou imagem para análise profunda.");
+        setIsAnalyzingBrand(false);
+        return;
+      }
+
+      const contents = assets.map(asset => ({
+        role: "user",
+        parts: [
+          { inlineData: { data: asset.data, mimeType: asset.mimeType } }
+        ]
+      }));
+
+      contents.push({
+        role: "user",
+        parts: [
+          { text: `Analise profundamente a identidade visual e o branding destas imagens da empresa "${editingBrand.name}". 
+          Forneça um relatório estratégico que defina o padrão desta marca.
+          
+          Retorne os dados EXATAMENTE no seguinte formato JSON (sem markdown):
+          {
+            "styleAnalysis": "Breve descrição do estilo visual predominante e estética.",
+            "toneOfVoice": "Como a marca deve se comunicar (tom de voz).",
+            "detectedPalette": ["#hex1", "#hex2", "#hex3"],
+            "typographyRecommendation": "Modern/Classic/Minimal/Bold/Elegant",
+            "brandingEssence": "Resumo da essência e propósito visual da marca."
+          }` }
+        ]
+      } as any);
+
+      const response = await callGeminiAPI({
+        model: "gemini-1.5-flash",
+        contents: contents as any
+      });
+
+      const text = response.text;
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const data = JSON.parse(jsonMatch[0]);
+        setEditingBrand(prev => ({
+          ...prev!,
+          styleAnalysis: data.styleAnalysis || data.brandingEssence,
+          toneOfVoice: data.toneOfVoice,
+          detectedPalette: data.detectedPalette,
+          typography: data.typographyRecommendation || prev!.typography,
+          colors: data.detectedPalette && data.detectedPalette.length > 0 ? data.detectedPalette : prev!.colors
+        }));
+      }
+    } catch (error) {
+      console.error("Brand deep analysis failed:", error);
+      alert("Falha na análise da marca. Tente novamente.");
+    } finally {
+      setIsAnalyzingBrand(false);
+    }
+  };
+
   const handleMagicPrompt = async () => {
     if (!prompt || isMagicLoading) return;
     setIsMagicLoading(true);
@@ -1365,6 +1436,11 @@ function AppContent() {
     
     const multiplier = multipliers[currentRes] || 1;
     let finalCost = Math.ceil(baseCost * multiplier);
+
+    // If it's a standard image (not lipsync or video), force cost to 1 as requested
+    if (!isLipsyncMode && type === 'image') {
+      finalCost = 1;
+    }
 
     // Low Priority Discount (50% off)
     if (currentLowPri) {
@@ -1479,6 +1555,14 @@ function AppContent() {
     const currentCreativePrompt = currentPrompt;
     const currentCreativeStrategy = creativeStrategy;
     const currentCreativeAesthetic = creativeAesthetic;
+    const currentAdGoal = adGoal;
+    const currentAdTrigger = adTrigger;
+    const currentAdPlatform = adPlatform;
+
+    // Brand Strategic Patterns
+    const activeBrand = brandProfiles.find(b => b.id === activeBrandProfileId);
+    const currentStyleAnalysis = activeBrand?.styleAnalysis || '';
+    const currentToneOfVoice = activeBrand?.toneOfVoice || '';
     
     // Deduct credits immediately
     const userRef = doc(db, 'users', user.uid);
@@ -1551,16 +1635,25 @@ function AppContent() {
               const hasCreativeLogo = currentUseCreativeStudio && currentCreativeLogo;
               
               const creativeContext = currentUseCreativeStudio ? `
-              [CREATIVE STUDIO MODE ACTIVE - WORLD CLASS SOCIAL MEDIA STANDARDS]
+              [CREATIVE STUDIO MODE ACTIVE - WORLD CLASS PERFORMANCE MARKETING STANDARDS]
+              
+              BRAND STRATEGIC PATTERN (STRICT ADHERENCE):
+              ESTABLISHED STYLE: ${currentStyleAnalysis}
+              TONE OF VOICE: ${currentToneOfVoice}
+              
+              OBJECTIVE: ${currentAdGoal} (Strategic focus on conversion and results)
+              PSYCHOLOGICAL TRIGGER: ${currentAdTrigger} (Apply branding techniques to evoke this emotion)
+              PLATFORM OPTIMIZATION: ${currentAdPlatform} (Native look for this platform)
               STRATEGY: ${currentCreativeStrategy}
               AESTHETIC: ${currentCreativeAesthetic}
               FORMAT: ${currentCreativeFormat}
               TYPOGRAPHY STYLE: ${currentCreativeTypography}
               BRAND COLORS: ${currentCreativeColors.join(', ')}
-              LOGO: A brand logo is provided. Integrate the brand identity seamlessly into the creative.
-              GOAL: Create a high-converting, professional marketing asset for social media using the specified strategy and aesthetic.
-              BEST PRACTICES: Use high-contrast lighting, clean compositions, rule of thirds, and vibrant colors that pop on mobile feeds. 
-              Ensure the brand identity feels native to the platform (Instagram, TikTok, etc.).
+              
+              GOAL: Create a HIGH-CONVERTING, professional marketing asset (Ad Creative).
+              DESIGN PRINCIPLES: Clear visual hierarchy, "Stop the Scroll" impact in the first 3 seconds, high-end commercial aesthetics.
+              COMPOSITION: Rule of thirds, focus on emotional expressions if human faces are present, professional studio lighting.
+              MARTECH: Use modern, agency-grade visual patterns common in high-spending TikTok/Meta Ads.
               ` : '';
 
               const styleContext = currentStyle ? `[ESTILO OBRIGATÓRIO: ${currentStyle}]` : '';
@@ -1614,7 +1707,7 @@ function AppContent() {
                 : enhancedPrompt;
 
               if (currentUseCreativeStudio) {
-                promptText = `[ESTÚDIO LUMINA] ESTRATÉGIA: ${currentCreativeStrategy}. ESTÉTICA: ${currentCreativeAesthetic}. ${promptText}`;
+                promptText = `[ESTÚDIO LUMINA ADS] OBJETIVO: ${currentAdGoal}. GATILHO: ${currentAdTrigger}. PLATAFORMA: ${currentAdPlatform}. ESTRATÉGIA: ${currentCreativeStrategy}. ESTÉTICA: ${currentCreativeAesthetic}. ${promptText}`;
               }
 
               // Build contents for multimodal support (Reference Images)
@@ -3256,7 +3349,10 @@ function AppContent() {
                       mission: '',
                       niche: '',
                       contact: '',
-                      description: ''
+                      description: '',
+                      styleAnalysis: '',
+                      toneOfVoice: '',
+                      detectedPalette: []
                     });
                     setBrandStep('upload');
                   }}
@@ -3285,7 +3381,10 @@ function AppContent() {
                       mission: '',
                       niche: '',
                       contact: '',
-                      description: ''
+                      description: '',
+                      styleAnalysis: '',
+                      toneOfVoice: '',
+                      detectedPalette: []
                     });
                     setBrandStep('upload');
                   }}
@@ -3350,6 +3449,23 @@ function AppContent() {
                         ))}
                         {brand.colors.length === 0 && <div className="text-[10px] text-gray-600 italic">Nenhuma cor detectada</div>}
                       </div>
+
+                      {(brand.styleAnalysis || brand.toneOfVoice) && (
+                        <div className="pt-4 border-t border-[#222] space-y-3">
+                          {brand.styleAnalysis && (
+                            <div className="space-y-1">
+                              <span className="text-[8px] font-bold text-gray-600 uppercase">Estilo</span>
+                              <p className="text-[10px] text-gray-400 line-clamp-2 leading-relaxed">{brand.styleAnalysis}</p>
+                            </div>
+                          )}
+                          {brand.toneOfVoice && (
+                            <div className="space-y-1">
+                              <span className="text-[8px] font-bold text-gray-600 uppercase">Tom de Voz</span>
+                              <p className="text-[10px] text-gray-400 line-clamp-1 leading-relaxed">{brand.toneOfVoice}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Edit Overlay */}
@@ -3496,7 +3612,24 @@ function AppContent() {
                   </div>
                 </div>
 
-                <div className="mt-10 flex justify-end">
+                <div className="mt-10 flex justify-end gap-4">
+                  <button 
+                    onClick={handleDeepBrandAnalysis}
+                    disabled={isAnalyzingBrand || (editingBrand.logos.length === 0 && editingBrand.images.length === 0)}
+                    className="px-8 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-2xl hover:bg-white/10 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isAnalyzingBrand ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ANALISANDO ESTILO...
+                      </>
+                    ) : (
+                      <>
+                        <Zap size={18} className="text-[#d4af37]" />
+                        ANÁLISE PROFUNDA IA
+                      </>
+                    )}
+                  </button>
                   <button 
                     onClick={() => setBrandStep('info')}
                     disabled={editingBrand.logos.length === 0 && editingBrand.images.length === 0}
@@ -3589,6 +3722,29 @@ function AppContent() {
                       <option value="Elegant">Elegant</option>
                     </select>
                   </div>
+
+                  {editingBrand.styleAnalysis && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="md:col-span-2 p-6 bg-[#d4af37]/5 border border-[#d4af37]/20 rounded-3xl space-y-4"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Zap size={16} className="text-[#d4af37]" />
+                        <h4 className="text-[10px] font-black text-[#d4af37] uppercase tracking-[0.2em]">Padrão Estratégico Detectado (IA)</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1">
+                          <span className="text-[8px] font-bold text-gray-500 uppercase">Estilo Dominante</span>
+                          <p className="text-xs text-gray-300 leading-relaxed">{editingBrand.styleAnalysis}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-[8px] font-bold text-gray-500 uppercase">Tom de Voz</span>
+                          <p className="text-xs text-gray-300 leading-relaxed">{editingBrand.toneOfVoice}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
 
                 <div className="mt-10 flex justify-end gap-4">
@@ -3635,7 +3791,7 @@ function AppContent() {
                           <Sparkles size={24} className="text-[#d4af37]" />
                           <h3 className="font-bold text-xl">Estúdio Lumina</h3>
                         </div>
-                        
+
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Modos do Studio</label>
@@ -3902,7 +4058,7 @@ function AppContent() {
                         type="submit"
                         disabled={isProcessing}
                         className="min-w-[300px] bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black py-4 rounded-2xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 text-base"
-                        onClick={(e) => handleCreate(e, false)}
+                        onClick={(e) => handleCreate(e, false, false)}
                       >
                         {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <Play size={20} fill="currentColor" />}
                         GERAR ({getCostPerItem(false) * quantity * Math.max(1, prompt.split('\n').filter(p => p.trim() !== '').length)} CRÉDITOS)
@@ -4391,16 +4547,13 @@ function AppContent() {
                     <div className="w-full lg:w-auto lg:min-w-[300px] space-y-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <Briefcase size={24} className={useCreativeStudio ? 'text-[#d4af37]' : 'text-gray-500'} />
+                          <Target size={24} className="text-[#d4af37]" />
                           <h3 className="font-bold text-xl">Projetos Criativos Ads</h3>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setUseCreativeStudio(!useCreativeStudio)}
-                          className={`w-12 h-6 rounded-full transition-colors relative ${useCreativeStudio ? 'bg-[#d4af37]' : 'bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${useCreativeStudio ? 'translate-x-6' : ''}`} />
-                        </button>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-full">
+                          <div className="w-2 h-2 rounded-full bg-[#d4af37] animate-pulse" />
+                          <span className="text-[10px] font-black text-[#d4af37] uppercase tracking-widest">ADS Mode Active</span>
+                        </div>
                       </div>
 
                       {/* Brand Selector Dropdown */}
@@ -4434,6 +4587,22 @@ function AppContent() {
                         </select>
                         <ChevronDown size={14} className="absolute right-3 bottom-3.5 text-gray-500 pointer-events-none" />
                       </div>
+
+                      {activeBrandProfileId && brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-4 bg-[#d4af37]/5 border border-[#d4af37]/10 rounded-2xl space-y-2"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <Zap size={10} className="text-[#d4af37]" />
+                            <span className="text-[8px] font-black text-[#d4af37] uppercase tracking-[0.2em]">Padrão da Marca Ativo</span>
+                          </div>
+                          <p className="text-[10px] text-gray-400 leading-relaxed italic line-clamp-2">
+                            "{brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis}"
+                          </p>
+                        </motion.div>
+                      )}
 
                       {/* Logo Display/Upload */}
                       <div 
@@ -4548,55 +4717,123 @@ function AppContent() {
                     </div>
                   </div>
 
-                  {/* Creative Styles and Strategies */}
-                  <div className="w-full mt-10 pt-10 border-t border-[#222] space-y-10">
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#d4af37]/10 flex items-center justify-center">
-                          <Zap size={16} className="text-[#d4af37]" />
+                  {/* Creative Styles and Strategies - Unified Performance Panel */}
+                  <div className="w-full mt-10 pt-10 border-t border-[#222]">
+                    <div className="flex flex-col lg:flex-row gap-10">
+                      
+                      {/* Left: Performance Core */}
+                      <div className="flex-1 space-y-8">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-[#d4af37]/10 flex items-center justify-center border border-[#d4af37]/20">
+                            <TrendingUp size={20} className="text-[#d4af37]" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-black text-white uppercase tracking-[0.2em]">Estratégia de Performance</h4>
+                            <p className="text-[10px] text-gray-500 font-medium">Configure os pilares psicológicos do seu anúncio</p>
+                          </div>
                         </div>
-                        <div className="flex flex-col">
-                          <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Estratégia do Criativo</h4>
-                          <span className="text-[9px] text-gray-500 font-medium">Defina o objetivo psicológico e de marketing da peça</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-3">
-                        {CREATIVE_STRATEGIES.map((strategy) => (
-                          <button
-                            key={strategy.id}
-                            type="button"
-                            onClick={() => setCreativeStrategy(strategy.name)}
-                            className={`px-5 py-3.5 rounded-2xl border text-[10px] font-bold transition-all flex flex-col items-start gap-1 min-w-[160px] flex-1 md:flex-none ${creativeStrategy === strategy.name ? 'bg-[#d4af37] text-black border-[#d4af37] shadow-lg shadow-[#d4af37]/10' : 'bg-[#1a1a1a] border-[#222] text-gray-400 hover:border-[#333] hover:bg-[#1f1f1f]'}`}
-                          >
-                            <span className="uppercase tracking-wider">{strategy.name}</span>
-                            <span className={`text-[8px] font-medium opacity-70 ${creativeStrategy === strategy.name ? 'text-black' : 'text-gray-500'}`}>{strategy.description}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
 
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#d4af37]/10 flex items-center justify-center">
-                          <Palette size={16} className="text-[#d4af37]" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div className="space-y-4">
+                            <label className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Objetivo da Campanha</label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                { id: 'conversoes', label: 'Vendas/Conversão' },
+                                { id: 'lead', label: 'Captação Leads' },
+                                { id: 'engajamento', label: 'Viral/Social' },
+                                { id: 'awareness', label: 'Branding/Impacto' }
+                              ].map(goal => (
+                                <button
+                                  key={goal.id}
+                                  type="button"
+                                  onClick={() => setAdGoal(goal.id as any)}
+                                  className={`px-3 py-2 rounded-xl border text-[9px] font-bold transition-all ${adGoal === goal.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-black/40 border-white/5 text-gray-500 hover:border-[#d4af37]/30'}`}
+                                >
+                                  {goal.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <label className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Gatilho Psicológico Master</label>
+                            <div className="grid grid-cols-3 gap-2">
+                              {[
+                                { id: 'desejo', label: 'DESEJO' },
+                                { id: 'escassez', label: 'ESCASSEZ' },
+                                { id: 'urgencia', label: 'URGÊNCIA' },
+                                { id: 'autoridade', label: 'AUTORIDADE' },
+                                { id: 'prova_social', label: 'PROVA SOCIAL' },
+                                { id: 'curiosidade', label: 'CURIOSIDADE' }
+                              ].map(trigger => (
+                                <button
+                                  key={trigger.id}
+                                  type="button"
+                                  onClick={() => setAdTrigger(trigger.id as any)}
+                                  className={`px-1 py-2 rounded-xl border text-[8px] font-black transition-all ${adTrigger === trigger.id ? 'bg-white text-black border-white' : 'bg-black/40 border-white/5 text-gray-500 hover:border-white/20'}`}
+                                >
+                                  {trigger.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex flex-col">
-                          <h4 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Estética Visual</h4>
-                          <span className="text-[9px] text-gray-500 font-medium">Escolha o estilo artístico e visual do criativo</span>
+
+                        <div className="space-y-4 pt-4">
+                          <label className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Otimização Plataforma Nativa</label>
+                          <div className="flex gap-2">
+                            {[
+                              { id: 'instagram', label: 'META (Insta/FB Ad)' },
+                              { id: 'tiktok', label: 'TIKTOK ADS (UGC)' },
+                              { id: 'youtube', label: 'YT SHORTS / VSL' },
+                              { id: 'facebook', label: 'FACEBOOK FEED' }
+                            ].map(plat => (
+                              <button
+                                key={plat.id}
+                                type="button"
+                                onClick={() => setAdPlatform(plat.id as any)}
+                                className={`flex-1 px-3 py-3 rounded-xl border text-[9px] font-black transition-all ${adPlatform === plat.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-black/40 border-white/5 text-gray-500 hover:border-blue-600/30'}`}
+                              >
+                                {plat.label}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-3">
-                        {CREATIVE_AESTHETICS.map((aesthetic) => (
-                          <button
-                            key={aesthetic.id}
-                            type="button"
-                            onClick={() => setCreativeAesthetic(aesthetic.name)}
-                            className={`px-5 py-3.5 rounded-2xl border text-[10px] font-bold transition-all flex flex-col items-start gap-1 min-w-[160px] flex-1 md:flex-none ${creativeAesthetic === aesthetic.name ? 'bg-[#d4af37] text-black border-[#d4af37] shadow-lg shadow-[#d4af37]/10' : 'bg-[#1a1a1a] border-[#222] text-gray-400 hover:border-[#333] hover:bg-[#1f1f1f]'}`}
+
+                      {/* Right: Style & Aesthetic */}
+                      <div className="w-full lg:w-[350px] space-y-8">
+                        <div className="space-y-4">
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ângulo de Venda</label>
+                          <select 
+                            value={creativeStrategy}
+                            onChange={(e) => setCreativeStrategy(e.target.value)}
+                            className="w-full bg-black/40 border border-white/5 text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37]"
                           >
-                            <span className="uppercase tracking-wider">{aesthetic.name}</span>
-                            <span className={`text-[8px] font-medium opacity-70 ${creativeAesthetic === aesthetic.name ? 'text-black' : 'text-gray-500'}`}>{aesthetic.description}</span>
-                          </button>
-                        ))}
+                            {CREATIVE_STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name} - {s.description}</option>)}
+                          </select>
+                        </div>
+
+                        <div className="space-y-4">
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estética do Criativo</label>
+                          <select 
+                            value={creativeAesthetic}
+                            onChange={(e) => setCreativeAesthetic(e.target.value)}
+                            className="w-full bg-black/40 border border-white/5 text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37]"
+                          >
+                            {CREATIVE_AESTHETICS.map(a => <option key={a.id} value={a.name}>{a.name} - {a.description}</option>)}
+                          </select>
+                        </div>
+                        
+                        <div className="p-5 bg-[#d4af37]/5 border border-[#d4af37]/20 rounded-2xl flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#d4af37] flex items-center justify-center text-black">
+                            <Sparkles size={16} fill="currentColor" />
+                          </div>
+                          <p className="text-[10px] text-gray-400 leading-tight">
+                            <span className="text-white font-bold block mb-0.5">IA Smart Optimization Ativa</span>
+                            A IA ajustará automaticamente a composição para o formato <span className="text-[#d4af37]">{creativeFormat}</span>.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
