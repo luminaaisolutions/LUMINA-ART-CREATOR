@@ -229,13 +229,25 @@ async function createServer() {
   app.post("/api/gemini", async (req, res) => {
     try {
       const { method, args, apiKey: clientApiKey } = req.body;
-      let apiKey = clientApiKey || process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
+      let apiKey = clientApiKey || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
       
       if (apiKey) {
         apiKey = apiKey.toString().trim();
-        // Remove quotes if the user accidentally included them in the env var
+        // Remove quotes and common accidental wrappers
         if (apiKey.startsWith('"') && apiKey.endsWith('"')) apiKey = apiKey.substring(1, apiKey.length - 1);
         if (apiKey.startsWith("'") && apiKey.endsWith("'")) apiKey = apiKey.substring(1, apiKey.length - 1);
+        
+        // DEBUG LOG (MASKED)
+        console.log(`[Gemini Proxy] Key Metadata - Prefix: "${apiKey.substring(0, 7)}", Suffix: "${apiKey.substring(apiKey.length - 4)}", Length: ${apiKey.length}, Has Spaces: ${apiKey.includes(' ')}`);
+        
+        // Detect descriptive strings instead of keys
+        if (apiKey.includes(' • ') || apiKey.includes('...') || apiKey.toLowerCase().includes('gemini api key')) {
+          console.error("[Gemini Proxy] KEY FORMAT ERROR: The environment variable seems to contain the DISPLAY NAME of the key instead of the actual key string.");
+          return res.status(401).json({ 
+            error: "Formato de Chave Inválido", 
+            message: "O sistema detectou o NOME da chave (ex: 'Gemini API Key...') em vez do CÓDIGO real (ex: 'AIzaSy...'). Por favor, delete o segredo e adicione-o novamente colando o código de texto puro." 
+          });
+        }
       }
       
       // Clean up placeholder keys aggressively
@@ -289,6 +301,14 @@ async function createServer() {
         const data = await response.json();
         if (!response.ok) return res.status(response.status).json(data);
         return res.json(data);
+      } else if (method === 'generateImages') {
+        console.log(`[Gemini Proxy] Calling generateImages for ${args.model}`);
+        const result = await (client as any).models.generateImages({
+          model: args.model,
+          prompt: args.prompt,
+          config: args.config
+        });
+        return res.json(result);
       } else if (method === 'generateContent') {
         const result = await client.models.generateContent({
           model: args.model,

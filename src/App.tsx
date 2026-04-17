@@ -907,16 +907,16 @@ function AppContent() {
 
   // Helper to get the most recent valid key
   const getActiveKey = useCallback(async () => {
+    // Precedence: explicit state > platform managed > env vars
     let key = geminiApiKey;
     
+    // Initial cleanup of provided key
     if (key) {
       key = key.toString().trim();
-      // Remove quotes if the user accidentally included them
       if (key.startsWith('"') && key.endsWith('"')) key = key.substring(1, key.length - 1);
       if (key.startsWith("'") && key.endsWith("'")) key = key.substring(1, key.length - 1);
     }
     
-    // Clean up placeholder keys aggressively
     const isPlaceholder = (k: string) => {
       if (!k) return true;
       const upper = k.toUpperCase();
@@ -931,27 +931,44 @@ function AppContent() {
       );
     };
 
-    if (key && isPlaceholder(key)) {
-      key = '';
-    }
+    if (key && isPlaceholder(key)) key = '';
 
-    // Try platform key first
     if (typeof window !== 'undefined' && (window as any).aistudio) {
       try {
         const platformKey = await (window as any).aistudio.getApiKey?.();
-        if (platformKey && platformKey.length > 5) {
+        if (platformKey && platformKey.length > 5 && !platformKey.includes(' ')) {
           key = platformKey;
         }
       } catch (e) {
         console.warn("Plataforma falhou ao retornar chave:", e);
       }
     }
+
+    if (!key || isPlaceholder(key)) {
+      key = (import.meta as any).env.VITE_GEMINI_API_KEY || (import.meta as any).env.VITE_API_KEY || '';
+    }
     
+    // Final cleanup
+    if (key) {
+      key = key.trim();
+      if (key.includes(' • ') || key.includes('...') || key.toLowerCase().includes('gemini api key')) {
+        console.warn("[App] Key looks like a display name, ignoring.");
+        key = '';
+      }
+    }
+
     return key;
   }, [geminiApiKey]);
 
-  const callGeminiAPI = async (options: { prompt?: string, contents?: any, model?: string, config?: any, method?: 'generateContent' | 'generateImages' | 'generateVideos' | 'getVideosOperation' | 'generateContentStream' }) => {
-    const maxRetries = 3;
+  const callGeminiAPI = async (options: { 
+    prompt?: string, 
+    contents?: any, 
+    model?: string, 
+    config?: any, 
+    method?: 'generateContent' | 'generateImages' | 'generateVideos' | 'getVideosOperation' | 'generateContentStream',
+    operation?: any
+  }) => {
+    const maxRetries = 2;
     let attempt = 0;
     const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
 
@@ -959,91 +976,41 @@ function AppContent() {
       try {
         const activeKey = await getActiveKey();
         
-        if (!activeKey || activeKey === 'YOUR_API_KEY' || activeKey === '') {
-          console.error("ERRO DE CHAVE: Nenhuma API Key encontrada no ambiente ou na plataforma.");
-          throw new Error("Lumina: API Key não configurada. Por favor, adicione uma GEMINI_API_KEY nas configurações do projeto (Settings > Secrets).");
-        }
-
-        const dynamicAi = new GoogleGenAI({ apiKey: activeKey });
-
-        const tools = (config as any)?.tools;
-        const cleanConfig = { ...config };
-        if (cleanConfig.tools) delete cleanConfig.tools;
-
-        if (method === 'generateContent') {
-          const response = await dynamicAi.models.generateContent({
-            model,
-            contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
-            config: cleanConfig,
-            // @ts-ignore
-            tools
-          });
-          return response;
-        } else if (method === 'generateContentStream') {
-          return await dynamicAi.models.generateContentStream({
-            model,
-            contents: contents || [{ role: 'user', parts: [{ text: prompt || "" }] }],
-            config: cleanConfig,
-            // @ts-ignore
-            tools
-          });
-        } else if (method === 'generateImages') {
-          // @ts-ignore
-          return await dynamicAi.models.generateImages({
-            model,
-            prompt,
-            config
-          });
-        } else if (method === 'generateVideos') {
-          // @ts-ignore
-          return await dynamicAi.models.generateVideos({
-            model,
-            prompt,
-            config: {
-              ...config,
-              // Handle both possible naming conventions for audio input
-              audioConfig: options.contents?.audioConfig || options.contents?.audio_input,
-              audio_input: options.contents?.audioConfig || options.contents?.audio_input
+        // Chamada via Proxy do Servidor para evitar erros de CORS e Chave Inválida no Frontend
+        const response = await fetch('/api/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            method,
+            apiKey: activeKey,
+            args: {
+              model,
+              prompt,
+              contents,
+              config,
+              operation: options.operation
             }
-          });
-        } else if (method === 'getVideosOperation') {
-          // @ts-ignore
-          return await dynamicAi.models.getVideosOperation({
-            name: (options as any).operation?.name || (options as any).operation
-          });
-        }
-        
-        throw new Error(`Método ${method} não suportado no frontend.`);
-    } catch (error: any) {
-      console.error("Gemini API Error Detail:", {
-        message: error.message,
-        status: error.status,
-        reason: error.reason,
-        method: method
-      });
+          })
+        });
 
-      attempt++;
-      const is503 = error.message?.includes('503') || error.message?.includes('UNAVAILABLE') || error.message?.includes('high demand');
-      const isQuota = error.message?.includes('429') || error.message?.toLowerCase().includes('quota');
-      
-      if (isQuota) {
-        throw new Error("Limite de gerações atingido para esta chave (Quota Exceeded). Tente novamente em alguns minutos ou use uma chave com maior limite.");
-      }
+        const data = await response.json();
 
-      if (is503 && attempt < maxRetries) {
-          const delay = Math.pow(2, attempt) * 1000;
-          console.warn(`Gemini API em alta demanda (503). Tentativa ${attempt} de ${maxRetries}. Re-tentando em ${delay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
+        if (!response.ok) {
+          // Se for erro de autenticação, lançar erro específico para o usuário
+          if (response.status === 401) {
+            throw new Error(data.message || "Lumina: API Key inválida ou não configurada.");
+          }
+          throw new Error(data.error?.message || data.error || "Erro na comunicação com o servidor Gemini.");
         }
 
-        console.error("Gemini API Error:", error);
-        
-        if (error.message?.includes('403') || error.message?.includes('PERMISSION_DENIED')) {
-          throw new Error("ACESSO NEGADO (403): Sua chave de API está bloqueada ou a API 'Generative Language' não está ativada no Google Cloud Console. Verifique suas configurações.");
+        return data;
+      } catch (error: any) {
+        attempt++;
+        if (attempt >= maxRetries) {
+          console.error("Lumina Gemini Final Error:", error);
+          throw error;
         }
-        
-        throw new Error(error.message || "Falha na comunicação com o Gemini API");
+        await new Promise(r => setTimeout(r, 1000));
       }
     }
   };
