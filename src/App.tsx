@@ -1549,19 +1549,24 @@ function AppContent() {
               
               const enhancerRes = await callGeminiAPI({
                 model: 'gemini-3-flash-preview',
-                prompt: `Você é um Engenheiro de Prompt especialista em IAs de imagem de elite.
-                Sua tarefa é expandir o prompt do usuário para qualidade cinematográfica absoluta, seguindo RIGIDAMENTE as seleções abaixo.
-
-                PROMPT DO USUÁRIO: "${itemPrompt}"
+                prompt: `You are an Elite Prompt Engineer for state-of-the-art AI image models (Imagen 3, Gemini 3).
+                TASK: Expand the user's concept into a WORLD-CLASS PHOTOGRAPHIC or ARTISTIC masterpiece.
+                
+                USER CONCEPT: "${itemPrompt}"
                 ${styleContext}
                 ${creativeContext}
                 
-                REGRAS DE OURO:
-                1. ${hasRef || itemPrompt.includes('[Ator/Referência]') ? 'FIDELIDADE DE ATOR: O personagem na cena DEVE ser a pessoa da imagem de referência. Mantenha traços faciais e identidade 100%.' : ''}
-                2. ${hasProduct || itemPrompt.includes('[Produto]') ? 'FIDELIDADE DE PRODUTO: O produto da imagem de referência DEVE ser o centro da cena com fidelidade máxima.' : ''}
-                3. ${currentStyle ? `ESTILO: A imagem DEVE seguir estritamente a estética "${currentStyle}".` : ''}
-                4. QUALIDADE: Use termos técnicos como "octane render", "8k", "volumetric lighting", "ray tracing".
-                5. IDIOMA: Saída APENAS do prompt expandido em INGLÊS.`
+                CRITICAL TECHNICAL SPECIFICATIONS:
+                - LIGHTING: Cinematic, volumetric, dramatic chiaroscuro, global illumination, ray-tracing.
+                - DETAIL: High-fidelity textures, skin pores, fabric weave, 8k resolution, extreme sharpness.
+                - CAMERA: f/1.8 lens, shallow depth of field, sharp focus on subject, rule of thirds, masterwork composition.
+                - RENDERING: Octane render, unreal engine 5.4, hyper-realistic, professional color grading.
+                
+                RULES:
+                1. ${hasRef || itemPrompt.includes('[Ator/Referência]') ? 'FIDELITY: The character MUST BE 100% IDENTICAL to the reference image. Preserve facial structure, skin tone, and features perfectly.' : ''}
+                2. ${hasProduct || itemPrompt.includes('[Produto]') ? 'PRODUCT: The PRODUCT from reference MUST BE 100% FAITHFUL. Exact logo, shape, and material.' : ''}
+                3. STYLE: STRICTLY follow "${currentStyle || 'Realistic Photographic'}".
+                4. LANGUAGE: Output ONLY the expanded English prompt. NO CONVERSATION. BE CONCISE BUT POWERFUL.`
               });
               
               if (enhancerRes && enhancerRes.text) {
@@ -1723,14 +1728,20 @@ function AppContent() {
                 contents: [{
                   role: 'user',
                   parts: [
-                    { text: `Analyze this audio and enhance the visual prompt. 
-                    1. Is this audio music/singing? (YES/NO)
-                    2. What is the language being spoken? (e.g., Portuguese, English, Spanish, etc.)
-                    3. Enhance this visual prompt for Veo 3.1: "${itemPrompt}". 
-                    CRITICAL: Focus ONLY on visual details, lighting, and cinematic quality. 
-                    DO NOT describe the speech content or language in the enhanced prompt. 
-                    DO NOT suggest scene changes or multiple shots.
-                    Respond in JSON: { "isMusic": true/false, "language": "...", "enhancedPrompt": "..." }` },
+                    { text: `Advanced Multi-Modal Audio-to-Visual Intelligence.
+                    Analyze this audio and output a MASTER-CLASS VEO 3.1 PROMPT.
+                    
+                    USER INPUT: "${itemPrompt}"
+                    
+                    ANALYSIS REQUIREMENTS:
+                    1. Detect if Music/vocal performance. (YES/NO)
+                    2. Detect exact Language.
+                    3. CREATE EXPANDED VEO 3.1 PROMPT:
+                       - Visuals: Cinematic lighting, 35mm film grain, 8k, professional grading.
+                       - Motion: Natural, fluid, realistic weight.
+                       - Detail: Hyper-realistic skin, micro-expressions, sharp focus.
+                    
+                    Respond ONLY in exact JSON: { "isMusic": boolean, "language": "string", "enhancedPrompt": "string" }` },
                     { inlineData: { data: currentLipsyncAudio.data, mimeType: currentLipsyncAudio.mimeType } }
                   ]
                 }],
@@ -1751,19 +1762,27 @@ function AppContent() {
           // Force strict instructions for lipsync (Always applied)
           if (isLipsync) {
             // Simplify prompt for better adherence and less hallucination
-            enhancedPrompt = `[LIP SYNC MODE - STRICT PORTUGUESE]
+            enhancedPrompt = `[MODE: ULTRA-PRO LIPSYNC - VEO 3.1]
             CONTENT: The character MUST speak EXACTLY: "${currentLipsyncAudioPrompt || 'Bom dia'}".
-            LANGUAGE: Portuguese (PT-BR). NO TRANSLATION. NO ENGLISH.
-            VISUALS: Maintain 100% identity of the person in the reference image. 
+            LANGUAGE: Portuguese (PT-BR). STRICT ADHERENCE.
+            VISUALS: 100% IDENTITY FIDELITY. Subject in focus, cinematic lighting, f/1.8 aperture, 8k resolution, shot on 35mm film.
+            FACE: Perfect lip movements, micro-expressions synced to audio, natural blinking.
             THE PERSON MUST BE EXACTLY THE SAME AS IN THE REFERENCE IMAGE.
-            ${hasProductRef ? 'PRODUCT: The character MUST be presenting the product shown in the product reference image.' : ''}
-            SYNC: Perfect mouth synchronization with the ${isAudioGenerated ? 'generated' : 'attached'} audio.
-            STRICT: No hallucinations. No new words. No body motion. Absolute silence in generated video.`;
+            ${hasProductRef ? 'PRODUCT: High-fidelity presentation of the product from reference image.' : ''}
+            SYNC: Perfect time-aligned mouth synchronization.
+            LIMITS: NO hallucinating text. NO excessive body movement. Professional camera work.`;
           } else if (hasProductRef) {
-            enhancedPrompt = `[PRODUCT PRESENTATION MODE]
-            VISUALS: Maintain 100% identity of the person in the reference image.
-            PRODUCT: The character MUST be presenting the product shown in the product reference image.
-            ACTION: ${itemPrompt}`;
+            enhancedPrompt = `[MODE: PROFESSIONAL PRODUCT ADS]
+            CONCEPT: ${itemPrompt}
+            LIGHTING: Dynamic product lighting, volumetric shadows, ray-traced reflections.
+            IDENTITY: 100% same person as reference.
+            PRODUCT: 100% same product as reference. High quality textures.
+            CINEMATOGRAPHY: Smooth tracking shot, master-class composition, 8k.`;
+          } else if (!fastMode) {
+            // Apply a base level of quality expansion even for standard video
+            enhancedPrompt = `[VEO 3.1 CINEMATIC MASTERPIECE]
+            ACTION: ${enhancedPrompt}
+            QUALITY: Cinematic lighting, 8k resolution, realistic physics, fluid motion, professional color grading, ultra-sharp focus.`;
           }
 
           await updateDoc(doc(db, itemPath), { progress: 30, status: 'processing' });
