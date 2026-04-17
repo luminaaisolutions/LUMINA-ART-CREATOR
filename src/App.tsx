@@ -50,7 +50,8 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
-  KeyRound
+  KeyRound,
+  Home
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
@@ -244,10 +245,41 @@ function Timer({ start, end, status }: { start: any; end?: any; status: string }
   );
 }
 
-// --- Terms of Use Modal ---
-function TermsModal({ onClose }: { onClose: () => void }) {
+// --- Legal & Contact Modal ---
+function LegalModal({ tab, onClose }: { tab: 'terms' | 'privacy' | 'contact', onClose: () => void }) {
+  const content = {
+    terms: {
+      title: "Termos de Uso",
+      sections: [
+        { h: "1. Aceitação", p: "Ao usar a Lumina, você aceita estes termos integralmente." },
+        { h: "2. Serviços", p: "Geração de conteúdo via IA. O uso de créditos é definitivo." },
+        { h: "3. Propriedade", p: "O usuário retém direitos sobre prompts, a Lumina sobre a infraestrutura." },
+        { h: "4. Regras", p: "Proibido conteúdo ilegal, ofensivo ou infrator." }
+      ]
+    },
+    privacy: {
+      title: "Política de Privacidade",
+      sections: [
+        { h: "1. Coleta", p: "Coletamos e-mail, nome e logs de geração para melhoria do serviço." },
+        { h: "2. Uso", p: "Seus dados não são vendidos. Usamos criptografia de ponta." },
+        { h: "3. Cookies", p: "Utilizamos cookies apenas para manter sua sessão ativa." },
+        { h: "4. LGPD", p: "Garantimos todos os direitos previstos na Lei Geral de Proteção de Dados." }
+      ]
+    },
+    contact: {
+      title: "Canais de Atendimento",
+      sections: [
+        { h: "Suporte Técnico", p: "Disponível 24/7 para assinantes Pro e Elite." },
+        { h: "E-mail Oficial", p: "luminaaisolutions@gmail.com" },
+        { h: "Escritório", p: "São Paulo, SP - Brasil" }
+      ]
+    }
+  };
+
+  const active = content[tab];
+
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/95 backdrop-blur-2xl">
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -256,58 +288,43 @@ function TermsModal({ onClose }: { onClose: () => void }) {
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#d4af37] via-[#f1c40f] to-[#d4af37]" />
         
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Termos de Uso <span className="text-[#d4af37]">Lumina</span></h2>
+          <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{active.title} <span className="text-[#d4af37]">Lumina</span></h2>
           <button onClick={onClose} className="p-2 text-gray-500 hover:text-white transition-colors">
             <X size={24} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto pr-4 space-y-6 text-gray-400 text-sm leading-relaxed custom-scrollbar">
-          <section className="space-y-3">
-            <h3 className="text-white font-bold uppercase tracking-widest text-xs">1. Aceitação dos Termos</h3>
-            <p>Ao acessar e usar a Lumina Art Creator, você concorda em cumprir estes Termos de Uso. Se você não concordar com qualquer parte destes termos, não poderá usar nossos serviços.</p>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-white font-bold uppercase tracking-widest text-xs">2. Descrição do Serviço</h3>
-            <p>A Lumina é uma plataforma de inteligência artificial que permite a geração de imagens, vídeos e sincronização labial (Lip Sync) para fins criativos e comerciais.</p>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-white font-bold uppercase tracking-widest text-xs">3. Uso de Créditos</h3>
-            <p>O sistema opera baseado em créditos. Créditos podem ser adquiridos através de planos ou ganhos em promoções. Créditos utilizados em gerações não são reembolsáveis, exceto em casos de falha técnica comprovada do sistema.</p>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-white font-bold uppercase tracking-widest text-xs">4. Propriedade Intelectual</h3>
-            <p>Você retém os direitos sobre as entradas (prompts e imagens de referência) fornecidas. As gerações produzidas pela IA podem ser usadas para fins comerciais, sujeitas às leis de direitos autorais vigentes e às políticas dos provedores de modelos de IA (Google Gemini).</p>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-white font-bold uppercase tracking-widest text-xs">5. Conduta do Usuário</h3>
-            <p>É proibido usar a Lumina para gerar conteúdo ilegal, odioso, sexualmente explícito, violento ou que infrinja direitos de terceiros. O uso indevido resultará no banimento imediato da conta sem reembolso.</p>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-white font-bold uppercase tracking-widest text-xs">6. Limitação de Responsabilidade</h3>
-            <p>A Lumina não garante que os resultados da IA serão perfeitos ou atenderão a todas as expectativas. O serviço é fornecido "como está".</p>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-white font-bold uppercase tracking-widest text-xs">7. Privacidade</h3>
-            <p>Seus dados são protegidos conforme nossa Política de Privacidade. Imagens de referência enviadas são processadas temporariamente para a geração e não são usadas para treinar modelos públicos sem seu consentimento.</p>
-          </section>
+          {active.sections.map((s, i) => (
+            <section key={i} className="space-y-3 p-6 bg-white/5 rounded-3xl border border-white/5">
+              <h3 className="text-[#d4af37] font-black uppercase tracking-widest text-xs">{s.h}</h3>
+              <p>{s.p}</p>
+              {s.h === "E-mail Oficial" && (
+                <a 
+                  href={`mailto:${s.p}`} 
+                  className="inline-block mt-4 px-6 py-2 bg-[#d4af37] text-black font-black rounded-full text-[10px] hover:scale-105 transition-all"
+                >
+                  ENVIAR E-MAIL AGORA
+                </a>
+              )}
+            </section>
+          ))}
         </div>
 
         <button 
           onClick={onClose}
-          className="w-full bg-[#1a1a1a] text-white font-black py-4 rounded-2xl border border-[#222] hover:bg-[#222] transition-all mt-8 uppercase tracking-widest text-xs"
+          className="w-full bg-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] transition-all mt-8 uppercase tracking-widest text-xs"
         >
-          Entendi e Aceito
+          Fechar
         </button>
       </motion.div>
     </div>
   );
+}
+
+// --- Terms of Use Modal ---
+function TermsModal({ onClose }: { onClose: () => void }) {
+  return <LegalModal tab="terms" onClose={onClose} />;
 }
 
 // --- Registration Modal ---
@@ -692,6 +709,7 @@ function AppContent() {
   const [activeBrandProfileId, setActiveBrandProfileId] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [legalTab, setLegalTab] = useState<'terms' | 'privacy' | 'contact'>('terms');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [registrationData, setRegistrationData] = useState({ firstName: '', lastName: '', phone: '', email: '', password: '' });
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
@@ -843,7 +861,7 @@ function AppContent() {
   useEffect(() => {
     setPrompt(prev => {
       let result = prev;
-      const actorTag = '[Ator/Referência]';
+      const actorTag = '[Personagem/Referência]';
       const productTag = '[Produto]';
 
       // Clean existing tags to avoid duplicates or messy formatting
@@ -864,7 +882,7 @@ function AppContent() {
   useEffect(() => {
     setCreativePrompt(prev => {
       let result = prev;
-      const actorTag = '[Ator/Referência]';
+      const actorTag = '[Personagem/Referência]';
       const productTag = '[Produto]';
 
       result = result.replace(actorTag, '').replace(productTag, '').trim();
@@ -1407,7 +1425,7 @@ function AppContent() {
 
     // Validation for Lipsync
     if (isLipsyncActive && !lipsyncAsset) {
-      alert("Para usar o Lip Sync, você precisa fazer o upload de um Ator/Referência.");
+      alert("Para usar o Lip Sync, você precisa fazer o upload de um Personagem/Referência.");
       return;
     }
     if (isLipsyncActive && !lipsyncAudio && lipsyncAudioPrompt.trim() === '') {
@@ -1563,7 +1581,7 @@ function AppContent() {
                 - RENDERING: Octane render, unreal engine 5.4, hyper-realistic, professional color grading.
                 
                 RULES:
-                1. ${hasRef || itemPrompt.includes('[Ator/Referência]') ? 'FIDELITY: The character MUST BE 100% IDENTICAL to the reference image. Preserve facial structure, skin tone, and features perfectly.' : ''}
+                1. ${hasRef || itemPrompt.includes('[Personagem/Referência]') ? 'FIDELITY: The character MUST BE 100% IDENTICAL to the reference image. Preserve facial structure, skin tone, and features perfectly.' : ''}
                 2. ${hasProduct || itemPrompt.includes('[Produto]') ? 'PRODUCT: The PRODUCT from reference MUST BE 100% FAITHFUL. Exact logo, shape, and material.' : ''}
                 3. STYLE: STRICTLY follow "${currentStyle || 'Realistic Photographic'}".
                 4. LANGUAGE: Output ONLY the expanded English prompt. NO CONVERSATION. BE CONCISE BUT POWERFUL.`
@@ -2471,6 +2489,8 @@ function AppContent() {
     return (
       <>
         <LandingPage 
+          isAuthenticated={!!user}
+          onEnterStudio={() => setView('app')}
           onLogin={() => {
             setShowRegistration(false);
             setShowLoginModal(true);
@@ -2479,6 +2499,9 @@ function AppContent() {
             setShowLoginModal(false);
             setShowRegistration(true);
           }}
+          onViewTerms={() => { setLegalTab('terms'); setShowTerms(true); }}
+          onViewPrivacy={() => { setLegalTab('privacy'); setShowTerms(true); }}
+          onViewContact={() => { setLegalTab('contact'); setShowTerms(true); }}
         />
         {showLoginModal && (
           <LoginModal 
@@ -2507,7 +2530,7 @@ function AppContent() {
             onViewTerms={() => setShowTerms(true)}
           />
         )}
-        {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
+        {showTerms && <LegalModal tab={legalTab} onClose={() => setShowTerms(false)} />}
       </>
     );
   }
@@ -2643,14 +2666,29 @@ function AppContent() {
       {/* --- Top Navigation --- */}
       <header className="fixed top-0 left-0 right-0 h-20 bg-[#111] border-b border-[#222] z-50 flex items-center justify-between px-8">
         <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#d4af37] to-[#f1c40f] rounded-xl flex items-center justify-center shadow-lg shadow-[#d4af37]/20">
+          <button 
+            onClick={() => setView('landing')}
+            className="flex items-center gap-3 group hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <div className="w-10 h-10 bg-gradient-to-br from-[#d4af37] to-[#f1c40f] rounded-xl flex items-center justify-center shadow-lg shadow-[#d4af37]/20 group-hover:shadow-[#d4af37]/40 transition-all">
               <Zap className="text-black w-6 h-6" />
             </div>
-            <span className="hidden lg:block font-bold text-xl tracking-tighter text-white uppercase">LUMINA <span className="text-[#d4af37]">ART CREATOR</span></span>
-          </div>
+            <div className="flex flex-col items-start leading-none">
+              <span className="font-black text-sm tracking-tighter text-white uppercase">LUMINA</span>
+              <span className="font-black text-[10px] tracking-widest text-[#d4af37] uppercase">ART CREATOR</span>
+            </div>
+          </button>
 
           <nav className="flex items-center gap-2">
+            <button 
+              onClick={() => setView('landing')}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap font-bold text-xs uppercase tracking-widest hover:bg-[#222] text-gray-400 group"
+              title="Voltar para a Landing Page"
+            >
+              <Home size={16} className="group-hover:text-[#d4af37] transition-colors" />
+              <span className="hidden xl:block">Home</span>
+            </button>
+            <div className="w-px h-6 bg-[#222] mx-2" />
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
               { id: 'branding', label: 'Minhas Marcas', icon: Palette },
@@ -3666,7 +3704,7 @@ function AppContent() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
                             <div className="flex items-center justify-between mb-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ator / Referência</label>
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Personagem / Referência</label>
                               {refAsset && (
                                 <button type="button" onClick={analyzeAssetForPrompt} disabled={isAnalyzing} className="text-[9px] font-black text-[#d4af37] flex items-center gap-1 uppercase">
                                   {isAnalyzing ? "..." : <Sparkles size={10} />}
@@ -3692,7 +3730,7 @@ function AppContent() {
                               ) : (
                                 <div className="text-center">
                                   <User size={14} className="text-gray-600 mx-auto mb-1" />
-                                  <span className="text-[8px] font-bold text-gray-500 uppercase">Ator</span>
+                                  <span className="text-[8px] font-bold text-gray-500 uppercase">Personagem</span>
                                 </div>
                               )}
                             </div>
@@ -4001,7 +4039,7 @@ function AppContent() {
 
         {/* --- LipSync Tab --- */}
         {activeTab === 'lipsync' && (
-          <div className="w-full max-w-full mx-auto py-8 px-4 md:px-8">
+          <div className="w-full max-w-6xl mx-auto py-8 px-4 md:px-8">
             <div className="flex flex-col gap-8">
               {/* Lipsync Controls - Horizontal/Top Layout */}
               <div className="w-full">
@@ -4073,7 +4111,7 @@ function AppContent() {
                           ) : (
                             <>
                               <User size={24} className="text-gray-600" />
-                              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Ator</span>
+                              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Personagem</span>
                             </>
                           )}
                         </div>
@@ -4237,7 +4275,7 @@ function AppContent() {
                 </div>
 
                 {batch.filter(item => item.sourceTab === 'lipsync').length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {batch.filter(item => item.sourceTab === 'lipsync').map((item, i) => {
                       const lipsyncList = batch.filter(item => item.sourceTab === 'lipsync');
                       return (

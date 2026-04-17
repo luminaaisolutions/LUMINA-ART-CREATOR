@@ -11,31 +11,79 @@ import {
   Play, 
   ShieldCheck, 
   Cpu,
-  Users
+  Users,
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface LandingPageProps {
   onLogin: () => void;
   onSignUp: () => void;
+  isAuthenticated?: boolean;
+  onEnterStudio?: () => void;
+  onViewTerms?: () => void;
+  onViewPrivacy?: () => void;
+  onViewContact?: () => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignUp }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ 
+  onLogin, 
+  onSignUp, 
+  isAuthenticated, 
+  onEnterStudio,
+  onViewTerms,
+  onViewPrivacy,
+  onViewContact
+}) => {
+  const [showDemoVideo, setShowDemoVideo] = React.useState(false);
   const [activeShowcase, setActiveShowcase] = React.useState(0);
+  const [currentDemoIdx, setCurrentDemoIdx] = React.useState(0);
+
+  const demoVideos = [
+    {
+      url: "https://cdn.openai.com/sora/videos/tokyo-walk.mp4",
+      label: "Realismo Urbano"
+    },
+    {
+      url: "https://cdn.openai.com/sora/videos/big-sur.mp4",
+      label: "Paisagem Cinematográfica"
+    },
+    {
+      url: "https://cdn.openai.com/sora/videos/mighty-surfing-wave.mp4",
+      label: "Dinâmica de Fluidos"
+    }
+  ];
+
+  const nextDemo = () => setCurrentDemoIdx(prev => (prev + 1) % demoVideos.length);
+  const prevDemo = () => setCurrentDemoIdx(prev => (prev - 1 + demoVideos.length) % demoVideos.length);
+
+  // Auto-switch fallback timer
+  React.useEffect(() => {
+    if (!showDemoVideo) return;
+    const timer = setInterval(() => {
+      // Force next if stuck for too long
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [showDemoVideo, currentDemoIdx]);
   const showcaseItems = [
     {
-      url: "https://picsum.photos/seed/cyber/1280/720",
-      prompt: "[Produto] Perfume de luxo em uma metrópole Cyberpunk, luzes neon, reflexos de chuva, 8k.",
-      label: "PRODUTO + AMBIENTE"
+      url: "https://cdn.openai.com/sora/videos/fashion-show.mp4",
+      type: "video",
+      prompt: "[Personagem/Referência] Modelo feminina em desfile de alta costura em estilo Cyberpunk, iluminação neon dramática, ultra-realismo 8k.",
+      label: "FASHION + CYBERPUNK"
     },
     {
-      url: "https://picsum.photos/seed/model1/1280/720",
-      prompt: "[Ator/Referência] Modelo feminina em desfile de alta costura, iluminação dramática, estilo cinematográfico.",
-      label: "PERSONA E MODA"
+      url: "https://cdn.openai.com/sora/videos/big-sur.mp4",
+      type: "video",
+      prompt: "[Drone] Voo cinematográfico sobre a costa de Big Sur, ondas quebrando contra rochas, luz dourada do pôr do sol, 4k.",
+      label: "PAISAGISMO AÉREO"
     },
     {
-      url: "https://picsum.photos/seed/nature/1280/720",
-      prompt: "Paisagem de montanhas suíças ao pôr do sol, ultra-realismo, lente 35mm, cores vibrantes.",
-      label: "PAISAGISMOS"
+      url: "https://cdn.openai.com/sora/videos/tokyo-walk.mp4",
+      type: "video",
+      prompt: "[Cena] Mulher caminhando pelas ruas de Tokyo sob chuva, reflexos de neon nas poças d'água, atmosfera cinematográfica 35mm.",
+      label: "CENA URBANA"
     }
   ];
 
@@ -60,18 +108,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignUp }) =
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <button 
-              onClick={onLogin}
-              className="text-white px-4 py-2 text-sm font-bold hover:text-[#d4af37] transition-colors"
-            >
-              ENTRAR
-            </button>
-            <button 
-              onClick={onSignUp}
-              className="bg-white text-black px-6 py-2.5 rounded-full font-bold text-sm hover:scale-105 transition-all shadow-lg"
-            >
-              CADASTRAR
-            </button>
+            {isAuthenticated ? (
+              <button 
+                onClick={onEnterStudio}
+                className="bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black px-8 py-2.5 rounded-full font-black text-sm hover:scale-105 transition-all shadow-lg flex items-center gap-2"
+              >
+                ENTRAR NO ESTÚDIO
+                <ArrowRight size={16} />
+              </button>
+            ) : (
+              <>
+                <button 
+                  onClick={onLogin}
+                  className="text-white px-4 py-2 text-sm font-bold hover:text-[#d4af37] transition-colors"
+                >
+                  ENTRAR
+                </button>
+                <button 
+                  onClick={onSignUp}
+                  className="bg-white text-black px-6 py-2.5 rounded-full font-bold text-sm hover:scale-105 transition-all shadow-lg"
+                >
+                  CADASTRAR
+                </button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -98,14 +158,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignUp }) =
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+              {isAuthenticated ? (
+                <button 
+                  onClick={onEnterStudio}
+                  className="w-full sm:w-auto bg-[#d4af37] text-black px-12 py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-2xl shadow-[#d4af37]/20"
+                >
+                  VOLTAR AO STUDIO LUMINA
+                  <ArrowRight size={24} />
+                </button>
+              ) : (
+                <button 
+                  onClick={onSignUp}
+                  className="w-full sm:w-auto bg-[#d4af37] text-black px-10 py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-2xl shadow-[#d4af37]/20"
+                >
+                  COMEÇAR AGORA (40 CRÉDITOS GRÁTIS)
+                  <ArrowRight size={20} />
+                </button>
+              )}
               <button 
-                onClick={onSignUp}
-                className="w-full sm:w-auto bg-[#d4af37] text-black px-10 py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-2xl shadow-[#d4af37]/20"
+                onClick={() => setShowDemoVideo(true)}
+                className="w-full sm:w-auto bg-[#111] border border-[#222] text-white px-10 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-[#1a1a1a] transition-all"
               >
-                COMEÇAR AGORA (40 CRÉDITOS GRÁTIS)
-                <ArrowRight size={20} />
-              </button>
-              <button className="w-full sm:w-auto bg-[#111] border border-[#222] text-white px-10 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-[#1a1a1a] transition-all">
                 <Play size={20} className="text-[#d4af37]" />
                 VER DEMONSTRAÇÃO
               </button>
@@ -183,17 +256,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignUp }) =
                   <motion.div
                     key={activeShowcase}
                     initial={{ opacity: 0, scale: 1.1 }}
-                    animate={{ opacity: 0.6, scale: 1 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.8 }}
                     className="absolute inset-0"
                   >
-                    <img 
-                      src={showcaseItems[activeShowcase].url} 
-                      alt="Showcase" 
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
+                    {showcaseItems[activeShowcase].type === 'video' ? (
+                      <video 
+                        src={showcaseItems[activeShowcase].url} 
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <img 
+                        src={showcaseItems[activeShowcase].url} 
+                        alt="Showcase" 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/40" />
                   </motion.div>
                 </AnimatePresence>
                 
@@ -351,12 +436,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignUp }) =
         <div className="max-w-3xl mx-auto">
           <h2 className="text-5xl font-black tracking-tighter mb-8">PRONTO PARA DOMINAR O <span className="text-[#d4af37]">ALGORITMO?</span></h2>
           <p className="text-gray-400 mb-12 text-lg">Junte-se a mais de 500 criadores de elite que já estão escalando sua produção com a Lumina.</p>
-          <button 
-            onClick={onSignUp}
-            className="bg-white text-black px-12 py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-2xl"
-          >
-            CRIAR MINHA CONTA (40 CRÉDITOS)
-          </button>
+          {isAuthenticated ? (
+            <button 
+              onClick={onEnterStudio}
+              className="bg-white text-black px-14 py-6 rounded-2xl font-black text-2xl hover:scale-105 transition-all shadow-2xl flex items-center gap-3 mx-auto"
+            >
+              RETOMAR CRIAÇÕES
+              <ArrowRight size={28} />
+            </button>
+          ) : (
+            <button 
+              onClick={onSignUp}
+              className="bg-white text-black px-12 py-6 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-2xl"
+            >
+              CRIAR MINHA CONTA (40 CRÉDITOS)
+            </button>
+          )}
         </div>
       </section>
 
@@ -368,13 +463,105 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onSignUp }) =
             <span className="font-bold tracking-tighter uppercase">LUMINA ART CREATOR</span>
           </div>
           <div className="flex gap-8 text-sm text-gray-500 font-medium">
-            <a href="#" className="hover:text-[#d4af37] transition-colors">Termos de Uso</a>
-            <a href="#" className="hover:text-[#d4af37] transition-colors">Privacidade</a>
-            <a href="#" className="hover:text-[#d4af37] transition-colors">Contato</a>
+            <button onClick={onViewTerms} className="hover:text-[#d4af37] transition-colors">Termos de Uso</button>
+            <button onClick={onViewPrivacy} className="hover:text-[#d4af37] transition-colors">Privacidade</button>
+            <button onClick={onViewContact} className="hover:text-[#d4af37] transition-colors">Contato</button>
           </div>
           <p className="text-xs text-gray-600 font-mono">© 2026 LUMINA AI SOLUTIONS. ALL RIGHTS RESERVED.</p>
         </div>
       </footer>
+
+      {/* --- Demo Video Modal --- */}
+      <AnimatePresence>
+        {showDemoVideo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8"
+          >
+            <div 
+              className="absolute inset-0 bg-black/95 backdrop-blur-2xl" 
+              onClick={() => setShowDemoVideo(false)}
+            />
+            
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-6xl aspect-video bg-[#111] rounded-[2rem] md:rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl"
+            >
+              <button
+                onClick={() => setShowDemoVideo(false)}
+                className="absolute top-6 right-6 z-50 w-12 h-12 bg-black/50 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-[#d4af37] hover:text-black transition-all"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="absolute top-6 left-6 z-50 flex items-center gap-3">
+                <div className="px-4 py-2 bg-[#d4af37] text-black text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg">
+                  Demo Lumina Pro
+                </div>
+                <div className="px-3 py-2 bg-black/50 backdrop-blur-xl border border-white/10 text-white text-[10px] font-bold rounded-full uppercase tracking-widest">
+                  {demoVideos[currentDemoIdx].label}
+                </div>
+              </div>
+
+              <div className="absolute top-6 right-20 z-50 flex gap-1.5 items-center">
+                {demoVideos.map((_, i) => (
+                  <div 
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all duration-500 ${currentDemoIdx === i ? 'w-8 bg-[#d4af37]' : 'w-2 bg-white/30'}`}
+                  />
+                ))}
+              </div>
+
+              <div className="absolute top-1/2 -translate-y-1/2 left-4 z-50">
+                <button 
+                  onClick={prevDemo}
+                  className="w-12 h-12 bg-black/50 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-[#d4af37] hover:text-black transition-all"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+              </div>
+
+              <div className="absolute top-1/2 -translate-y-1/2 right-4 z-50">
+                <button 
+                  onClick={nextDemo}
+                  className="w-12 h-12 bg-black/50 backdrop-blur-xl border border-white/10 rounded-full flex items-center justify-center text-white hover:bg-[#d4af37] hover:text-black transition-all"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </div>
+
+              <AnimatePresence mode="wait">
+                <motion.video
+                  key={currentDemoIdx}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                  src={demoVideos[currentDemoIdx].url}
+                  className="w-full h-full object-cover border-none"
+                  autoPlay
+                  muted
+                  playsInline
+                  onEnded={nextDemo}
+                  onError={(e) => {
+                    console.error("Video error:", e);
+                    nextDemo(); // Skip broken video
+                  }}
+                />
+              </AnimatePresence>
+              
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 text-center w-full px-4">
+                <p className="text-[#d4af37] text-xs font-black uppercase tracking-[0.2em] drop-shadow-lg">Exemplo {currentDemoIdx + 1} de {demoVideos.length}</p>
+                <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Motor Generativo Veo 3.1 Pro — Qualidade Cinematográfica</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
