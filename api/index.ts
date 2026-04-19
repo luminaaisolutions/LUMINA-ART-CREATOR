@@ -368,7 +368,6 @@ async function createServer() {
         });
         return res.json(result);
       } else if (method === 'generateContent') {
-        // Construct contents from prompt if needed (SDK requirement)
         const contents = args.contents || [{ role: 'user', parts: [{ text: args.prompt || "" }] }];
         
         const result = await client.models.generateContent({
@@ -376,7 +375,12 @@ async function createServer() {
           contents: contents,
           config: args.config
         });
-        return res.json(result);
+        
+        // Ensure text is included in JSON response as it's a getter in the SDK class
+        return res.json({
+          ...result,
+          text: result.text
+        });
       } else {
         return res.status(400).json({ error: "Invalid method" });
       }

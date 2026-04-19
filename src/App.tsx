@@ -1408,58 +1408,62 @@ function AppContent() {
     setIsAnalyzingBrand(true);
     
     try {
-      const assets = [...editingBrand.logos, ...editingBrand.images].slice(0, 4);
+      const rawAssets = [...editingBrand.logos, ...editingBrand.images].filter(Boolean);
+      const assets = rawAssets.slice(0, 4);
+      
       if (assets.length === 0) {
         alert("Suba pelo menos um logotipo ou imagem para análise profunda.");
         setIsAnalyzingBrand(false);
         return;
       }
 
-      const contents = assets.map(asset => ({
-        role: "user",
-        parts: [
-          { inlineData: { data: asset.data, mimeType: asset.mimeType } }
-        ]
+      const parts: any[] = assets.map(asset => ({
+        inlineData: { data: asset.data, mimeType: asset.mimeType }
       }));
 
-      contents.push({
-        role: "user",
-        parts: [
-          { text: `Analise profundamente a identidade visual e o branding destas imagens da empresa "${editingBrand.name}". 
-          Forneça um relatório estratégico que defina o padrão desta marca.
-          
-          Retorne os dados EXATAMENTE no seguinte formato JSON (sem markdown):
-          {
-            "styleAnalysis": "Breve descrição do estilo visual predominante e estética.",
-            "toneOfVoice": "Como a marca deve se comunicar (tom de voz).",
-            "detectedPalette": ["#hex1", "#hex2", "#hex3"],
-            "typographyRecommendation": "Modern/Classic/Minimal/Bold/Elegant",
-            "brandingEssence": "Resumo da essência e propósito visual da marca."
-          }` }
-        ]
-      } as any);
-
-      const response = await callGeminiAPI({
-        model: "gemini-flash-latest",
-        contents: contents as any
+      parts.push({
+        text: `Analise profundamente a identidade visual e o branding destas imagens da empresa "${editingBrand.name}". 
+        Forneça um relatório estratégico que defina o padrão desta marca baseado nestes assets.
+        
+        Retorne os dados EXATAMENTE no seguinte formato JSON (sem markdown ou blocos de código):
+        {
+          "styleAnalysis": "Breve descrição do estilo visual predominante e estética.",
+          "toneOfVoice": "Como a marca deve se comunicar (tom de voz).",
+          "detectedPalette": ["#hex1", "#hex2", "#hex3"],
+          "typographyRecommendation": "Modern/Classic/Minimal/Bold/Elegant",
+          "brandingEssence": "Resumo da essência e propósito visual da marca."
+        }`
       });
 
-      const text = response.text;
+      const response = await callGeminiAPI({
+        model: "gemini-3-flash-preview",
+        contents: [{ role: "user", parts }]
+      });
+
+      const text = response.text || "";
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const data = JSON.parse(jsonMatch[0]);
-        setEditingBrand(prev => ({
-          ...prev!,
-          styleAnalysis: data.styleAnalysis || data.brandingEssence,
-          toneOfVoice: data.toneOfVoice,
-          detectedPalette: data.detectedPalette,
-          typography: data.typographyRecommendation || prev!.typography,
-          colors: data.detectedPalette && data.detectedPalette.length > 0 ? data.detectedPalette : prev!.colors
-        }));
+        try {
+          const data = JSON.parse(jsonMatch[0].trim());
+          setEditingBrand(prev => ({
+            ...prev!,
+            styleAnalysis: data.styleAnalysis || data.brandingEssence || '',
+            toneOfVoice: data.toneOfVoice || '',
+            detectedPalette: data.detectedPalette || [],
+            typography: data.typographyRecommendation || prev!.typography,
+            colors: data.detectedPalette && data.detectedPalette.length > 0 ? data.detectedPalette : prev!.colors
+          }));
+        } catch (e) {
+          console.error("JSON parse error in brand analysis:", e, text);
+          throw new Error("A IA retornou um formato de resposta inválido. Tente novamente.");
+        }
+      } else {
+        console.error("No JSON found in response:", text);
+        throw new Error("A IA não conseguiu gerar o relatório da marca. Tente novamente.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Brand deep analysis failed:", error);
-      alert("Falha na análise da marca. Tente novamente.");
+      alert(error.message || "Falha na análise da marca. Tente novamente.");
     } finally {
       setIsAnalyzingBrand(false);
     }
