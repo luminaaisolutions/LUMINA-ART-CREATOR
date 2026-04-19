@@ -62,6 +62,35 @@
         "createdAt": { "type": "string", "format": "date-time", "description": "Data da transação." }
       },
       "required": ["id", "userId", "amount", "status", "createdAt"]
+    },
+    "BrandProfile": {
+      "title": "Brand Profile",
+      "description": "Perfil de marca do usuário para criativos personalizados.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID único da marca." },
+        "name": { "type": "string", "description": "Nome da marca." },
+        "logos": { 
+          "type": "array", 
+          "items": { "type": "object" },
+          "description": "Logotipos da marca (base64)." 
+        },
+        "images": { 
+          "type": "array", 
+          "items": { "type": "object" },
+          "description": "Imagens de referência." 
+        },
+        "colors": { "type": "array", "items": { "type": "string" }, "description": "Cores primárias." },
+        "typography": { "type": "string", "description": "Tipografia preferida." },
+        "mission": { "type": "string", "description": "Missão da marca." },
+        "niche": { "type": "string", "description": "Nicho de atuação." },
+        "contact": { "type": "string", "description": "Informações de contato." },
+        "description": { "type": "string", "description": "Descrição detalhada." },
+        "styleAnalysis": { "type": "string", "description": "Análise de estilo gerada por IA." },
+        "toneOfVoice": { "type": "string", "description": "Tom de voz detectado." },
+        "detectedPalette": { "type": "array", "items": { "type": "string" }, "description": "Paleta detectada pela IA." }
+      },
+      "required": ["id", "name"]
     }
   },
   "firestore": {
@@ -72,6 +101,10 @@
     "/users/{userId}/batches/{batchId}": {
       "schema": "BatchItem",
       "description": "Itens de geração do usuário."
+    },
+    "/users/{userId}/brands/{brandId}": {
+      "schema": "BrandProfile",
+      "description": "Perfis de marca do usuário."
     },
     "/payments/{paymentId}": {
       "schema": "Payment",

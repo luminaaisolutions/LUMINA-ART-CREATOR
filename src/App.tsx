@@ -787,6 +787,7 @@ function AppContent() {
   const isSubmittingRegistration = useRef(false);
   const unsubUserRef = useRef<(() => void) | null>(null);
   const unsubBatchRef = useRef<(() => void) | null>(null);
+  const unsubBrandsRef = useRef<(() => void) | null>(null);
 
   const handleEmailSignUp = async () => {
     if (!registrationData.email || !registrationData.password) return;
@@ -1214,16 +1215,26 @@ function AppContent() {
           const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BatchItem));
           setBatch(items);
         }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/batches`));
+
+        // Sync brand profiles
+        const brandsRef = collection(db, `users/${currentUser.uid}/brands`);
+        unsubBrandsRef.current = onSnapshot(brandsRef, (snapshot) => {
+          const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+          setBrandProfiles(items);
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/brands`));
       } else {
         setBatch([]);
+        setBrandProfiles([]);
         unsubUserRef.current?.();
         unsubBatchRef.current?.();
+        unsubBrandsRef.current?.();
       }
     });
     return () => {
       unsubscribe();
       unsubUserRef.current?.();
       unsubBatchRef.current?.();
+      unsubBrandsRef.current?.();
     };
   }, []);
 
@@ -3500,7 +3511,13 @@ function AppContent() {
                           {activeBrandProfileId === brand.id ? 'Ativo' : 'Ativar'}
                         </button>
                         <button 
-                          onClick={() => setBrandProfiles(brandProfiles.filter(b => b.id !== brand.id))}
+                          onClick={async () => {
+                            if (confirm('Tem certeza que deseja excluir esta marca?')) {
+                              if (user) {
+                                await deleteDoc(doc(db, `users/${user.uid}/brands`, brand.id)).catch(console.error);
+                              }
+                            }
+                          }}
                           className="p-2 bg-red-500/10 text-red-500 rounded-full hover:bg-red-500 hover:text-white transition-all"
                         >
                           <Trash2 size={12} />
@@ -3898,22 +3915,28 @@ function AppContent() {
 
                 <div className="mt-10 flex justify-end gap-4">
                   <button 
-                    onClick={() => {
-                      const existingIdx = brandProfiles.findIndex(b => b.id === editingBrand.id);
-                      if (existingIdx >= 0) {
-                        const newProfiles = [...brandProfiles];
-                        newProfiles[existingIdx] = editingBrand;
-                        setBrandProfiles(newProfiles);
-                      } else {
-                        setBrandProfiles([...brandProfiles, editingBrand]);
+                    onClick={async () => {
+                      if (!user) {
+                        alert("Você precisa estar logado para salvar marcas.");
+                        return;
                       }
-                      setBrandStep('list');
-                      setEditingBrand(null);
+                      setIsAnalyzingBrand(true);
+                      try {
+                        const brandRef = doc(db, `users/${user.uid}/brands`, editingBrand.id);
+                        await setDoc(brandRef, editingBrand);
+                        setBrandStep('list');
+                        setEditingBrand(null);
+                      } catch (error) {
+                        console.error("Failed to save brand:", error);
+                        alert("Erro ao salvar marca no servidor.");
+                      } finally {
+                        setIsAnalyzingBrand(false);
+                      }
                     }}
-                    disabled={!editingBrand.name}
+                    disabled={!editingBrand.name || isAnalyzingBrand}
                     className="px-10 py-4 bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black rounded-2xl hover:scale-105 transition-all disabled:opacity-50 flex items-center gap-2"
                   >
-                    SALVAR MARCA
+                    {isAnalyzingBrand ? 'SALVANDO...' : 'SALVAR MARCA'}
                     <CheckCircle2 size={18} />
                   </button>
                 </div>
@@ -5035,7 +5058,7 @@ function AppContent() {
                 </div>
 
                 {batch.filter(item => item.sourceTab === 'projects').length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {batch.filter(item => item.sourceTab === 'projects').map((item, i) => {
                       const projectsList = batch.filter(item => item.sourceTab === 'projects');
                       return (
@@ -5044,7 +5067,7 @@ function AppContent() {
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: i * 0.05 }}
-                          className="bg-[#111] rounded-[32px] border border-[#222] overflow-hidden group relative"
+                          className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden group relative"
                         >
                           <div 
                             className="aspect-[9/16] bg-black relative cursor-pointer overflow-hidden"

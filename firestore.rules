@@ -94,6 +94,27 @@ service cloud.firestore {
              (!('previewUrl' in data) || (data.previewUrl is string && data.previewUrl.size() < 1048576));
     }
 
+    function isValidBrandProfile(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'logos', 'images', 'colors', 'typography', 'mission', 'niche', 'contact', 'description', 'styleAnalysis', 'toneOfVoice', 'detectedPalette']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 200 &&
+             (!('logos' in data) || data.logos is list) &&
+             (!('images' in data) || data.images is list) &&
+             (!('colors' in data) || data.colors is list) &&
+             (!('typography' in data) || (data.typography is string && data.typography.size() <= 100)) &&
+             (!('mission' in data) || (data.mission is string && data.mission.size() <= 2000)) &&
+             (!('niche' in data) || (data.niche is string && data.niche.size() <= 500)) &&
+             (!('contact' in data) || (data.contact is string && data.contact.size() <= 500)) &&
+             (!('description' in data) || (data.description is string && data.description.size() <= 3000)) &&
+             (!('styleAnalysis' in data) || (data.styleAnalysis is string && data.styleAnalysis.size() <= 5000)) &&
+             (!('toneOfVoice' in data) || (data.toneOfVoice is string && data.toneOfVoice.size() <= 1000)) &&
+             (!('detectedPalette' in data) || data.detectedPalette is list);
+    }
+
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -118,6 +139,14 @@ service cloud.firestore {
         allow read: if isOwner(userId) || isAdmin();
         allow create: if isOwner(userId) && isValidBatchItem(request.resource.data);
         allow update: if (isOwner(userId) && isValidBatchItem(request.resource.data)) || isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /brands/{brandId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidBrandProfile(request.resource.data) && isValidId(brandId);
+        allow update: if (isOwner(userId) && isValidBrandProfile(request.resource.data) && isValidId(brandId)) || isAdmin();
         allow delete: if isOwner(userId) || isAdmin();
       }
 
