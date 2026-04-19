@@ -288,12 +288,19 @@ async function createServer() {
     try {
       const { method, args, apiKey: clientApiKey } = req.body;
       
-      // COMMERCIAL STABILITY: Always prioritize the Master Key (Server Env Var)
-      // This prevents client-side key issues from affecting the production environment.
-      let apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY || clientApiKey;
+      // COMMERCIAL STABILITY: Select the first valid key available (Master or Client)
+      const keysToTry = [
+        process.env.GEMINI_API_KEY,
+        process.env.VITE_GEMINI_API_KEY,
+        process.env.API_KEY,
+        process.env.GOOGLE_API_KEY,
+        clientApiKey
+      ];
+
+      let apiKey = keysToTry.find(k => k && k.length > 20 && k.startsWith('AIza'));
       
-      if (!apiKey || apiKey.length < 20 || !apiKey.startsWith('AIza')) {
-        console.error("[Gemini Proxy] CRITICAL: No valid Master Key found in server environment.");
+      if (!apiKey) {
+        console.error("[Gemini Proxy] CRITICAL: No valid API Key found in server env or client request.");
         return res.status(503).json({ 
           error: "Serviço Indisponível", 
           message: "Estamos realizando uma manutenção rápida em nossos motores de IA. Por favor, tente novamente em alguns instantes." 
@@ -362,10 +369,14 @@ async function createServer() {
       } else if (errorMessage.includes("quota") || errorMessage.includes("429")) {
         status = 429;
         errorMessage = "Limite de requisições excedido. Aguarde alguns instantes ou verifique seu plano no Google AI Studio.";
+      } else if (errorMessage.includes("Safety") || errorMessage.includes("blocked")) {
+        status = 400;
+        errorMessage = "O conteúdo solicitado foi bloqueado pelos filtros de segurança da IA. Tente reformular seu prompt.";
       }
       
       res.status(status).json({ 
         error: errorMessage,
+        message: errorMessage,
         details: error.stack?.substring(0, 200)
       });
     }

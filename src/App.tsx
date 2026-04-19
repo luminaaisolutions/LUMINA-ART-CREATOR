@@ -59,6 +59,43 @@ import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
 import { LandingPage } from './components/LandingPage';
 
+// --- Utilities ---
+const resizeImage = (base64Str: string, maxWidth = 1024, maxHeight = 1024): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${base64Str}`;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      // White background for transparent PNGs converted to JPEG
+      if (ctx) {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+      }
+      resolve(canvas.toDataURL('image/jpeg', 0.6).split(',')[1]);
+    };
+    img.onerror = () => resolve(base64Str);
+  });
+};
+
 // --- Error Boundary Component ---
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: any }> {
   constructor(props: { children: React.ReactNode }) {
@@ -1444,7 +1481,7 @@ function AppContent() {
 
       const response = await callGeminiAPI({
         model: "gemini-3-flash-preview",
-        contents: [{ role: "user", parts }]
+        contents: [{ role: 'user', parts }]
       });
 
       const text = response.text || "";
@@ -1745,13 +1782,18 @@ function AppContent() {
               DESIGN PRINCIPLES: Clear visual hierarchy, "Stop the Scroll" impact in the first 3 seconds, high-end commercial aesthetics.
               COMPOSITION: Rule of thirds, focus on emotional expressions if human faces are present, professional studio lighting.
               MARTECH: Use modern, agency-grade visual patterns common in high-spending TikTok/Meta Ads.
+              
+              STRICT NEGATIVE INSTRUCTIONS:
+              - DO NOT ADD ANY TEXT, LOGOS, OR WATERMARKS TO THE IMAGE UNLESS EXPLICITLY REQUESTED IN THE USER CONCEPT.
+              - NO OVERLAYS, NO BUTTONS, NO "ESTÚDIO LUMINA ADS" TEXT.
+              - THE OUTPUT MUST BE A CLEAN ARTISTIC/PHOTOGRAPHIC ASSET READY FOR MARKETERS TO ADD THEIR OWN COPY.
               ` : '';
 
               const styleContext = currentStyle ? `[ESTILO OBRIGATÓRIO: ${currentStyle}]` : '';
               
               const enhancerRes = await callGeminiAPI({
-                model: 'gemini-flash-latest',
-                prompt: `You are an Elite Prompt Engineer for state-of-the-art AI image models (Imagen 3, Gemini 3).
+                model: 'gemini-3-flash-preview',
+                prompt: `You are an Elite Prompt Engineer for state-of-the-art AI image models (Imagen 4, Gemini 3).
                 TASK: Expand the user's concept into a WORLD-CLASS PHOTOGRAPHIC or ARTISTIC masterpiece.
                 
                 USER CONCEPT: "${itemPrompt}"
@@ -1789,8 +1831,8 @@ function AppContent() {
 
           while (imageAttempt <= maxImageAttempts && !base64Data) {
             try {
-              // Respect user model choice (Nano = Gemini 3.1 Flash Image, Imagen = Imagen 4.0)
-              const modelName = currentModelType === 'imagen' ? 'imagen-4.0-generate-001' : 'gemini-3.1-flash-image-preview'; 
+              // Respect user model choice (Nano = Gemini 2.5 Flash Image, Imagen = Imagen 4.0)
+              const modelName = currentModelType === 'imagen' ? 'imagen-4.0-generate-001' : 'gemini-2.5-flash-image'; 
               const methodToUse = currentModelType === 'imagen' ? 'generateImages' : 'generateContent';
               
               let promptText = currentRefAsset && currentRefAsset.type === 'image' 
@@ -1798,7 +1840,7 @@ function AppContent() {
                 : enhancedPrompt;
 
               if (currentUseCreativeStudio) {
-                promptText = `[ESTÚDIO LUMINA ADS] OBJETIVO: ${currentAdGoal}. GATILHO: ${currentAdTrigger}. PLATAFORMA: ${currentAdPlatform}. ESTRATÉGIA: ${currentCreativeStrategy}. ESTÉTICA: ${currentCreativeAesthetic}. ${promptText}`;
+                promptText = `OBJETIVO: ${currentAdGoal}. GATILHO: ${currentAdTrigger}. PLATAFORMA: ${currentAdPlatform}. ESTRATÉGIA: ${currentCreativeStrategy}. ESTÉTICA: ${currentCreativeAesthetic}. ${promptText}`;
               }
 
               // Build contents for multimodal support (Reference Images)
@@ -3174,7 +3216,7 @@ function AppContent() {
                     </div>
                     
                     <div className="space-y-2">
-                      <span className="text-[10px] font-black text-[#d4af37] uppercase tracking-[0.2em]">{card.id}</span>
+                      <span className="text-xs font-black text-[#d4af37] uppercase tracking-[0.2em]">{card.id}</span>
                       <h3 className="text-2xl font-bold">{card.title}</h3>
                       <p className="text-gray-500 text-sm leading-relaxed">{card.desc}</p>
                     </div>
@@ -3640,8 +3682,9 @@ function AppContent() {
                               const file = e.target.files[0];
                               if (file) {
                                 const reader = new FileReader();
-                                reader.onload = (event: any) => {
-                                  const base64 = event.target.result.split(',')[1];
+                                reader.onload = async (event: any) => {
+                                  const rawBase64 = event.target.result.split(',')[1];
+                                  const base64 = await resizeImage(rawBase64, 600, 600); // Aggressive compression for logos
                                   const newLogos = [...editingBrand.logos];
                                   newLogos[idx] = { data: base64, mimeType: file.type };
                                   setEditingBrand({ ...editingBrand, logos: newLogos });
@@ -3694,8 +3737,9 @@ function AppContent() {
                               const file = e.target.files[0];
                               if (file) {
                                 const reader = new FileReader();
-                                reader.onload = (event: any) => {
-                                  const base64 = event.target.result.split(',')[1];
+                                reader.onload = async (event: any) => {
+                                  const rawBase64 = event.target.result.split(',')[1];
+                                  const base64 = await resizeImage(rawBase64, 800, 800); // Aggressive compression for brand images
                                   const newImages = [...editingBrand.images];
                                   newImages[idx] = { data: base64, mimeType: file.type };
                                   setEditingBrand({ ...editingBrand, images: newImages });
@@ -3751,17 +3795,17 @@ function AppContent() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
                       <div className="space-y-2">
-                        <span className="text-[9px] font-black text-[#d4af37] uppercase tracking-widest block">Estética & Padrões</span>
+                        <span className="text-xs font-black text-[#d4af37] uppercase tracking-widest block">Estética & Padrões</span>
                         <p className="text-xs text-gray-300 leading-relaxed font-medium">{editingBrand.styleAnalysis}</p>
                       </div>
                       <div className="space-y-2">
-                        <span className="text-[9px] font-black text-[#d4af37] uppercase tracking-widest block">Personalidade da Marca</span>
+                        <span className="text-xs font-black text-[#d4af37] uppercase tracking-widest block">Personalidade da Marca</span>
                         <p className="text-xs text-gray-300 leading-relaxed font-medium">{editingBrand.toneOfVoice}</p>
                       </div>
                     </div>
                     {editingBrand.colors && editingBrand.colors.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-[#d4af37]/10">
-                        <span className="text-[9px] font-black text-[#d4af37] uppercase tracking-widest block mb-2">Paleta Identificada</span>
+                        <span className="text-xs font-black text-[#d4af37] uppercase tracking-widest block mb-2">Paleta Identificada</span>
                         <div className="flex gap-2">
                           {editingBrand.colors.map((color, i) => (
                             <div key={i} className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-lg border border-white/5">
@@ -3909,7 +3953,7 @@ function AppContent() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Tipografia Preferida</label>
+                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Tipografia Preferida</label>
                     <select 
                       value={editingBrand.typography}
                       onChange={(e) => setEditingBrand({ ...editingBrand, typography: e.target.value })}
@@ -3931,15 +3975,15 @@ function AppContent() {
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <Zap size={16} className="text-[#d4af37]" />
-                        <h4 className="text-[10px] font-black text-[#d4af37] uppercase tracking-[0.2em]">Padrão Estratégico Detectado (IA)</h4>
+                        <h4 className="text-xs font-black text-[#d4af37] uppercase tracking-[0.2em]">Padrão Estratégico Detectado (IA)</h4>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1">
-                          <span className="text-[8px] font-bold text-gray-500 uppercase">Estilo Dominante</span>
+                          <span className="text-[10px] font-bold text-gray-500 uppercase">Estilo Dominante</span>
                           <p className="text-xs text-gray-300 leading-relaxed">{editingBrand.styleAnalysis}</p>
                         </div>
                         <div className="space-y-1">
-                          <span className="text-[8px] font-bold text-gray-500 uppercase">Tom de Voz</span>
+                          <span className="text-[10px] font-bold text-gray-500 uppercase">Tom de Voz</span>
                           <p className="text-xs text-gray-300 leading-relaxed">{editingBrand.toneOfVoice}</p>
                         </div>
                       </div>
@@ -4022,7 +4066,7 @@ function AppContent() {
                                 <div className={`p-1 rounded-lg ${studioMode === mode.id ? 'bg-[#d4af37] text-black' : 'bg-[#222] text-gray-400'}`}>
                                   <mode.icon size={12} />
                                 </div>
-                                <span className="text-[8px] font-bold text-left leading-tight uppercase tracking-wider">{mode.label}</span>
+                                <span className="text-[10px] font-bold text-left leading-tight uppercase tracking-wider">{mode.label}</span>
                               </button>
                             ))}
                           </div>
@@ -4034,7 +4078,7 @@ function AppContent() {
                             <button 
                               type="button"
                               onClick={() => setFastMode(!fastMode)}
-                              className={`flex items-center gap-2 px-3 py-1 rounded-full text-[8px] font-black transition-all border ${fastMode ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] text-gray-500 border-[#222] hover:border-[#333]'}`}
+                              className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black transition-all border ${fastMode ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] text-gray-500 border-[#222] hover:border-[#333]'}`}
                             >
                               <Zap size={8} fill={fastMode ? "currentColor" : "none"} />
                               {fastMode ? 'TURBO' : 'QUALIDADE'}
@@ -4047,7 +4091,7 @@ function AppContent() {
                               className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'video' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
                             >
                               <Video size={20} />
-                              <span className="text-[9px] font-black uppercase tracking-widest">Vídeo Veo 3.1</span>
+                              <span className="text-[11px] font-black uppercase tracking-widest">Vídeo Veo 3.1</span>
                             </button>
                             <button 
                               type="button"
@@ -4055,7 +4099,7 @@ function AppContent() {
                               className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'image' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
                             >
                               <ImageIcon size={20} />
-                              <span className="text-[9px] font-black uppercase tracking-widest">Imagem Pro</span>
+                              <span className="text-[11px] font-black uppercase tracking-widest">Imagem Pro</span>
                             </button>
                           </div>
                         </div>
@@ -4066,7 +4110,7 @@ function AppContent() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
                             <div className="flex items-center justify-between mb-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Personagem / Referência</label>
+                              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Personagem / Referência</label>
                               {refAsset && (
                                 <button type="button" onClick={analyzeAssetForPrompt} disabled={isAnalyzing} className="text-[9px] font-black text-[#d4af37] flex items-center gap-1 uppercase">
                                   {isAnalyzing ? "..." : <Sparkles size={10} />}
@@ -4092,7 +4136,7 @@ function AppContent() {
                               ) : (
                                 <div className="text-center">
                                   <User size={14} className="text-gray-600 mx-auto mb-1" />
-                                  <span className="text-[8px] font-bold text-gray-500 uppercase">Personagem</span>
+                                  <span className="text-[10px] font-bold text-gray-500 uppercase">Personagem</span>
                                 </div>
                               )}
                             </div>
@@ -4100,7 +4144,7 @@ function AppContent() {
 
                           <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
                             <div className="flex items-center justify-between mb-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Produto</label>
+                              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Produto</label>
                             </div>
                             <input type="file" onChange={handleProductAssetUpload} className="hidden" ref={productAssetInputRef} accept="image/*" />
                             <div 
@@ -4144,13 +4188,13 @@ function AppContent() {
                           <div className="p-3 border-b border-[#222] flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Wand2 size={14} className="text-[#d4af37]" />
-                              <span className="text-[9px] font-black text-white uppercase tracking-widest">Estilos</span>
+                              <span className="text-xs font-black text-white uppercase tracking-widest">Estilos</span>
                             </div>
                             <button
                               type="button"
                               onClick={enhancePromptWithAI}
                               disabled={isEnhancing || !prompt.trim()}
-                              className="bg-[#d4af37] text-black px-2 py-1 rounded-lg font-black text-[8px] flex items-center gap-1 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                              className="bg-[#d4af37] text-black px-2 py-1 rounded-lg font-black text-[10px] flex items-center gap-1 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                             >
                               {isEnhancing ? <div className="w-2 h-2 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <Zap size={10} fill="currentColor" />}
                               IA
@@ -4174,7 +4218,7 @@ function AppContent() {
                                   className={`p-1.5 rounded-lg flex flex-col items-center gap-0.5 transition-all group ${selectedStyle === style.id ? 'bg-[#d4af37]/20 border-[#d4af37]' : 'bg-black/20 border border-white/5 hover:border-[#d4af37]/50'}`}
                                 >
                                   <style.icon size={12} className={selectedStyle === style.id ? 'text-[#d4af37]' : 'text-gray-600 group-hover:text-[#d4af37]'} />
-                                  <span className={`text-[7px] font-black tracking-tighter uppercase ${selectedStyle === style.id ? 'text-white' : 'text-gray-500 group-hover:text-white'}`}>
+                                  <span className={`text-[10px] font-black tracking-tighter uppercase ${selectedStyle === style.id ? 'text-white' : 'text-gray-500 group-hover:text-white'}`}>
                                     {style.label}
                                   </span>
                                 </button>
@@ -4185,7 +4229,7 @@ function AppContent() {
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-widest">Formato</label>
+                            <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Formato</label>
                             <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none">
                               <option value="9:16">9:16</option>
                               <option value="16:9">16:9</option>
@@ -4193,8 +4237,8 @@ function AppContent() {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-[9px] font-bold text-gray-400 mb-1 uppercase tracking-widest">Qualidade</label>
-                            <select value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-[10px] focus:outline-none focus:border-[#d4af37] appearance-none">
+                            <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Qualidade</label>
+                            <select value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none">
                               <option value="720p">720p</option>
                               <option value="1080p">1080p</option>
                               <option value="2K">2K</option>
@@ -4207,7 +4251,7 @@ function AppContent() {
                           <button
                             type="button"
                             onClick={() => setLowPriority(!lowPriority)}
-                            className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border text-[9px] font-bold transition-all ${lowPriority ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border text-[11px] font-bold transition-all ${lowPriority ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                           >
                             <Clock size={12} />
                             ECONOMIA
@@ -4215,7 +4259,7 @@ function AppContent() {
                           <button
                             type="button"
                             onClick={() => setUseGrounding(!useGrounding)}
-                            className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border text-[9px] font-bold transition-all ${useGrounding ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border text-[11px] font-bold transition-all ${useGrounding ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                           >
                             <Globe size={12} />
                             GROUNDING
@@ -4227,14 +4271,14 @@ function AppContent() {
                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
                       <div className="flex items-center gap-4">
                         <div className="flex flex-col">
-                          <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Quantidade</label>
+                          <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Quantidade</label>
                           <div className="flex gap-1 mt-1">
                             {[1, 2, 5, 10].map(n => (
                               <button 
                                 key={n} 
                                 type="button" 
                                 onClick={() => setQuantity(n)}
-                                className={`w-8 h-8 rounded-lg border text-[10px] font-bold transition-all ${quantity === n ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
+                                className={`w-8 h-8 rounded-lg border text-xs font-bold transition-all ${quantity === n ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                               >
                                 {n}
                               </button>
@@ -4243,14 +4287,14 @@ function AppContent() {
                         </div>
                         {type === 'video' && (
                           <div className="flex flex-col">
-                            <label className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Duração</label>
+                            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Duração</label>
                             <div className="flex gap-1 mt-1">
                               {[4, 8].map(d => (
                                 <button 
                                   key={d} 
                                   type="button" 
                                   onClick={() => setVideoDuration(d)}
-                                  className={`w-8 h-8 rounded-lg border text-[10px] font-bold transition-all ${videoDuration === d ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
+                                  className={`w-8 h-8 rounded-lg border text-xs font-bold transition-all ${videoDuration === d ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                                 >
                                   {d}s
                                 </button>
@@ -4326,13 +4370,13 @@ function AppContent() {
                           ) : item.status === 'failed' ? (
                             <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center gap-2">
                               <AlertCircle size={24} className="text-red-500/50" />
-                              <p className="text-[8px] text-red-400 font-medium leading-tight line-clamp-3">{item.error}</p>
+                              <p className="text-[10px] text-red-400 font-medium leading-tight line-clamp-3">{item.error}</p>
                             </div>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                               <div className="relative">
                                 <div className="w-10 h-10 border-3 border-[#d4af37]/20 border-t-[#d4af37] rounded-full animate-spin" />
-                                <div className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-[#d4af37]">
+                                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-[#d4af37]">
                                   {item.progress}%
                                 </div>
                               </div>
@@ -4971,7 +5015,7 @@ function AppContent() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div className="space-y-4">
-                            <label className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Objetivo da Campanha</label>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Objetivo da Campanha</label>
                             <div className="grid grid-cols-2 gap-2">
                               {[
                                 { id: 'conversoes', label: 'Vendas/Conversão' },
@@ -4983,7 +5027,7 @@ function AppContent() {
                                   key={goal.id}
                                   type="button"
                                   onClick={() => setAdGoal(goal.id as any)}
-                                  className={`px-3 py-2 rounded-xl border text-[9px] font-bold transition-all ${adGoal === goal.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-black/40 border-white/5 text-gray-500 hover:border-[#d4af37]/30'}`}
+                                  className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all ${adGoal === goal.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-black/40 border-white/5 text-gray-500 hover:border-[#d4af37]/30'}`}
                                 >
                                   {goal.label}
                                 </button>
@@ -4992,7 +5036,7 @@ function AppContent() {
                           </div>
 
                           <div className="space-y-4">
-                            <label className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Gatilho Psicológico Master</label>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Gatilho Psicológico Master</label>
                             <div className="grid grid-cols-3 gap-2">
                               {[
                                 { id: 'desejo', label: 'DESEJO' },
@@ -5006,7 +5050,7 @@ function AppContent() {
                                   key={trigger.id}
                                   type="button"
                                   onClick={() => setAdTrigger(trigger.id as any)}
-                                  className={`px-1 py-2 rounded-xl border text-[8px] font-black transition-all ${adTrigger === trigger.id ? 'bg-white text-black border-white' : 'bg-black/40 border-white/5 text-gray-500 hover:border-white/20'}`}
+                                  className={`px-1 py-2 rounded-xl border text-[10px] font-black transition-all ${adTrigger === trigger.id ? 'bg-white text-black border-white' : 'bg-black/40 border-white/5 text-gray-500 hover:border-white/20'}`}
                                 >
                                   {trigger.label}
                                 </button>
@@ -5016,7 +5060,7 @@ function AppContent() {
                         </div>
 
                         <div className="space-y-4 pt-4">
-                          <label className="block text-[8px] font-bold text-gray-400 uppercase tracking-widest">Otimização Plataforma Nativa</label>
+                          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Otimização Plataforma Nativa</label>
                           <div className="flex gap-2">
                             {[
                               { id: 'instagram', label: 'META (Insta/FB Ad)' },
@@ -5028,7 +5072,7 @@ function AppContent() {
                                 key={plat.id}
                                 type="button"
                                 onClick={() => setAdPlatform(plat.id as any)}
-                                className={`flex-1 px-3 py-3 rounded-xl border text-[9px] font-black transition-all ${adPlatform === plat.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-black/40 border-white/5 text-gray-500 hover:border-blue-600/30'}`}
+                                className={`flex-1 px-3 py-3 rounded-xl border text-xs font-black transition-all ${adPlatform === plat.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-black/40 border-white/5 text-gray-500 hover:border-blue-600/30'}`}
                               >
                                 {plat.label}
                               </button>
