@@ -287,55 +287,20 @@ async function createServer() {
   app.post("/api/gemini", async (req, res) => {
     try {
       const { method, args, apiKey: clientApiKey } = req.body;
-      let apiKey = clientApiKey || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
       
-      if (apiKey) {
-        apiKey = apiKey.toString().trim();
-        // Remove quotes and common accidental wrappers
-        if (apiKey.startsWith('"') && apiKey.endsWith('"')) apiKey = apiKey.substring(1, apiKey.length - 1);
-        if (apiKey.startsWith("'") && apiKey.endsWith("'")) apiKey = apiKey.substring(1, apiKey.length - 1);
-        
-        // DEBUG LOG (MASKED)
-        console.log(`[Gemini Proxy] Key Metadata - Prefix: "${apiKey.substring(0, 7)}", Suffix: "${apiKey.substring(apiKey.length - 4)}", Length: ${apiKey.length}, Has Spaces: ${apiKey.includes(' ')}`);
-        
-        // Detect descriptive strings instead of keys
-        if (apiKey.includes(' • ') || apiKey.includes('...') || apiKey.toLowerCase().includes('gemini api key')) {
-          console.error("[Gemini Proxy] KEY FORMAT ERROR: The environment variable seems to contain the DISPLAY NAME of the key instead of the actual key string.");
-          return res.status(401).json({ 
-            error: "Formato de Chave Inválido", 
-            message: "O sistema detectou o NOME da chave (ex: 'Gemini API Key...') em vez do CÓDIGO real (ex: 'AIzaSy...'). Por favor, delete o segredo e adicione-o novamente colando o código de texto puro." 
-          });
-        }
-      }
+      // COMMERCIAL STABILITY: Always prioritize the Master Key (Server Env Var)
+      // This prevents client-side key issues from affecting the production environment.
+      let apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY || clientApiKey;
       
-      // Clean up placeholder keys aggressively
-      const isPlaceholder = (key: string) => {
-        if (!key) return true;
-        const upper = key.toUpperCase();
-        return (
-          upper.startsWith('YOUR_') || 
-          upper.startsWith('TODO_') || 
-          upper.includes('INSERT_HERE') || 
-          upper.includes('API_KEY_HERE') ||
-          upper.includes('EXAMPLE') ||
-          upper.includes('DEFAULT') || // Evita usar a string "Default Gemini API Key" como chave literal
-          key.length < 10 // Real Gemini keys are long
-        );
-      };
-
-      if (apiKey && isPlaceholder(apiKey)) {
-        console.warn("[Gemini Proxy] Key placeholder detected and ignored.");
-        apiKey = null;
-      }
-
-      if (!apiKey) {
-        console.error("[Gemini Proxy] No valid API Key found.");
-        return res.status(401).json({ 
-          error: "Gemini API Key não configurada ou inválida.", 
-          message: "Por favor, configure sua GEMINI_API_KEY nas configurações do projeto (Settings > Secrets) ou no Studio." 
+      if (!apiKey || apiKey.length < 20 || !apiKey.startsWith('AIza')) {
+        console.error("[Gemini Proxy] CRITICAL: No valid Master Key found in server environment.");
+        return res.status(503).json({ 
+          error: "Serviço Indisponível", 
+          message: "Estamos realizando uma manutenção rápida em nossos motores de IA. Por favor, tente novamente em alguns instantes." 
         });
       }
 
+      apiKey = apiKey.toString().trim();
       const client = new GoogleGenAI({ apiKey });
 
       if (method === 'generateVideos') {
@@ -386,10 +351,22 @@ async function createServer() {
       }
     } catch (error: any) {
       console.error("Gemini API Proxy Exception:", error);
-      console.error("Failed Request Body (Truncated):", JSON.stringify({ ...req.body, apiKey: '***' }).substring(0, 1000));
-      res.status(500).json({ 
-        error: error.message || "Internal Proxy Error",
-        details: error.stack
+      
+      let errorMessage = error.message || "Erro desconhecido na API Gemini";
+      let status = 500;
+
+      // Localize and humanize common Google API errors
+      if (errorMessage.includes("API key not valid") || errorMessage.includes("API_KEY_INVALID")) {
+        status = 401;
+        errorMessage = "A chave de API configurada é inválida ou expirou. Por favor, verifique sua GEMINI_API_KEY no menu de configurações do projeto.";
+      } else if (errorMessage.includes("quota") || errorMessage.includes("429")) {
+        status = 429;
+        errorMessage = "Limite de requisições excedido. Aguarde alguns instantes ou verifique seu plano no Google AI Studio.";
+      }
+      
+      res.status(status).json({ 
+        error: errorMessage,
+        details: error.stack?.substring(0, 200)
       });
     }
   });

@@ -594,6 +594,13 @@ function LoginModal({ onLogin, onGoogleLogin, onSwitchToSignUp, onForgotPassword
 }
 
 function AppContent() {
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' | null }>({ message: '', type: null });
+
+  const showNotification = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(prev => prev.message === message ? { message: '', type: null } : prev), 5000);
+  }, []);
+
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [view, setView] = useState<'landing' | 'app'>(localStorage.getItem('lumina_view') as any || 'landing');
@@ -833,7 +840,7 @@ function AppContent() {
       localStorage.removeItem('referredBy');
     } catch (error: any) {
       console.error("Sign up failed:", error);
-      alert(`Erro ao criar conta: ${error.message}`);
+      showNotification(`Erro ao criar conta: ${error.message}`, "error");
     } finally {
       setIsRegistering(false);
       setTimeout(() => {
@@ -856,7 +863,7 @@ function AppContent() {
       } else if (error.code === 'auth/too-many-requests') {
         message = "Muitas tentativas. Tente novamente mais tarde.";
       }
-      alert(message);
+      showNotification(message, "error");
     } finally {
       setIsLoggingIn(false);
     }
@@ -864,16 +871,16 @@ function AppContent() {
 
   const handleForgotPassword = async (email: string) => {
     if (!email) {
-      alert("Por favor, digite seu e-mail primeiro.");
+      showNotification("Por favor, digite seu e-mail primeiro.", "info");
       return;
     }
     setIsResettingPassword(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      alert("E-mail de redefinição de senha enviado! Verifique sua caixa de entrada.");
+      showNotification("E-mail de redefinição de senha enviado! Verifique sua caixa de entrada.", "success");
     } catch (error: any) {
       console.error("Reset failed:", error);
-      alert(`Erro ao enviar e-mail: ${error.message}`);
+      showNotification(`Erro ao enviar e-mail: ${error.message}`, "error");
     } finally {
       setIsResettingPassword(false);
     }
@@ -1006,6 +1013,7 @@ function AppContent() {
     const isPlaceholder = (k: string) => {
       if (!k) return true;
       const upper = k.toUpperCase();
+      // Most common patterns of invalid or placeholder keys
       return (
         upper.startsWith('YOUR_') || 
         upper.startsWith('TODO_') || 
@@ -1013,7 +1021,8 @@ function AppContent() {
         upper.includes('API_KEY_HERE') ||
         upper.includes('EXAMPLE') ||
         upper.includes('DEFAULT') ||
-        k.length < 10
+        k.length < 20 || // Real Gemini keys are usually > 35 chars
+        !k.startsWith('AIza') // ALL valid Google API keys start with AIza
       );
     };
 
@@ -1085,17 +1094,15 @@ function AppContent() {
           data = responseText ? JSON.parse(responseText) : {};
         } catch (e) {
           if (response.status === 413) {
-            throw new Error("O arquivo ou imagem enviada é muito grande para o servidor. Tente uma imagem menor.");
+            throw new Error("O arquivo enviado é muito grande. Tente uma imagem menor.");
           }
-          throw new Error(`Erro inesperado do servidor (${response.status}): ${responseText.substring(0, 100)}`);
+          throw new Error("O sistema está temporariamente sobrecarregado. Por favor, aguarde um instante.");
         }
 
         if (!response.ok) {
-          // Se for erro de autenticação, lançar erro específico para o usuário
-          if (response.status === 401) {
-            throw new Error(data.message || "Lumina: API Key inválida ou não configurada.");
-          }
-          throw new Error(data.error?.message || data.error || "Erro na comunicação com o servidor Gemini.");
+          // Commercial Error Masking: Prefer human message, fallback to generic
+          const msg = data.message || "Estamos refinando nossos motores de IA. Tente novamente em breve.";
+          throw new Error(msg);
         }
 
         return data;
@@ -1312,7 +1319,7 @@ function AppContent() {
         body: JSON.stringify({ email: targetEmail, code, userId: user.uid })
       });
       
-      alert(`Um código de verificação foi enviado para ${targetEmail}. (Para teste: ${code})`);
+      showNotification("Um código de verificação foi enviado para o seu e-mail.", "success");
       setLastSentCode(code);
     } catch (error) {
       console.error("Failed to send OTP:", error);
@@ -1324,7 +1331,7 @@ function AppContent() {
     const enteredCode = verificationCode.join('');
     
     if (enteredCode.length < 6) {
-      alert("Por favor, insira o código completo.");
+      showNotification("Por favor, insira o código completo.", "info");
       return;
     }
 
@@ -1342,7 +1349,7 @@ function AppContent() {
         throw new Error(data.error || "Falha na verificação.");
       }
 
-      alert("Conta verificada com sucesso! Você recebeu 40 créditos de teste.");
+      showNotification("Conta verificada com sucesso! Você recebeu 40 créditos de teste.", "success");
       setView('app'); 
     } catch (error: any) {
       console.error("Verification failed:", error);
@@ -1412,7 +1419,7 @@ function AppContent() {
       const assets = rawAssets.slice(0, 4);
       
       if (assets.length === 0) {
-        alert("Suba pelo menos um logotipo ou imagem para análise profunda.");
+        showNotification("Suba pelo menos um logotipo ou imagem para análise profunda.", "info");
         setIsAnalyzingBrand(false);
         return;
       }
@@ -1463,7 +1470,7 @@ function AppContent() {
       }
     } catch (error: any) {
       console.error("Brand deep analysis failed:", error);
-      alert(error.message || "Falha na análise da marca. Tente novamente.");
+      showNotification(error.message || "Falha na análise da marca. Tente novamente.", "error");
     } finally {
       setIsAnalyzingBrand(false);
     }
@@ -1554,7 +1561,7 @@ function AppContent() {
       if (isLipsyncActive) {
         rawPrompts = [""];
       } else if (isCreativeActive) {
-        alert("Por favor, descreva o que deseja no criativo.");
+        showNotification("Por favor, descreva o que deseja no criativo.", "info");
         return;
       } else {
         return;
@@ -1570,7 +1577,7 @@ function AppContent() {
 
     // Check credits
     if (userData.credits < totalCost) {
-      alert(`Saldo insuficiente! Esta operação custa ${totalCost} créditos, mas você possui apenas ${userData.credits}.`);
+      showNotification(`Saldo insuficiente! Esta operação custa ${totalCost} créditos, mas você possui apenas ${userData.credits}.`, "error");
       setActiveTab('plans');
       return;
     }
@@ -1595,7 +1602,7 @@ function AppContent() {
     
     // Validation for Estúdio Lumina
     if (isCreativeActive && !creativeLogo) {
-      alert("Para gerar criativos, você precisa subir a logomarca.");
+      showNotification("Para gerar criativos, você precisa subir a logomarca.", "info");
       return;
     }
 
@@ -2842,6 +2849,29 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#f5f5f5] font-sans selection:bg-[#d4af37] selection:text-black">
+      {/* Notification Toast */}
+      <AnimatePresence>
+        {notification.message && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%' }}
+            className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-[9999] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border backdrop-blur-xl ${
+              notification.type === 'success' ? 'bg-green-500/10 border-green-500/50 text-green-400' :
+              notification.type === 'error' ? 'bg-red-500/10 border-red-500/50 text-red-400' :
+              'bg-[#1a1a1a]/90 border-[#333] text-gray-300'
+            }`}
+          >
+            {notification.type === 'success' ? <CheckCircle2 size={18} /> : 
+             notification.type === 'error' ? <AlertCircle size={18} /> : 
+             <Sparkles size={18} />}
+            <span className="text-xs font-bold uppercase tracking-widest leading-none">{notification.message}</span>
+            <button onClick={() => setNotification({ message: '', type: null })} className="ml-2 hover:text-white transition-colors">
+              <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* --- Top Navigation --- */}
       <header className="fixed top-0 left-0 right-0 h-20 bg-[#111] border-b border-[#222] z-50 flex items-center justify-between px-8">
         <div className="flex items-center gap-8">
@@ -3921,7 +3951,7 @@ function AppContent() {
                   <button 
                     onClick={async () => {
                       if (!user) {
-                        alert("Você precisa estar logado para salvar marcas.");
+                        showNotification("Você precisa estar logado para salvar marcas.", "info");
                         return;
                       }
                       setIsAnalyzingBrand(true);
@@ -3932,7 +3962,7 @@ function AppContent() {
                         setEditingBrand(null);
                       } catch (error) {
                         console.error("Failed to save brand:", error);
-                        alert("Erro ao salvar marca no servidor.");
+                        showNotification("Erro ao salvar marca no servidor.", "error");
                       } finally {
                         setIsAnalyzingBrand(false);
                       }
