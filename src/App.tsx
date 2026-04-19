@@ -598,6 +598,7 @@ function AppContent() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [view, setView] = useState<'landing' | 'app'>(localStorage.getItem('lumina_view') as any || 'landing');
   const [batch, setBatch] = useState<BatchItem[]>([]);
+  const isInternalNav = useRef(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -720,6 +721,63 @@ function AppContent() {
   const [showTerms, setShowTerms] = useState(false);
   const [legalTab, setLegalTab] = useState<'terms' | 'privacy' | 'contact'>('terms');
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // --- Navigation & History Sync ---
+  useEffect(() => {
+    // Initial state setup
+    const initialState = { 
+      view, 
+      activeTab: localStorage.getItem('lumina_activeTab') || 'dashboard', 
+      showLoginModal: false, 
+      showRegistration: false, 
+      showTerms: false, 
+      hasPreview: false 
+    };
+    window.history.replaceState(initialState, '');
+
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state) {
+        isInternalNav.current = true;
+        setView(state.view);
+        setActiveTab(state.activeTab);
+        setShowLoginModal(state.showLoginModal);
+        setShowRegistration(state.showRegistration);
+        setShowTerms(state.showTerms);
+        if (!state.hasPreview) setSelectedMedia(null);
+        isInternalNav.current = false;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Sync state changes TO history
+  useEffect(() => {
+    if (isInternalNav.current) return;
+    
+    const newState = { 
+      view, 
+      activeTab, 
+      showLoginModal, 
+      showRegistration, 
+      showTerms, 
+      hasPreview: !!selectedMedia 
+    };
+
+    const currentState = window.history.state;
+    // Basic check to avoid redundant history entries
+    if (!currentState || 
+        (currentState.view !== newState.view) || 
+        (currentState.activeTab !== newState.activeTab) ||
+        (currentState.showLoginModal !== newState.showLoginModal) ||
+        (currentState.showRegistration !== newState.showRegistration) ||
+        (currentState.showTerms !== newState.showTerms) ||
+        (currentState.hasPreview !== newState.hasPreview)) {
+      window.history.pushState(newState, '');
+    }
+  }, [view, activeTab, showLoginModal, showRegistration, showTerms, !!selectedMedia]);
   const [registrationData, setRegistrationData] = useState({ firstName: '', lastName: '', phone: '', email: '', password: '' });
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -3625,6 +3683,47 @@ function AppContent() {
                   </div>
                 </div>
 
+                {editingBrand.styleAnalysis && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-8 p-6 bg-[#d4af37]/5 border border-[#d4af37]/20 rounded-3xl relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Zap size={80} className="text-[#d4af37]" />
+                    </div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-6 h-6 bg-[#d4af37] text-black rounded-lg flex items-center justify-center">
+                        <Zap size={14} fill="currentColor" />
+                      </div>
+                      <h4 className="text-xs font-black text-white uppercase tracking-tighter">Relatório Estratégico IA</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                      <div className="space-y-2">
+                        <span className="text-[9px] font-black text-[#d4af37] uppercase tracking-widest block">Estética & Padrões</span>
+                        <p className="text-xs text-gray-300 leading-relaxed font-medium">{editingBrand.styleAnalysis}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <span className="text-[9px] font-black text-[#d4af37] uppercase tracking-widest block">Personalidade da Marca</span>
+                        <p className="text-xs text-gray-300 leading-relaxed font-medium">{editingBrand.toneOfVoice}</p>
+                      </div>
+                    </div>
+                    {editingBrand.colors && editingBrand.colors.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-[#d4af37]/10">
+                        <span className="text-[9px] font-black text-[#d4af37] uppercase tracking-widest block mb-2">Paleta Identificada</span>
+                        <div className="flex gap-2">
+                          {editingBrand.colors.map((color, i) => (
+                            <div key={i} className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-lg border border-white/5">
+                              <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color }} />
+                              <span className="text-[9px] font-mono text-gray-400 uppercase">{color}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
                 <div className="mt-10 flex justify-end gap-4">
                   <button 
                     onClick={handleDeepBrandAnalysis}
@@ -3711,6 +3810,43 @@ function AppContent() {
                       placeholder="História curta ou dados relevantes..."
                     />
                   </div>
+                  <div className="space-y-4 md:col-span-2">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Paleta de Cores Institucional</label>
+                    <div className="flex gap-3 flex-wrap">
+                      {editingBrand.colors.map((color, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-[#1a1a1a] border border-[#222] px-3 py-2 rounded-2xl group transition-all hover:border-[#d4af37]/30">
+                          <div className="w-5 h-5 rounded-full shadow-sm" style={{ backgroundColor: color }} />
+                          <input 
+                            type="text" 
+                            value={color} 
+                            onChange={(e) => {
+                              const newColors = [...editingBrand.colors];
+                              newColors[idx] = e.target.value;
+                              setEditingBrand({ ...editingBrand, colors: newColors });
+                            }}
+                            className="bg-transparent text-[11px] font-mono text-gray-400 w-20 focus:outline-none uppercase"
+                          />
+                          <button 
+                            onClick={() => {
+                              const newColors = editingBrand.colors.filter((_, i) => i !== idx);
+                              setEditingBrand({ ...editingBrand, colors: newColors });
+                            }}
+                            className="text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all ml-1"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                      <button 
+                        onClick={() => setEditingBrand({ ...editingBrand, colors: [...editingBrand.colors, '#d4af37'] })}
+                        className="h-10 px-4 rounded-2xl border-2 border-dashed border-[#222] flex items-center justify-center gap-2 text-gray-600 hover:border-[#d4af37] hover:text-[#d4af37] transition-all"
+                      >
+                        <Plus size={14} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Nova Cor</span>
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Contato / Redes Sociais</label>
                     <input 
@@ -4601,54 +4737,84 @@ function AppContent() {
                         <ChevronDown size={14} className="absolute right-3 bottom-3.5 text-gray-500 pointer-events-none" />
                       </div>
 
-                      {activeBrandProfileId && brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis && (
+                      {activeBrandProfileId && brandProfiles.find(b => b.id === activeBrandProfileId) && (
                         <motion.div 
                           initial={{ opacity: 0, y: 5 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="p-4 bg-[#d4af37]/5 border border-[#d4af37]/10 rounded-2xl space-y-2"
+                          className="p-5 bg-gradient-to-br from-[#d4af37]/10 to-transparent border border-[#d4af37]/20 rounded-3xl space-y-3 relative overflow-hidden"
                         >
-                          <div className="flex items-center gap-1.5">
-                            <Zap size={10} className="text-[#d4af37]" />
-                            <span className="text-[8px] font-black text-[#d4af37] uppercase tracking-[0.2em]">Padrão da Marca Ativo</span>
+                          <div className="absolute top-0 right-0 p-3 opacity-5">
+                            <Zap size={40} className="text-[#d4af37]" />
                           </div>
-                          <p className="text-[10px] text-gray-400 leading-relaxed italic line-clamp-2">
-                            "{brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis}"
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 bg-[#d4af37] text-black rounded-lg flex items-center justify-center">
+                              <Zap size={10} fill="currentColor" />
+                            </div>
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">DNA da Marca Ativado</span>
+                          </div>
+                          {brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis && (
+                            <p className="text-[11px] text-gray-400 leading-relaxed font-medium line-clamp-3">
+                              "{brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis}"
+                            </p>
+                          )}
                         </motion.div>
                       )}
 
                       {/* Logo Display/Upload */}
-                      <div 
-                        className={`aspect-[16/7] bg-[#1a1a1a] rounded-3xl border flex flex-col items-center justify-center gap-2 transition-all relative group ${creativeLogo ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#222] hover:border-[#333] cursor-pointer'}`}
-                        onClick={() => !creativeLogo && creativeLogoInputRef.current?.click()}
-                      >
-                        <input 
-                          ref={creativeLogoInputRef}
-                          type="file" 
-                          className="hidden" 
-                          accept="image/*" 
-                          onChange={handleCreativeLogoUpload} 
-                        />
-                        {creativeLogo ? (
-                          <>
-                            <img 
-                              src={`data:${creativeLogo.mimeType};base64,${creativeLogo.data}`} 
-                              alt="Logo" 
-                              className="h-full object-contain p-4" 
-                            />
-                            <button 
-                              type="button"
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCreativeLogo(null); setCreativeColors([]); }}
-                              className="absolute top-2 right-2 w-7 h-7 bg-black/80 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border border-red-500/30"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <ImagePlus size={20} className="text-gray-600" />
-                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Logo da Marca</span>
-                          </>
+                      <div className="flex flex-col gap-4">
+                        <div 
+                          className={`w-full max-w-[200px] aspect-square bg-[#1a1a1a] rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all relative group overflow-hidden ${creativeLogo ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#222] hover:border-[#333] cursor-pointer'}`}
+                          onClick={() => !creativeLogo && creativeLogoInputRef.current?.click()}
+                        >
+                          <input 
+                            ref={creativeLogoInputRef}
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={handleCreativeLogoUpload} 
+                          />
+                          {creativeLogo ? (
+                            <>
+                              <img 
+                                src={`data:${creativeLogo.mimeType};base64,${creativeLogo.data}`} 
+                                alt="Logo" 
+                                className="w-full h-full object-contain p-4" 
+                              />
+                              <button 
+                                type="button"
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCreativeLogo(null); setCreativeColors([]); }}
+                                className="absolute top-2 right-2 w-7 h-7 bg-black/80 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border border-red-500/30"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <ImagePlus size={20} className="text-gray-600" />
+                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none">Logo</span>
+                            </>
+                          )}
+                        </div>
+
+                        {activeBrandProfileId && (
+                          <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-2xl border border-white/10">
+                            <div>
+                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-2">Paleta Institucional</span>
+                              <div className="flex gap-1.5 flex-wrap">
+                                {creativeColors && creativeColors.length > 0 ? (
+                                  creativeColors.map((color, i) => (
+                                    <div key={i} className="w-4 h-4 rounded-full border border-white/10 shadow-sm" style={{ backgroundColor: color }} title={color} />
+                                  ))
+                                ) : (
+                                  <span className="text-[8px] text-gray-600 italic">Nenhuma cor</span>
+                                )}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Tipografia Base</span>
+                              <span className="text-[10px] font-bold text-[#d4af37] uppercase">{creativeTypography || 'Modern'}</span>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
