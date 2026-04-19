@@ -162,9 +162,16 @@ async function createServer() {
 
   app.post("/api/send-otp", async (req, res) => {
     try {
-      const { email, code } = req.body;
-      console.log(`[OTP] Enviando código ${code} para ${email}`);
+      const { email, code, userId } = req.body;
+      console.log(`[OTP] Enviando código ${code} para ${email} (User: ${userId})`);
       
+      // Store code in Firestore for verification if userId is provided
+      if (userId && dbAdmin) {
+        await dbAdmin.collection('users').doc(userId).update({
+          verificationCode: code
+        });
+      }
+
       if (resend) {
         await resend.emails.send({
           from: 'Lumina <noreply@luminaaisolutions.com.br>',
@@ -191,6 +198,57 @@ async function createServer() {
       }
     } catch (error: any) {
       console.error("Erro ao enviar OTP:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/verify-account", async (req, res) => {
+    try {
+      const { userId, code } = req.body;
+      if (!userId || !code) return res.status(400).json({ error: "UserId and code are required" });
+
+      if (!dbAdmin) return res.status(500).json({ error: "Firebase Admin not initialized" });
+
+      const userRef = dbAdmin.collection('users').doc(userId);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) return res.status(404).json({ error: "User not found" });
+
+      const userData = userDoc.data();
+      if (userData.isVerified) return res.status(400).json({ error: "User already verified" });
+
+      if (userData.verificationCode !== code) {
+        return res.status(400).json({ error: "Código de verificação incorreto" });
+      }
+
+      // 1. Verify user and grant trial credits
+      await userRef.update({
+        isVerified: true,
+        credits: 40,
+        verificationCode: admin.firestore.FieldValue.delete()
+      });
+
+      // 2. Handle Referral Bonus
+      if (userData.referredBy) {
+        try {
+          const referrers = await dbAdmin.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
+          if (!referrers.empty) {
+            const referrerDoc = referrers.docs[0];
+            if (referrerDoc.id !== userId) {
+              await referrerDoc.ref.update({
+                credits: admin.firestore.FieldValue.increment(10),
+                referralCount: admin.firestore.FieldValue.increment(1)
+              });
+              console.log(`[Referral] Granted 10 credits to ${referrerDoc.id} for referring ${userId}`);
+            }
+          }
+        } catch (refErr) {
+          console.error("[Referral] Bonus grant failed:", refErr);
+        }
+      }
+
+      res.json({ success: true, message: "Account verified and credits granted" });
+    } catch (error: any) {
+      console.error("Account verification error:", error);
       res.status(500).json({ error: error.message });
     }
   });

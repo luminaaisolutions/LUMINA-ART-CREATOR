@@ -997,7 +997,7 @@ function AppContent() {
   }) => {
     const maxRetries = 2;
     let attempt = 0;
-    const { prompt, contents, model = "gemini-3-flash-preview", config, method = 'generateContent' } = options;
+    const { prompt, contents, model = "gemini-flash-latest", config, method = 'generateContent' } = options;
 
     while (attempt < maxRetries) {
       try {
@@ -1240,7 +1240,7 @@ function AppContent() {
       await fetch('/api/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: targetEmail, code })
+        body: JSON.stringify({ email: targetEmail, code, userId: user.uid })
       });
       
       alert(`Um código de verificação foi enviado para ${targetEmail}. (Para teste: ${code})`);
@@ -1254,25 +1254,33 @@ function AppContent() {
     if (!user || !userData) return;
     const enteredCode = verificationCode.join('');
     
-    // Allow bypass for development if needed, but here we check against DB
-    if (enteredCode === userData.verificationCode || (lastSentCode && enteredCode === lastSentCode)) {
-      setIsVerifying(true);
-      try {
-        await updateDoc(doc(db, 'users', user.uid), { 
-          isVerified: true,
-          credits: 40, // 40 trial credits after verification
-          verificationCode: deleteField() 
-        });
-        alert("Conta verificada com sucesso! Você recebeu 40 créditos de teste.");
-        setView('app'); // Redirect to dashboard automatically
-      } catch (error) {
-        console.error("Verification failed:", error);
-      } finally {
-        setIsVerifying(false);
+    if (enteredCode.length < 6) {
+      alert("Por favor, insira o código completo.");
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const res = await fetch('/api/verify-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.uid, code: enteredCode })
+      });
+      
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Falha na verificação.");
       }
-    } else {
-      alert("Código incorreto. Tente novamente.");
+
+      alert("Conta verificada com sucesso! Você recebeu 40 créditos de teste.");
+      setView('app'); 
+    } catch (error: any) {
+      console.error("Verification failed:", error);
+      alert(error.message);
       setVerificationCode(['', '', '', '', '', '']);
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -1287,7 +1295,7 @@ function AppContent() {
       setCreativeLogo(logo);
       
       if (activeBrandProfileId) {
-        setBrandProfiles(prev => prev.map(b => b.id === activeBrandProfileId ? { ...b, logo } : b));
+        setBrandProfiles(prev => prev.map(b => b.id === activeBrandProfileId ? { ...b, logos: [logo] } : b));
       }
       
       analyzeLogoColors(base64, file.type);
@@ -1299,7 +1307,7 @@ function AppContent() {
     setIsAnalyzingLogo(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
+        model: "gemini-flash-latest",
         contents: [
           { 
             role: "user",
@@ -1363,7 +1371,7 @@ function AppContent() {
       } as any);
 
       const response = await callGeminiAPI({
-        model: "gemini-1.5-flash",
+        model: "gemini-flash-latest",
         contents: contents as any
       });
 
@@ -1393,7 +1401,7 @@ function AppContent() {
     setIsMagicLoading(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
+        model: "gemini-flash-latest",
         prompt: `Expanda o seguinte prompt de criação de imagem/vídeo para torná-lo profissional, detalhado e artístico. Mantenha o idioma original do prompt. Retorne APENAS o prompt expandido, sem explicações. Prompt original: "${prompt}"`
       });
       
@@ -1407,7 +1415,7 @@ function AppContent() {
   };
 
   // --- Generation Logic ---
-  const getCostPerItem = (isLipsyncMode = useLipsync) => {
+  const getCostPerItem = (isLipsyncMode = useLipsync, isCreativeMode = useCreativeStudio) => {
     let baseCost = 1;
     let currentRes = resolution;
     let currentLowPri = lowPriority;
@@ -1416,6 +1424,9 @@ function AppContent() {
       baseCost = 15; // Standard LipSync cost
       currentRes = lipsyncResolution;
       currentLowPri = lipsyncLowPriority;
+    } else if (isCreativeMode) {
+      // Creative ADS is always 1 credit per image/ad as requested
+      return 1;
     } else if (type === 'video') {
       baseCost = videoDuration >= 8 ? 35 : 20;
       currentRes = resolution;
@@ -1457,7 +1468,7 @@ function AppContent() {
     const isLipsyncActive = forceLipsync !== undefined ? forceLipsync : (activeTab === 'lipsync' || useLipsync);
     const isCreativeActive = forceCreative !== undefined ? forceCreative : (activeTab === 'projects' || useCreativeStudio);
     
-    const costPerItem = getCostPerItem(isLipsyncActive);
+    const costPerItem = getCostPerItem(isLipsyncActive, isCreativeActive);
     let currentQuantity = isLipsyncActive ? lipsyncQuantity : quantity;
     if (isCreativeActive) currentQuantity = creativeQuantity;
     
@@ -1566,7 +1577,7 @@ function AppContent() {
     
     // Deduct credits immediately
     const userRef = doc(db, 'users', user.uid);
-    updateDoc(userRef, { credits: userData.credits - totalCost }).catch(err => {
+    updateDoc(userRef, { credits: increment(-totalCost) }).catch(err => {
       console.error("Failed to deduct credits:", err);
     });
     
@@ -1659,7 +1670,7 @@ function AppContent() {
               const styleContext = currentStyle ? `[ESTILO OBRIGATÓRIO: ${currentStyle}]` : '';
               
               const enhancerRes = await callGeminiAPI({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-flash-latest',
                 prompt: `You are an Elite Prompt Engineer for state-of-the-art AI image models (Imagen 3, Gemini 3).
                 TASK: Expand the user's concept into a WORLD-CLASS PHOTOGRAPHIC or ARTISTIC masterpiece.
                 
@@ -1698,8 +1709,8 @@ function AppContent() {
 
           while (imageAttempt <= maxImageAttempts && !base64Data) {
             try {
-              // Respect user model choice (Nano = Gemini 3.1 Flash Image, Imagen = Imagen 3.0)
-              const modelName = currentModelType === 'imagen' ? 'imagen-3.0-generate-001' : 'gemini-3.1-flash-image-preview'; 
+              // Respect user model choice (Nano = Gemini 3.1 Flash Image, Imagen = Imagen 4.0)
+              const modelName = currentModelType === 'imagen' ? 'imagen-4.0-generate-001' : 'gemini-3.1-flash-image-preview'; 
               const methodToUse = currentModelType === 'imagen' ? 'generateImages' : 'generateContent';
               
               let promptText = currentRefAsset && currentRefAsset.type === 'image' 
@@ -1748,21 +1759,23 @@ function AppContent() {
                 }
               });
               
-              if (response.generatedImages?.[0]?.image?.imageBytes) {
-                base64Data = response.generatedImages[0].image.imageBytes;
-                mimeType = response.generatedImages[0].image.mimeType || 'image/png';
-              } else if (response.candidates?.[0]?.content?.parts) {
-                // Fallback for different API response shapes
-                const imagePart = response.candidates[0].content.parts.find((p: any) => p.inlineData);
-                if (imagePart) {
-                  base64Data = imagePart.inlineData.data;
-                  mimeType = imagePart.inlineData.mimeType || 'image/png';
-                }
-              }
+          if (response.generatedImages?.[0]?.image?.imageBytes) {
+            base64Data = response.generatedImages[0].image.imageBytes;
+            mimeType = response.generatedImages[0].image.mimeType || 'image/png';
+          } else if (response.candidates?.[0]?.content?.parts) {
+            // Fallback for different API response shapes
+            const imagePart = response.candidates[0].content.parts.find((p: any) => p.inlineData);
+            if (imagePart) {
+              base64Data = imagePart.inlineData.data;
+              mimeType = imagePart.inlineData.mimeType || 'image/png';
+            }
+          }
 
-              if (!base64Data) {
-                throw new Error("Resposta da API não conteve dados de imagem válidos.");
-              }
+          if (!base64Data) {
+            console.error("Gemini Image Response Error - Full Data:", JSON.stringify(response).substring(0, 1000));
+            const safetyNotice = response.candidates?.[0]?.finishReason === 'SAFETY' ? " (Bloqueado por filtros de segurança)" : "";
+            throw new Error(`Resposta da API não conteve dados de imagem válidos${safetyNotice}.`);
+          }
 
             } catch (e: any) {
               console.warn(`Image generation attempt ${imageAttempt} failed:`, e);
@@ -1835,7 +1848,7 @@ function AppContent() {
           if (!fastMode && isLipsync && currentLipsyncAudio) {
             try {
               const analysisRes = await callGeminiAPI({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-flash-latest',
                 contents: [{
                   role: 'user',
                   parts: [
@@ -2157,7 +2170,7 @@ function AppContent() {
         if (currentQuantity > 1 && currentType === 'image' && !fastMode) {
           try {
             const expansionRes = await callGeminiAPI({
-              model: 'gemini-3-flash-preview',
+              model: 'gemini-flash-latest',
               prompt: `The user wants ${currentQuantity} diverse and high-quality images based on this theme: "${itemPrompt}".
               Generate ${currentQuantity} distinct, highly detailed, and unique prompt variations. 
               Each variation MUST explore a completely different aspect, location, lighting, or artistic style related to the theme to avoid repetitive results.
@@ -2438,7 +2451,7 @@ function AppContent() {
     setIsAnalyzing(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
+        model: "gemini-flash-latest",
         contents: [{
           role: 'user',
           parts: [
@@ -2466,7 +2479,7 @@ function AppContent() {
     setIsEnhancing(true);
     try {
       const result = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
+        model: "gemini-flash-latest",
         prompt: `Enhance this video/image prompt to be more cinematic, detailed, and professional for Veo 3.1: "${prompt}". Focus on lighting, camera angles, textures, and atmosphere. Respond ONLY with the enhanced prompt in English.`
       });
       setPrompt(result.text || "");
@@ -2542,7 +2555,7 @@ function AppContent() {
     try {
       // 3. Test Gemini
       const response = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
+        model: "gemini-flash-latest",
         prompt: "ping"
       });
       
@@ -4061,7 +4074,7 @@ function AppContent() {
                         onClick={(e) => handleCreate(e, false, false)}
                       >
                         {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <Play size={20} fill="currentColor" />}
-                        GERAR ({getCostPerItem(false) * quantity * Math.max(1, prompt.split('\n').filter(p => p.trim() !== '').length)} CRÉDITOS)
+                        GERAR ({getCostPerItem(false, false) * quantity * Math.max(1, prompt.split('\n').filter(p => p.trim() !== '').length)} CRÉDITOS)
                       </button>
                     </div>
                   </form>
@@ -4408,7 +4421,7 @@ function AppContent() {
                           {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <Mic size={20} fill="currentColor" />}
                           <span>GERAR LIP SYNC</span>
                         </div>
-                        <span className="text-[10px] opacity-80 font-bold uppercase tracking-tighter">Custo: {getCostPerItem(true) * lipsyncQuantity} CRÉDITOS</span>
+                        <span className="text-[10px] opacity-80 font-bold uppercase tracking-tighter">Custo: {getCostPerItem(true, false) * lipsyncQuantity} CRÉDITOS</span>
                       </button>
                     </div>
                   </div>
@@ -4712,7 +4725,7 @@ function AppContent() {
                           {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <Sparkles size={20} fill="currentColor" />}
                           <span>GERAR CRIATIVOS</span>
                         </div>
-                        <span className="text-[10px] opacity-80 font-bold uppercase tracking-tighter">Custo: {getCostPerItem(false) * creativeQuantity} CRÉDITOS</span>
+                        <span className="text-[10px] opacity-80 font-bold uppercase tracking-tighter">Custo: {getCostPerItem(false, true) * creativeQuantity} CRÉDITOS</span>
                       </button>
                     </div>
                   </div>
