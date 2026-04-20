@@ -356,7 +356,7 @@ async function createServer() {
           () => (client as any).models.generateImages({
             model: args.model,
             prompt: args.prompt,
-            config: { ...args.config, safetySettings: args.config?.safetySettings || defaultSafetySettings }
+            config: { ...args.config, responseModalities: args.config?.responseModalities || ['TEXT', 'IMAGE'], safetySettings: args.config?.safetySettings || defaultSafetySettings }
           }),
           3, 3000, 'generateImages'
         );
@@ -369,7 +369,7 @@ async function createServer() {
           () => client.models.generateContent({
             model: args.model,
             contents: contents,
-            config: { ...args.config, safetySettings: args.config?.safetySettings || defaultSafetySettings }
+            config: { ...args.config, responseModalities: args.config?.responseModalities || ['TEXT', 'IMAGE'], safetySettings: args.config?.safetySettings || defaultSafetySettings }
           }),
           3, 2000, 'generateContent'
         );
