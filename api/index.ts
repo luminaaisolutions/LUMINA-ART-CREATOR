@@ -23,7 +23,9 @@ let dbAdmin: any = null;
 try {
   if (!admin.apps.length) {
     admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
+      credential: credential: process.env.FIREBASE_SERVICE_ACCOUNT 
+  ? admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+  : admin.credential.applicationDefault(),
       projectId: process.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_I || 'gen-lang-client-0723352507'
     });
   }
