@@ -42,6 +42,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const demoVideos = [
     {
+      url: "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/0030.mp4?alt=media&token=d19f5f7d-2a49-4288-b93b-3725b738477a",
+      label: "Gerado com Lumina"
+    },
+    {
+      url: "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/0036.mp4?alt=media&token=616013cf-5583-4cdc-9ae2-6c2f0ed1d701",
+      label: "Gerado com Lumina"
+    },
+    {
+      url: "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/0043.mp4?alt=media&token=d3d3fc93-8321-4017-8a80-054aae58822d",
+      label: "Gerado com Lumina"
+    }
+  ];
+    {
       url: "https://cdn.openai.com/sora/videos/tokyo-walk.mp4",
       label: "Realismo Urbano"
     },
@@ -68,22 +81,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   }, [showDemoVideo, currentDemoIdx]);
   const showcaseItems = [
     {
-      url: "https://cdn.openai.com/sora/videos/fashion-show.mp4",
+      url: "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/0023%20(1).mp4?alt=media&token=2a007a62-44bc-48a8-989c-5855f568d9db",
       type: "video",
-      prompt: "[Personagem/Referência] Modelo feminina em desfile de alta costura em estilo Cyberpunk, iluminação neon dramática, ultra-realismo 8k.",
-      label: "FASHION + CYBERPUNK"
+      prompt: "Criação de vídeo cinematográfico com IA — resultados reais gerados pelo Lumina Art Creator.",
+      label: "VÍDEO CINEMATOGRÁFICO"
     },
     {
-      url: "https://cdn.openai.com/sora/videos/big-sur.mp4",
+      url: "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/0030.mp4?alt=media&token=d19f5f7d-2a49-4288-b93b-3725b738477a",
       type: "video",
-      prompt: "[Drone] Voo cinematográfico sobre a costa de Big Sur, ondas quebrando contra rochas, luz dourada do pôr do sol, 4k.",
-      label: "PAISAGISMO AÉREO"
+      prompt: "Geração de conteúdo visual profissional com inteligência artificial em segundos.",
+      label: "CONTEÚDO PROFISSIONAL"
     },
     {
-      url: "https://cdn.openai.com/sora/videos/tokyo-walk.mp4",
+      url: "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/0036.mp4?alt=media&token=616013cf-5583-4cdc-9ae2-6c2f0ed1d701",
       type: "video",
-      prompt: "[Cena] Mulher caminhando pelas ruas de Tokyo sob chuva, reflexos de neon nas poças d'água, atmosfera cinematográfica 35mm.",
-      label: "CENA URBANA"
+      prompt: "Transforme suas ideias em vídeos impactantes com o poder da IA generativa.",
+      label: "IA GENERATIVA"
     }
   ];
 
