@@ -398,7 +398,7 @@ async function createServer() {
           if (args.audio_input) requestBody.audio_input = args.audio_input;
 
           videoResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideo`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideos`,
             {
               method: 'POST',
               headers: {
