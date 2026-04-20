@@ -90,7 +90,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   React.useEffect(() => {
     const timer = setInterval(() => {
       setActiveShowcase(prev => (prev + 1) % showcaseItems.length);
-    }, 4000);
+    }, 8000);
     return () => clearInterval(timer);
   }, []);
 
