@@ -1811,15 +1811,14 @@ function AppContent() {
               const creativeContext = currentUseCreativeStudio ? `
               [PROJETOS ADS MODE ACTIVE]
               
-              SPELLING VIGILANCE:
-              - BASE LANGUAGE: Portuguese (BR).
-              - MANDATORY TEXT: "TREINAMENTO AO VIVO" and "IA PARA NEGÓCIOS".
+              TEXT & SPELLING:
+              - ONLY include text if explicitly requested by the user.
+              - If text is requested: ensure Perfect Spelling in Portuguese (BR).
               - WORD CHECK: "VIVO" (V-I-V-O). NEVER WRITE "LIVO".
               - WORD CHECK: "NEGÓCIOS" (N-E-G-Ó-C-I-O-S). 
-              - POSITION: TOP LEFT CORNER for "LUMINA" wordmark.
               
               INSTRUCTIONS:
-              - Depict a professional corporate training scene.
+              - Depict a professional corporate scene based on user prompt.
               ` : '';
 
               const studioContext = activeTab === 'creative_studio' ? `
@@ -1828,10 +1827,7 @@ function AppContent() {
               FOCUS:
               - High-end professional portraiture/headshots.
               - Perfect skin, natural light, 8k focus.
-              - NO banners or promotional text unless asked.
-              
-              BRANDING:
-              - Small "LUMINA" wordmark in TOP LEFT CORNER.
+              - ABSOLUTELY NO TEXT, LOGOS, OR BRAND NAMES unless explicitly requested in the user prompt.
               ` : '';
               
               const styleContext = currentStyle ? `[STYLE: ${currentStyle}]` : '';
