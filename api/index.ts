@@ -58,7 +58,7 @@ async function getServiceAccountAccessToken(): Promise<string | null> {
 
     const auth = new GoogleAuth({
       credentials: serviceAccount,
-      scopes: ['https://www.googleapis.com/auth/generative-language']
+      scopes: ['https://www.googleapis.com/auth/cloud-platform']
     });
 
     const client = await auth.getClient();
@@ -379,41 +379,33 @@ async function createServer() {
         // Try OAuth token first (service account), fallback to API key
         const oauthToken = await getServiceAccountAccessToken();
         
-        const requestBody: any = {
-          model: `models/${args.model}`,
-          prompt: args.prompt,
-          config: {
-            numberOfVideos: args.config?.numberOfVideos || 1,
-            durationSeconds: args.config?.durationSeconds || 4,
-            aspectRatio: args.config?.aspectRatio || '9:16',
-            resolution: args.config?.resolution || '720p'
-          }
-        };
-
-        if (args.image) {
-          requestBody.image = args.image;
-        }
-
-        if (args.audio_input) {
-          requestBody.audio_input = args.audio_input;
-        }
-
         let videoResponse;
         
         if (oauthToken) {
           console.log("[Gemini Proxy] Using OAuth token for video generation");
+          
+          const requestBody: any = {
+            prompt: args.prompt,
+            config: {
+              numberOfVideos: args.config?.numberOfVideos || 1,
+              durationSeconds: args.config?.durationSeconds || 4,
+              aspectRatio: args.config?.aspectRatio || '9:16',
+              resolution: args.config?.resolution || '720p'
+            }
+          };
+
+          if (args.image) requestBody.image = args.image;
+          if (args.audio_input) requestBody.audio_input = args.audio_input;
+
           videoResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:predictLongRunning`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideo`,
             {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${oauthToken}`,
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify({
-                instances: [requestBody],
-                parameters: {}
-              })
+              body: JSON.stringify(requestBody)
             }
           );
         } else {
