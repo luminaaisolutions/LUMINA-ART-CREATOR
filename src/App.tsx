@@ -5568,9 +5568,8 @@ const handleBatchDownload = async (ids: string[]) => {
                       >
                         {selectedForDownload.has(item.id) && <CheckCircle2 size={14} className="text-black" />}
                       </div>
-                    >
-                      {sessionPreviews[item.id] || item.previewUrl ? (
-                        item.type === 'video' || item.type === 'lipsync' ? (
+                    {sessionPreviews[item.id] || item.previewUrl ? (
+                          item.type === 'video' || item.type === 'lipsync' ? (
                           <video 
                             src={sessionPreviews[item.id] || item.previewUrl} 
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
