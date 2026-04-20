@@ -1004,15 +1004,15 @@ function AppContent() {
       if (result.startsWith(',')) result = result.substring(1).trim();
 
       let prefix = '';
-      if (creativeRefAsset || refAsset) prefix += actorTag;
-      if (creativeProductAsset || productAsset) prefix += productTag;
+      if (creativeRefAsset) prefix += actorTag;
+      if (creativeProductAsset) prefix += productTag;
       
       if (prefix) {
         return result ? `${prefix}, ${result}` : prefix;
       }
       return result;
     });
-  }, [creativeRefAsset, creativeProductAsset, refAsset, productAsset]);
+  }, [creativeRefAsset, creativeProductAsset]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const refAssetInputRef = useRef<HTMLInputElement | null>(null);
@@ -1417,13 +1417,26 @@ function AppContent() {
 
   const handleCreativeRefAssetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      const compressedBase64 = await compressImage(file);
-      setCreativeRefAsset({
-        data: compressedBase64,
-        mimeType: 'image/jpeg',
-        type: 'image'
-      });
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        const compressedBase64 = await compressImage(file);
+        setCreativeRefAsset({
+          data: compressedBase64,
+          mimeType: 'image/jpeg',
+          type: 'image'
+        });
+      } else if (file.type.startsWith('video/')) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = (reader.result as string).split(',')[1];
+          setCreativeRefAsset({
+            data: base64String,
+            mimeType: file.type,
+            type: 'image' // We store internal as type 'image' for reference even if it's video
+          } as any);
+        };
+        reader.readAsDataURL(file);
+      }
     }
     e.target.value = '';
   };
@@ -1613,8 +1626,8 @@ function AppContent() {
     e.preventDefault();
     if (!user || !userData) return;
 
-    const isLipsyncActive = forceLipsync !== undefined ? forceLipsync : (activeTab === 'lipsync' || useLipsync);
-    const isCreativeActive = forceCreative !== undefined ? forceCreative : (activeTab === 'projects' || useCreativeStudio);
+    const isLipsyncActive = forceLipsync !== undefined ? forceLipsync : (activeTab === 'lipsync');
+    const isCreativeActive = forceCreative !== undefined ? forceCreative : (activeTab === 'projects');
     
     const costPerItem = getCostPerItem(isLipsyncActive, isCreativeActive);
     let currentQuantity = isLipsyncActive ? lipsyncQuantity : quantity;
@@ -1688,8 +1701,8 @@ function AppContent() {
     ) : (isLipsyncActive ? lipsyncAspectRatio : aspectRatio);
     const currentResolution = isLipsyncActive ? lipsyncResolution : resolution;
     const currentUseGrounding = useGrounding;
-    const currentRefAsset = isCreativeActive ? (creativeRefAsset || refAsset) : refAsset;
-    const currentProductAsset = isCreativeActive ? (creativeProductAsset || productAsset) : productAsset;
+    const currentRefAsset = isCreativeActive ? creativeRefAsset : refAsset;
+    const currentProductAsset = isCreativeActive ? creativeProductAsset : productAsset;
     const currentLipsyncAsset = lipsyncAsset;
     const currentLipsyncProductAsset = lipsyncProductAsset;
     const currentModelType = modelType;
@@ -1765,7 +1778,7 @@ function AppContent() {
         const newItem: BatchItem = {
           id: itemId,
           type: currentUseLipsync ? 'lipsync' : currentType,
-          sourceTab: activeTab,
+          sourceTab: currentUseLipsync ? 'lipsync' : currentUseCreativeStudio ? 'projects' : 'creative_studio',
           status: currentLowPriority ? 'pending' : 'processing',
           prompt: itemPrompt,
           aspectRatio: currentAspectRatio,
@@ -1796,46 +1809,45 @@ function AppContent() {
               const hasCreativeLogo = currentUseCreativeStudio && currentCreativeLogo;
               
               const creativeContext = currentUseCreativeStudio ? `
-              [CREATIVE STUDIO MODE ACTIVE - ABSOLUTE FIDELITY]
+              [PROJETOS ADS MODE ACTIVE]
               
-              SPELLING & TYPOGRAPHY VIGILANCE:
+              SPELLING VIGILANCE:
               - BASE LANGUAGE: Portuguese (BR).
-              - MANDATORY WORD CHECK: If you write "VIVO", it is V-I-V-O. If you write "NEGÓCIOS", it is N-E-G-Ó-C-I-O-S.
-              - DO NOT miss letters. DO NOT swap V for L.
-              - Font: Ultra-bold, clean sans-serif.
-              
-              LOGO ANCHORING (STRICT):
-              - POSITION: TOP LEFT CORNER (Canto Superior Esquerdo).
-              - CONTENT: Use the "LUMINA" minimalist wordmark or the provided logo asset.
-              - STYLE: Elegant, clean, professional. NEVER invent generic logos like "G" or circles.
+              - MANDATORY TEXT: "TREINAMENTO AO VIVO" and "IA PARA NEGÓCIOS".
+              - WORD CHECK: "VIVO" (V-I-V-O). NEVER WRITE "LIVO".
+              - WORD CHECK: "NEGÓCIOS" (N-E-G-Ó-C-I-O-S). 
+              - POSITION: TOP LEFT CORNER for "LUMINA" wordmark.
               
               INSTRUCTIONS:
-              - Depict a professional "Treinamento ao Vivo" (Live Training) scene in an authentic Brazilian corporate/modern context.
-              - The background should be clean and objective.
+              - Depict a professional corporate training scene.
               ` : '';
 
-              const styleContext = currentStyle ? `[ESTILO OBRIGATÓRIO: ${currentStyle}]` : '';
+              const studioContext = activeTab === 'creative_studio' ? `
+              [ESTÚDIO LUMINA MODE ACTIVE]
+              
+              FOCUS:
+              - High-end professional portraiture/headshots.
+              - Perfect skin, natural light, 8k focus.
+              - NO banners or promotional text unless asked.
+              
+              BRANDING:
+              - Small "LUMINA" wordmark in TOP LEFT CORNER.
+              ` : '';
+              
+              const styleContext = currentStyle ? `[STYLE: ${currentStyle}]` : '';
               
               const enhancerRes = await callGeminiAPI({
                 model: 'gemini-3-flash-preview',
-                prompt: `You are an Unstoppable Brand Director and Typographic Master.
-                TASK: Design a prompt for an AI that generates a visual ad with PERFECT SPELLING and LOGO PLACEMENT.
+                prompt: `You are an expert AI Prompt Engineer. Combine the following context into a descriptive visual prompt for Imagen 4.0.
                 
-                USER COPY: "${itemPrompt}"
+                USER INTENT: "${itemPrompt}"
                 ${styleContext}
                 ${creativeContext}
+                ${studioContext}
                 
-                CRITICAL SPELLING REQUIREMENTS:
-                - The phrase "TREINAMENTO AO VIVO" must be spelled perfectly. Check every letter: T-R-E-I-N-A-M-E-N-T-O A-O V-I-V-O.
-                - The phrase "IA PARA NEGÓCIOS" must be spelled perfectly: I-A P-A-R-A N-E-G-Ó-C-I-O-S.
-                
-                CRITICAL LOGO LOGIC:
-                - Place the text "LUMINA" in a minimalist font in the TOP LEFT CORNER of the image. This is the official brand placement.
-                
-                RULES:
-                1. NO TYPOS. Spell check every word in your output prompt.
-                2. LOGO: Anchor to top left.
-                3. LANGUAGE: Output ONLY the expanded English visual prompt for the generator AI.`
+                REQUIREMENTS:
+                - Output ONLY the final visual prompt in English. 
+                - Ensure any rendered text is in Portuguese (BR) and spelled perfectly.`
               });
               
               if (enhancerRes && enhancerRes.text) {
@@ -1872,19 +1884,21 @@ function AppContent() {
               const parts: any[] = [{ text: promptText }];
               
               if (currentModelType !== 'imagen') {
-                if (currentRefAsset && currentRefAsset.data) {
+                // IMPORTANT: Image generation models (Gemini 2.5 Flash Image) ONLY support image modality.
+                // We must filter out video/audio assets to avoid "Audio input modality not enabled" errors.
+                if (currentRefAsset && currentRefAsset.data && currentRefAsset.mimeType?.startsWith('image/')) {
                   parts.unshift({
                     inlineData: {
                       data: currentRefAsset.data,
-                      mimeType: currentRefAsset.mimeType || 'image/png'
+                      mimeType: currentRefAsset.mimeType
                     }
                   });
                 }
-                if (currentProductAsset && currentProductAsset.data) {
+                if (currentProductAsset && currentProductAsset.data && currentProductAsset.mimeType?.startsWith('image/')) {
                   parts.unshift({
                     inlineData: {
                       data: currentProductAsset.data,
-                      mimeType: currentProductAsset.mimeType || 'image/png'
+                      mimeType: currentProductAsset.mimeType
                     }
                   });
                 }
@@ -1992,7 +2006,8 @@ function AppContent() {
           let enhancedPrompt = itemPrompt;
           
           let detectedLanguage = "the audio's original language";
-          if (!fastMode && isLipsync && currentLipsyncAudio) {
+          // Only perform audio analysis if we have audio AND it's a model that supports it (Gemini 1.5 Flash supports audio)
+          if (!fastMode && isLipsync && currentLipsyncAudio && currentLipsyncAudio.mimeType?.startsWith('audio/')) {
             try {
               const analysisRes = await callGeminiAPI({
                 model: 'gemini-flash-latest',
@@ -2594,9 +2609,18 @@ function AppContent() {
   };
 
   const analyzeAssetForPrompt = async () => {
-    if (!refAsset) return;
+    if (!refAsset || !refAsset.data) return;
     setIsAnalyzing(true);
     try {
+      // Gemini 1.5 Flash supports multimodal (image/video/audio).
+      // However, we restrict to image/video for prompt analysis to be safe.
+      const isSupportedType = refAsset.mimeType?.startsWith('image/') || refAsset.mimeType?.startsWith('video/');
+      if (!isSupportedType) {
+        showNotification("Somente imagens ou vídeos podem ser analisados.", "info");
+        setIsAnalyzing(false);
+        return;
+      }
+
       const response = await callGeminiAPI({
         model: "gemini-flash-latest",
         contents: [{
@@ -2627,7 +2651,10 @@ function AppContent() {
     try {
       const result = await callGeminiAPI({
         model: "gemini-flash-latest",
-        prompt: `Enhance this video/image prompt to be more cinematic, detailed, and professional for Veo 3.1: "${prompt}". Focus on lighting, camera angles, textures, and atmosphere. Respond ONLY with the enhanced prompt in English.`
+        prompt: `Enhance this video/image prompt to be more cinematic, detailed, and professional: "${prompt}". 
+        IMPORTANT: Use American English for the description but KEEP ANY TEXT INSIDE QUOTES EXACTLY AS IS. 
+        DO NOT translate or fix spelling of text meant to be rendered inside the image (e.g. Portuguese phrases). 
+        Focus on lighting, camera angles, textures, and atmosphere. Respond ONLY with the enhanced prompt in English.`
       });
       setPrompt(result.text || "");
     } catch (error) {
@@ -2639,6 +2666,7 @@ function AppContent() {
   };
 
   const applyStyle = (style: string) => {
+    const isCreative = activeTab === 'projects';
     const styles: Record<string, string> = {
       'Cinematográfico': 'cinematic lighting, 8k resolution, highly detailed, professional color grading, dramatic atmosphere',
       'Cyberpunk': 'cyberpunk aesthetic, neon lights, rainy streets, futuristic technology, high contrast, vibrant colors',
@@ -2651,11 +2679,18 @@ function AppContent() {
     
     if (styles[style]) {
       setSelectedStyle(style);
-      setPrompt(prev => {
+      const setTargetPrompt = isCreative ? setCreativePrompt : setPrompt;
+      setTargetPrompt(prev => {
         const current = prev.trim();
         if (!current) return styles[style];
-        if (current.includes(styles[style])) return current;
-        return `${current}, ${styles[style]}`;
+        
+        // Remove existing styles to avoid stacking
+        let cleanPrompt = current;
+        Object.values(styles).forEach(s => {
+          cleanPrompt = cleanPrompt.replace(', ' + s, '').replace(s, '');
+        });
+        
+        return `${cleanPrompt.trim()}, ${styles[style]}`;
       });
     }
   };
