@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import admin from 'firebase-admin';
 import { GoogleGenAI } from "@google/genai";
+import { GoogleAuth } from 'google-auth-library';
 
 if (!process.env.VERCEL) {
   try {
@@ -32,6 +33,33 @@ try {
   dbAdmin = admin.firestore();
 } catch (e) {
   console.error("[Startup] Firebase Admin failed to initialize:", e);
+}
+
+// Helper: get OAuth2 access token from LUMINA_SERVICE_ACCOUNT
+async function getVeoAccessToken(): Promise<string | null> {
+  try {
+    const serviceAccount = process.env.LUMINA_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.LUMINA_SERVICE_ACCOUNT)
+      : null;
+    if (!serviceAccount) {
+      console.warn("[Veo Auth] LUMINA_SERVICE_ACCOUNT not found");
+      return null;
+    }
+    const auth = new GoogleAuth({
+      credentials: serviceAccount,
+      scopes: [
+        'https://www.googleapis.com/auth/cloud-platform',
+        'https://www.googleapis.com/auth/generative-language'
+      ]
+    });
+    const client = await auth.getClient();
+    const tokenResponse = await client.getAccessToken();
+    console.log("[Veo Auth] OAuth token obtained successfully");
+    return tokenResponse.token || null;
+  } catch (e: any) {
+    console.error("[Veo Auth] Failed to get token:", e.message);
+    return null;
+  }
 }
 
 // Initialize Mercado Pago
@@ -67,7 +95,7 @@ async function createServer() {
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
   app.use(express.json({ limit: '50mb' }));
 
-  console.log("=== SERVER STARTUP v5 ===");
+  console.log("=== SERVER STARTUP v6 ===");
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
 
@@ -232,38 +260,84 @@ async function createServer() {
         { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' }
       ];
 
-      // --- generateVideos via SDK (NO safetySettings - Veo does not support it) ---
+      // --- generateVideos via REST with OAuth (LUMINA_SERVICE_ACCOUNT) ---
       if (method === 'generateVideos') {
-        console.log(`[Gemini Proxy] Calling generateVideos via SDK for ${args.model}`);
+        console.log(`[Gemini Proxy] Calling generateVideos for ${args.model}`);
 
-        const videoConfig: any = {
-          numberOfVideos: args.config?.numberOfVideos || 1,
-          durationSeconds: args.config?.durationSeconds || 4,
-          aspectRatio: args.config?.aspectRatio || '9:16',
-          resolution: args.config?.resolution || '720p'
-        };
+        const oauthToken = await getVeoAccessToken();
 
-        const videoArgs: any = {
-          model: args.model,
+        if (!oauthToken) {
+          return res.status(500).json({ error: "Não foi possível autenticar para geração de vídeo." });
+        }
+
+        const requestBody: any = {
           prompt: args.prompt,
-          config: videoConfig
+          config: {
+            numberOfVideos: args.config?.numberOfVideos || 1,
+            durationSeconds: args.config?.durationSeconds || 4,
+            aspectRatio: args.config?.aspectRatio || '9:16',
+            resolution: args.config?.resolution || '720p'
+          }
         };
 
-        if (args.image) videoArgs.image = args.image;
-        if (args.audio_input) videoArgs.audio_input = args.audio_input;
+        if (args.image) requestBody.image = args.image;
+        if (args.audio_input) requestBody.audio_input = args.audio_input;
 
-        const result = await withRetry(
-          () => (client as any).models.generateVideos(videoArgs),
-          3, 5000, 'generateVideos'
+        console.log(`[Gemini Proxy] Using OAuth token, sending to predictLongRunning`);
+
+        const videoResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:predictLongRunning`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${oauthToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              instances: [requestBody],
+              parameters: {}
+            })
+          }
         );
-        return res.json(result);
+
+        const videoRawText = await videoResponse.text();
+        console.log(`[Gemini Proxy] Video response status: ${videoResponse.status}`);
+        console.log(`[Gemini Proxy] Video response body: ${videoRawText.substring(0, 300)}`);
+
+        if (!videoRawText || videoRawText.trim() === '') {
+          return res.status(500).json({ error: "API retornou resposta vazia." });
+        }
+
+        let videoData;
+        try {
+          videoData = JSON.parse(videoRawText);
+        } catch (e) {
+          return res.status(500).json({ error: "Resposta inválida da API", raw: videoRawText.substring(0, 200) });
+        }
+
+        if (!videoResponse.ok) {
+          console.error("[Gemini Proxy] Video error:", JSON.stringify(videoData));
+          return res.status(videoResponse.status).json(videoData);
+        }
+
+        return res.json(videoData);
 
       // --- getVideosOperation (polling) ---
       } else if (method === 'getVideosOperation') {
         const opName = args.operation?.name || args.operation;
         console.log(`[Gemini Proxy] Polling operation: ${opName}`);
-        const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
-        const response = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+        
+        const oauthToken = await getVeoAccessToken();
+        let response;
+        if (oauthToken) {
+          response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/${opName}`,
+            { headers: { 'Authorization': `Bearer ${oauthToken}`, 'Content-Type': 'application/json' } }
+          );
+        } else {
+          const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
+          response = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+        }
         const data = await response.json();
         if (!response.ok) return res.status(response.status).json(data);
         return res.json(data);
