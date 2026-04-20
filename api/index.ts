@@ -427,13 +427,26 @@ async function createServer() {
           return res.json(result);
         }
 
-        if (!videoResponse.ok) {
-          const errData = await videoResponse.json();
-          console.error("[Gemini Proxy] Video generation error:", JSON.stringify(errData));
-          return res.status(videoResponse.status).json(errData);
+        const videoRawText = await videoResponse.text();
+        console.log(`[Gemini Proxy] Video response status: ${videoResponse.status}`);
+        console.log(`[Gemini Proxy] Video response body: ${videoRawText.substring(0, 500)}`);
+
+        if (!videoRawText || videoRawText.trim() === "") {
+          return res.status(500).json({ error: "API retornou resposta vazia.", message: "Tente novamente." });
         }
 
-        const videoData = await videoResponse.json();
+        let videoData;
+        try {
+          videoData = JSON.parse(videoRawText);
+        } catch (e) {
+          return res.status(500).json({ error: "Resposta invalida da API", raw: videoRawText.substring(0, 200) });
+        }
+
+        if (!videoResponse.ok) {
+          console.error("[Gemini Proxy] Video generation error:", JSON.stringify(videoData));
+          return res.status(videoResponse.status).json(videoData);
+        }
+
         return res.json(videoData);
 
       // --- getVideosOperation (polling) ---
