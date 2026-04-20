@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import admin from 'firebase-admin';
 import { GoogleGenAI } from "@google/genai";
+import { GoogleAuth } from 'google-auth-library';
 
 if (!process.env.VERCEL) {
   try {
@@ -20,11 +21,23 @@ const __dirname = path.dirname(__filename);
 
 // Initialize Firebase Admin
 let dbAdmin: any = null;
+let serviceAccountCredentials: any = null;
+
 try {
   if (!admin.apps.length) {
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : null;
+    
+    if (serviceAccount) {
+      serviceAccountCredentials = serviceAccount;
+    }
+
     admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-      projectId: process.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_I || 'gen-lang-client-0723352507'
+      credential: serviceAccount
+        ? admin.credential.cert(serviceAccount)
+        : admin.credential.applicationDefault(),
+      projectId: process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0723352507'
     });
   }
   dbAdmin = admin.firestore();
@@ -32,11 +45,58 @@ try {
   console.error("[Startup] Firebase Admin failed to initialize:", e);
 }
 
+// Helper: get OAuth2 access token from service account for Vertex AI
+async function getServiceAccountAccessToken(): Promise<string | null> {
+  try {
+    const serviceAccount = serviceAccountCredentials || 
+      (process.env.FIREBASE_SERVICE_ACCOUNT ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT) : null);
+    
+    if (!serviceAccount) {
+      console.warn("[Auth] No service account found for OAuth token");
+      return null;
+    }
+
+    const auth = new GoogleAuth({
+      credentials: serviceAccount,
+      scopes: ['https://www.googleapis.com/auth/cloud-platform']
+    });
+
+    const client = await auth.getClient();
+    const tokenResponse = await client.getAccessToken();
+    return tokenResponse.token || null;
+  } catch (e: any) {
+    console.error("[Auth] Failed to get service account token:", e.message);
+    return null;
+  }
+}
+
 // Initialize Mercado Pago
-const mpClient = new MercadoPagoConfig({ 
+const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || '',
   options: { timeout: 5000 }
 });
+
+// Helper: retry any async function up to maxAttempts times
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxAttempts: number = 3,
+  delayMs: number = 3000,
+  label: string = 'operation'
+): Promise<T> {
+  let lastError: any;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      if (attempt < maxAttempts) {
+        console.log(`[Retry] ${label} attempt ${attempt}/${maxAttempts} failed: ${err.message}. Retrying in ${delayMs * attempt}ms...`);
+        await new Promise(r => setTimeout(r, delayMs * attempt));
+      }
+    }
+  }
+  throw lastError;
+}
 
 async function createServer() {
   const app = express();
@@ -44,12 +104,10 @@ async function createServer() {
   app.use(express.json({ limit: '50mb' }));
 
   console.log("=== SERVER STARTUP ===");
-  // ... (rest of the logs)
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
-  
-  // Log available keys (masked for security)
-  const possibleKeys = ['GEMINI_API_KEY', 'API_KEY', 'GOOGLE_API_KEY', 'VITE_GEMINI_API_KEY'];
+
+  const possibleKeys = ['GEMINI_API_KEY', 'API_KEY', 'GOOGLE_API_KEY'];
   possibleKeys.forEach(k => {
     const val = process.env[k];
     if (val) {
@@ -58,12 +116,12 @@ async function createServer() {
       console.log(`Env Var ${k}: Not found`);
     }
   });
-  
-  const geminiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
+
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
   console.log("Final Gemini Key to use starts with:", geminiKey ? geminiKey.substring(0, 4) : "NONE");
   console.log("======================");
 
-  // API Routes
+  // Health check
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "Lumina API is running" });
   });
@@ -72,7 +130,7 @@ async function createServer() {
   app.post("/api/create-payment", async (req, res) => {
     try {
       const { planName, credits, amount, userId, userEmail } = req.body;
-      
+
       const preference = new Preference(mpClient);
       const result = await preference.create({
         body: {
@@ -85,9 +143,7 @@ async function createServer() {
               currency_id: 'BRL'
             }
           ],
-          payer: {
-            email: userEmail
-          },
+          payer: { email: userEmail },
           back_urls: {
             success: `${req.headers.origin}/dashboard?payment=success`,
             failure: `${req.headers.origin}/dashboard?payment=failure`,
@@ -113,6 +169,15 @@ async function createServer() {
   // Mercado Pago Webhook
   app.post("/api/webhooks/mercadopago", async (req, res) => {
     try {
+      const webhookSecret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+      if (webhookSecret) {
+        const signature = req.headers['x-signature'] as string;
+        if (!signature || !signature.includes(webhookSecret)) {
+          console.warn("[MercadoPago Webhook] Invalid signature - request rejected");
+          return res.status(401).send("Unauthorized");
+        }
+      }
+
       const { type, data } = req.body;
       console.log(`[MercadoPago Webhook] Type: ${type}, Data ID: ${data?.id}`);
 
@@ -122,22 +187,20 @@ async function createServer() {
 
         if (paymentData.status === 'approved') {
           const { user_id, plan_name, credits } = paymentData.metadata;
-          
-          console.log(`[MercadoPago Webhook] Payment Approved! User: ${user_id}, Credits: ${credits}`);
 
-          // Update user credits in Firestore
+          if (!dbAdmin) throw new Error("Firebase Admin not initialized");
+
           const userRef = dbAdmin.collection('users').doc(user_id);
-          await dbAdmin.runTransaction(async (transaction) => {
+          await dbAdmin.runTransaction(async (transaction: any) => {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists) throw new Error("User not found");
-            
+
             const currentCredits = userDoc.data()?.credits || 0;
             transaction.update(userRef, {
               credits: currentCredits + Number(credits),
               plan: plan_name.toLowerCase()
             });
 
-            // Log payment
             const paymentRef = dbAdmin.collection('payments').doc(String(data.id));
             transaction.set(paymentRef, {
               id: String(data.id),
@@ -160,12 +223,12 @@ async function createServer() {
     }
   });
 
+  // Send OTP
   app.post("/api/send-otp", async (req, res) => {
     try {
       const { email, code, userId } = req.body;
-      console.log(`[OTP] Enviando código ${code} para ${email} (User: ${userId})`);
-      
-      // Store code in Firestore for verification if userId is provided
+      console.log(`[OTP] Enviando código para ${email} (User: ${userId})`);
+
       if (userId && dbAdmin) {
         await dbAdmin.collection('users').doc(userId).update({
           verificationCode: code
@@ -185,7 +248,7 @@ async function createServer() {
               <div style="background: #f9f9f9; padding: 20px; border-radius: 10px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #111; margin: 20px 0;">
                 ${code}
               </div>
-              <p style="font-size: 12px; color: #777;">Este código expira em 10 minutos. Se você não solicitou este código, por favor ignore este email.</p>
+              <p style="font-size: 12px; color: #777;">Este código expira em 10 minutos.</p>
               <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
               <p style="text-align: center; font-size: 14px; color: #999;">&copy; 2026 Lumina Art Creator</p>
             </div>
@@ -202,11 +265,11 @@ async function createServer() {
     }
   });
 
+  // Verify Account
   app.post("/api/verify-account", async (req, res) => {
     try {
       const { userId, code } = req.body;
       if (!userId || !code) return res.status(400).json({ error: "UserId and code are required" });
-
       if (!dbAdmin) return res.status(500).json({ error: "Firebase Admin not initialized" });
 
       const userRef = dbAdmin.collection('users').doc(userId);
@@ -215,22 +278,22 @@ async function createServer() {
 
       const userData = userDoc.data();
       if (userData.isVerified) return res.status(400).json({ error: "User already verified" });
-
       if (userData.verificationCode !== code) {
         return res.status(400).json({ error: "Código de verificação incorreto" });
       }
 
-      // 1. Verify user and grant trial credits
       await userRef.update({
         isVerified: true,
         credits: 40,
         verificationCode: admin.firestore.FieldValue.delete()
       });
 
-      // 2. Handle Referral Bonus
       if (userData.referredBy) {
         try {
-          const referrers = await dbAdmin.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
+          const referrers = await dbAdmin.collection('users')
+            .where('referralCode', '==', userData.referredBy)
+            .limit(1)
+            .get();
           if (!referrers.empty) {
             const referrerDoc = referrers.docs[0];
             if (referrerDoc.id !== userId) {
@@ -238,7 +301,6 @@ async function createServer() {
                 credits: admin.firestore.FieldValue.increment(10),
                 referralCount: admin.firestore.FieldValue.increment(1)
               });
-              console.log(`[Referral] Granted 10 credits to ${referrerDoc.id} for referring ${userId}`);
             }
           }
         } catch (refErr) {
@@ -253,28 +315,24 @@ async function createServer() {
     }
   });
 
-  // Proxy for downloads to avoid CORS issues
+  // Proxy for downloads
   app.get("/api/proxy-download", async (req, res) => {
     try {
       const { url } = req.query;
       if (!url) return res.status(400).json({ error: "URL is required" });
-      
+
       const response = await fetch(url as string, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        },
+        headers: { 'User-Agent': 'Mozilla/5.0' },
         redirect: 'follow'
       });
 
       if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
-      
+
       const contentType = response.headers.get("content-type");
       if (contentType) res.setHeader("Content-Type", contentType);
-      
-      // Force download behavior
       res.setHeader("Content-Disposition", "attachment");
       res.setHeader("Access-Control-Allow-Origin", "*");
-      
+
       const buffer = await response.arrayBuffer();
       res.send(Buffer.from(buffer));
     } catch (error: any) {
@@ -283,32 +341,29 @@ async function createServer() {
     }
   });
 
-  // Proxy for video generation and polling
+  // Main Gemini API Proxy
   app.post("/api/gemini", async (req, res) => {
     try {
       const { method, args, apiKey: clientApiKey } = req.body;
-      
-      // COMMERCIAL STABILITY: Select the first valid key available (Master or Client)
+
       const keysToTry = [
         process.env.GEMINI_API_KEY,
-        process.env.VITE_GEMINI_API_KEY,
         process.env.API_KEY,
-        process.env.GOOGLE_API_KEY,
         clientApiKey
       ];
 
       let apiKey = keysToTry.find(k => k && k.length > 20 && k.startsWith('AIza'));
-      
+
       if (!apiKey) {
-        console.error("[Gemini Proxy] CRITICAL: No valid API Key found in server env or client request.");
-        return res.status(503).json({ 
-          error: "Serviço Indisponível", 
-          message: "Estamos realizando uma manutenção rápida em nossos motores de IA. Por favor, tente novamente em alguns instantes." 
+        console.error("[Gemini Proxy] CRITICAL: No valid API Key found.");
+        return res.status(503).json({
+          error: "Serviço Indisponível",
+          message: "Estamos realizando uma manutenção rápida em nossos motores de IA. Por favor, tente novamente em alguns instantes."
         });
       }
 
       apiKey = apiKey.toString().trim();
-      const client = new GoogleGenAI({ apiKey });
+
       const defaultSafetySettings = [
         { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
         { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
@@ -317,80 +372,167 @@ async function createServer() {
         { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' }
       ];
 
+      // --- generateVideos via REST API with OAuth (Service Account) ---
       if (method === 'generateVideos') {
-        console.log(`[Gemini Proxy] Calling generateVideos for ${args.model}`);
-        const result = await (client as any).models.generateVideos({
-          model: args.model,
+        console.log(`[Gemini Proxy] Calling generateVideos for ${args.model} via REST`);
+        
+        // Try OAuth token first (service account), fallback to API key
+        const oauthToken = await getServiceAccountAccessToken();
+        
+        const requestBody: any = {
+          model: `models/${args.model}`,
           prompt: args.prompt,
           config: {
-            ...args.config,
-            safetySettings: args.config?.safetySettings || defaultSafetySettings
-          },
-          image: args.image,
-          audio_input: args.audio_input
-        });
-        return res.json(result);
+            numberOfVideos: args.config?.numberOfVideos || 1,
+            durationSeconds: args.config?.durationSeconds || 4,
+            aspectRatio: args.config?.aspectRatio || '9:16',
+            resolution: args.config?.resolution || '720p'
+          }
+        };
+
+        if (args.image) {
+          requestBody.image = args.image;
+        }
+
+        if (args.audio_input) {
+          requestBody.audio_input = args.audio_input;
+        }
+
+        let videoResponse;
+        
+        if (oauthToken) {
+          console.log("[Gemini Proxy] Using OAuth token for video generation");
+          videoResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:predictLongRunning`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${oauthToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                instances: [requestBody],
+                parameters: {}
+              })
+            }
+          );
+        } else {
+          console.log("[Gemini Proxy] OAuth failed, using API key for video generation");
+          const client = new GoogleGenAI({ apiKey });
+          const result = await withRetry(
+            () => (client as any).models.generateVideos({
+              model: args.model,
+              prompt: args.prompt,
+              config: {
+                ...args.config,
+                safetySettings: undefined // Remove safetySettings for Veo
+              },
+              image: args.image,
+              audio_input: args.audio_input
+            }),
+            3, 5000, 'generateVideos'
+          );
+          return res.json(result);
+        }
+
+        if (!videoResponse.ok) {
+          const errData = await videoResponse.json();
+          console.error("[Gemini Proxy] Video generation error:", JSON.stringify(errData));
+          return res.status(videoResponse.status).json(errData);
+        }
+
+        const videoData = await videoResponse.json();
+        return res.json(videoData);
+
+      // --- getVideosOperation (polling) ---
       } else if (method === 'getVideosOperation') {
         const opName = args.operation?.name || args.operation;
         console.log(`[Gemini Proxy] Getting operation status: ${opName}`);
         
-        // We use a manual fetch for operations because the SDK's internal operations 
-        // handling is sometimes tricky to proxy if it tries to follow links automatically.
-        const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
-        const response = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
-        const data = await response.json();
-        if (!response.ok) return res.status(response.status).json(data);
+        const oauthToken = await getServiceAccountAccessToken();
+        
+        let pollResponse;
+        if (oauthToken) {
+          pollResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/${opName}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${oauthToken}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+        } else {
+          const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
+          pollResponse = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+        }
+        
+        const data = await pollResponse.json();
+        if (!pollResponse.ok) return res.status(pollResponse.status).json(data);
         return res.json(data);
+
+      // --- generateImages ---
       } else if (method === 'generateImages') {
         console.log(`[Gemini Proxy] Calling generateImages for ${args.model}`);
-        const result = await (client as any).models.generateImages({
-          model: args.model,
-          prompt: args.prompt,
-          config: {
-            ...args.config,
-            safetySettings: args.config?.safetySettings || defaultSafetySettings
-          }
-        });
+        const client = new GoogleGenAI({ apiKey });
+        const result = await withRetry(
+          () => (client as any).models.generateImages({
+            model: args.model,
+            prompt: args.prompt,
+            config: {
+              ...args.config,
+              safetySettings: args.config?.safetySettings || defaultSafetySettings
+            }
+          }),
+          3, 3000, 'generateImages'
+        );
         return res.json(result);
+
+      // --- generateContent ---
       } else if (method === 'generateContent') {
+        const client = new GoogleGenAI({ apiKey });
         const contents = args.contents || [{ role: 'user', parts: [{ text: args.prompt || "" }] }];
-        
-        const result = await client.models.generateContent({
-          model: args.model,
-          contents: contents,
-          config: {
-            ...args.config,
-            safetySettings: args.config?.safetySettings || defaultSafetySettings
-          }
-        });
-        
-        // Ensure text is included in JSON response as it's a getter in the SDK class
-        return res.json({
-          ...result,
-          text: result.text
-        });
+        const result = await withRetry(
+          () => client.models.generateContent({
+            model: args.model,
+            contents: contents,
+            config: {
+              ...args.config,
+              safetySettings: args.config?.safetySettings || defaultSafetySettings
+            }
+          }),
+          3, 2000, 'generateContent'
+        );
+        return res.json({ ...result, text: result.text });
+
       } else {
         return res.status(400).json({ error: "Invalid method" });
       }
+
     } catch (error: any) {
       console.error("Gemini API Proxy Exception:", error);
-      
+
       let errorMessage = error.message || "Erro desconhecido na API Gemini";
       let status = 500;
 
-      // Localize and humanize common Google API errors
       if (errorMessage.includes("API key not valid") || errorMessage.includes("API_KEY_INVALID")) {
         status = 401;
-        errorMessage = "A chave de API configurada é inválida ou expirou. Por favor, verifique sua GEMINI_API_KEY no menu de configurações do projeto.";
+        errorMessage = "A chave de API configurada é inválida ou expirou.";
       } else if (errorMessage.includes("quota") || errorMessage.includes("429")) {
         status = 429;
-        errorMessage = "Limite de requisições excedido. Aguarde alguns instantes ou verifique seu plano no Google AI Studio.";
+        errorMessage = "Limite de requisições excedido. Aguarde alguns instantes.";
       } else if (errorMessage.includes("Safety") || errorMessage.includes("blocked")) {
         status = 400;
         errorMessage = "O conteúdo solicitado foi bloqueado pelos filtros de segurança da IA. Tente reformular seu prompt.";
+      } else if (errorMessage.includes("timeout") || errorMessage.includes("504")) {
+        status = 504;
+        errorMessage = "A geração demorou mais que o esperado. Tente novamente.";
+      } else if (errorMessage.includes("403") || errorMessage.includes("PERMISSION_DENIED")) {
+        status = 403;
+        errorMessage = "Sem permissão para usar este recurso. Verifique as configurações da API.";
       }
-      
-      res.status(status).json({ 
+
+      res.status(status).json({
         error: errorMessage,
         message: errorMessage,
         details: error.stack?.substring(0, 200)
@@ -403,25 +545,36 @@ async function createServer() {
     try {
       let { url } = req.query;
       if (!url) return res.status(400).json({ error: "URL is required" });
-      
+
       let targetUrl = url as string;
-      
-      // If it's a Google API URL, we must append the API Key to authorize the download
+
       if (targetUrl.includes("generativelanguage.googleapis.com")) {
-        const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
+        const oauthToken = await getServiceAccountAccessToken();
+        if (oauthToken) {
+          const response = await fetch(targetUrl, {
+            headers: { 'Authorization': `Bearer ${oauthToken}` }
+          });
+          if (!response.ok) throw new Error(`Failed to fetch video: ${response.statusText}`);
+          const contentType = response.headers.get("content-type");
+          if (contentType) res.setHeader("Content-Type", contentType);
+          const buffer = await response.arrayBuffer();
+          return res.send(Buffer.from(buffer));
+        }
+        
+        const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
         if (apiKey) {
           const separator = targetUrl.includes("?") ? "&" : "?";
           targetUrl = `${targetUrl}${separator}key=${apiKey.trim()}`;
         }
       }
-      
+
       console.log(`[Proxy] Fetching video from: ${targetUrl.split('?')[0]}...`);
       const response = await fetch(targetUrl);
       if (!response.ok) throw new Error(`Failed to fetch video: ${response.statusText} (${response.status})`);
-      
+
       const contentType = response.headers.get("content-type");
       if (contentType) res.setHeader("Content-Type", contentType);
-      
+
       const buffer = await response.arrayBuffer();
       res.send(Buffer.from(buffer));
     } catch (error: any) {
@@ -432,31 +585,25 @@ async function createServer() {
 
   // Vite middleware for development
   const isDev = process.env.NODE_ENV !== "production";
-  console.log(`[Startup] Mode: ${isDev ? 'Development' : 'Production'}`);
-
   if (isDev && !process.env.VERCEL) {
     try {
-      console.log("[Startup] Initializing Vite middleware...");
       const { createServer: createViteServer } = await import("vite");
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: "spa",
       });
       app.use(vite.middlewares);
-      console.log("[Startup] Vite middleware initialized.");
     } catch (e) {
       console.error("[Startup] Failed to initialize Vite middleware:", e);
     }
   } else if (!process.env.VERCEL) {
     const distPath = path.join(process.cwd(), 'dist');
-    console.log(`[Startup] Serving static files from: ${distPath}`);
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
-  // Handle errors
   app.use((err: any, req: any, res: any, next: any) => {
     console.error("[Runtime Error]:", err);
     res.status(500).json({ error: "Internal Server Error", message: err.message });
