@@ -1107,7 +1107,7 @@ function AppContent() {
   }) => {
     const maxRetries = 2;
     let attempt = 0;
-    const { prompt, contents, model = "gemini-flash-latest", config, method = 'generateContent' } = options;
+    const { prompt, contents, model = "gemini-2.0-flash", config, method = 'generateContent' } = options;
 
     while (attempt < maxRetries) {
       try {
@@ -1464,7 +1464,7 @@ function AppContent() {
     setIsAnalyzingLogo(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-flash-latest",
+        model: "gemini-2.0-flash",
         contents: [
           { 
             role: "user",
@@ -1524,7 +1524,7 @@ function AppContent() {
       });
 
       const response = await callGeminiAPI({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash",
         contents: [{ role: 'user', parts }]
       });
 
@@ -1562,7 +1562,7 @@ function AppContent() {
     setIsMagicLoading(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-flash-latest",
+        model: "gemini-2.0-flash",
         prompt: `Expanda o seguinte prompt de criação de imagem/vídeo para torná-lo profissional, detalhado e artístico. Mantenha o idioma original do prompt. Retorne APENAS o prompt expandido, sem explicações. Prompt original: "${prompt}"`
       });
       
@@ -1833,7 +1833,7 @@ function AppContent() {
               const styleContext = currentStyle ? `[STYLE: ${currentStyle}]` : '';
               
               const enhancerRes = await callGeminiAPI({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-2.0-flash',
                 prompt: `You are an expert AI Prompt Engineer. Combine the following context into a descriptive visual prompt for Imagen 4.0.
                 
                 USER INTENT: "${itemPrompt}"
@@ -1865,7 +1865,7 @@ function AppContent() {
           while (imageAttempt <= maxImageAttempts && !base64Data) {
             try {
               // Respect user model choice (Nano = Gemini 2.5 Flash Image, Imagen = Imagen 4.0)
-              const modelName = currentModelType === 'imagen' ? 'imagen-4.0-generate-001' : 'gemini-2.5-flash-image'; 
+              const modelName = currentModelType === 'imagen' ? 'imagen-3.0-generate-001' : 'gemini-2.0-flash-exp'; 
               const methodToUse = currentModelType === 'imagen' ? 'generateImages' : 'generateContent';
               
               let promptText = currentRefAsset && currentRefAsset.type === 'image' 
@@ -2006,7 +2006,7 @@ function AppContent() {
           if (!fastMode && isLipsync && currentLipsyncAudio && currentLipsyncAudio.mimeType?.startsWith('audio/')) {
             try {
               const analysisRes = await callGeminiAPI({
-                model: 'gemini-flash-latest',
+                model: 'gemini-2.0-flash',
                 contents: [{
                   role: 'user',
                   parts: [
@@ -2072,7 +2072,7 @@ function AppContent() {
           // 3. Generate Video
           // Use current state-of-the-art models recommended in documentation
           const isLipsyncJob = currentUseLipsync;
-          const modelToUse = isLipsyncJob ? 'veo-3.1-generate-preview' : 'veo-3.1-lite-generate-preview';
+          const modelToUse = isLipsyncJob ? 'veo-2.0-generate-001' : 'veo-2.0-generate-001';
           
           const activeKey = await getActiveKey();
 
@@ -2328,7 +2328,7 @@ function AppContent() {
         if (currentQuantity > 1 && currentType === 'image' && !fastMode) {
           try {
             const expansionRes = await callGeminiAPI({
-              model: 'gemini-flash-latest',
+              model: 'gemini-2.0-flash',
               prompt: `The user wants ${currentQuantity} diverse and high-quality images based on this theme: "${itemPrompt}".
               Generate ${currentQuantity} distinct, highly detailed, and unique prompt variations. 
               Each variation MUST explore a completely different aspect, location, lighting, or artistic style related to the theme to avoid repetitive results.
@@ -2618,7 +2618,7 @@ function AppContent() {
       }
 
       const response = await callGeminiAPI({
-        model: "gemini-flash-latest",
+        model: "gemini-2.0-flash",
         contents: [{
           role: 'user',
           parts: [
@@ -2646,7 +2646,7 @@ function AppContent() {
     setIsEnhancing(true);
     try {
       const result = await callGeminiAPI({
-        model: "gemini-flash-latest",
+        model: "gemini-2.0-flash",
         prompt: `Enhance this video/image prompt to be more cinematic, detailed, and professional: "${prompt}". 
         IMPORTANT: Use American English for the description but KEEP ANY TEXT INSIDE QUOTES EXACTLY AS IS. 
         DO NOT translate or fix spelling of text meant to be rendered inside the image (e.g. Portuguese phrases). 
@@ -2733,7 +2733,7 @@ function AppContent() {
     try {
       // 3. Test Gemini
       const response = await callGeminiAPI({
-        model: "gemini-flash-latest",
+        model: "gemini-2.0-flash",
         prompt: "ping"
       });
       
