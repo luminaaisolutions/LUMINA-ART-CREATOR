@@ -58,7 +58,7 @@ async function getServiceAccountAccessToken(): Promise<string | null> {
 
     const auth = new GoogleAuth({
       credentials: serviceAccount,
-      scopes: ['https://www.googleapis.com/auth/cloud-platform']
+      scopes: ['https://www.googleapis.com/auth/generative-language']
     });
 
     const client = await auth.getClient();
