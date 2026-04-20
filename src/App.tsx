@@ -2124,7 +2124,13 @@ function AppContent() {
                 referenceType: 'ASSET'
               });
             }
-            videoParams.config.referenceImages = referenceImages;
+// referenceImages not supported by veo-2.0, use top-level image instead
+if (referenceImages.length > 0) {
+  videoParams.image = {
+    imageBytes: referenceImages[0].image.imageBytes,
+    mimeType: referenceImages[0].image.mimeType
+  };
+}
           } else {
             // Use single top-level image (Lite model)
             if (hasImageRef) {
