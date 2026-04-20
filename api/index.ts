@@ -95,7 +95,7 @@ async function createServer() {
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
   app.use(express.json({ limit: '50mb' }));
 
-  console.log("=== SERVER STARTUP v6 ===");
+  console.log("=== SERVER STARTUP v7 ===");
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
 
@@ -270,20 +270,19 @@ async function createServer() {
           return res.status(500).json({ error: "Não foi possível autenticar para geração de vídeo." });
         }
 
-        const requestBody: any = {
+        const instancePayload: any = {
           prompt: args.prompt,
-          config: {
-            numberOfVideos: args.config?.numberOfVideos || 1,
-            durationSeconds: args.config?.durationSeconds || 4,
-            aspectRatio: args.config?.aspectRatio || '9:16',
-            resolution: args.config?.resolution || '720p'
-          }
+          durationSeconds: args.config?.durationSeconds || 4,
+          aspectRatio: args.config?.aspectRatio || '9:16',
+          resolution: args.config?.resolution || '720p',
+          numberOfVideos: args.config?.numberOfVideos || 1
         };
 
-        if (args.image) requestBody.image = args.image;
-        if (args.audio_input) requestBody.audio_input = args.audio_input;
+        if (args.image) instancePayload.image = args.image;
+        if (args.audio_input) instancePayload.audio_input = args.audio_input;
 
         console.log(`[Gemini Proxy] Using OAuth token, sending to predictLongRunning`);
+        console.log(`[Gemini Proxy] Payload: ${JSON.stringify({ prompt: instancePayload.prompt, durationSeconds: instancePayload.durationSeconds, aspectRatio: instancePayload.aspectRatio })}`);
 
         const videoResponse = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:predictLongRunning`,
@@ -294,7 +293,7 @@ async function createServer() {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              instances: [requestBody],
+              instances: [instancePayload],
               parameters: {}
             })
           }
