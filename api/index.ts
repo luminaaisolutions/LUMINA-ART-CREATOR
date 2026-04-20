@@ -95,7 +95,7 @@ async function createServer() {
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
   app.use(express.json({ limit: '50mb' }));
 
-  console.log("=== SERVER STARTUP v7 ===");
+  console.log("=== SERVER STARTUP v8 ===");
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
 
@@ -271,11 +271,7 @@ async function createServer() {
         }
 
         const instancePayload: any = {
-          prompt: args.prompt,
-          durationSeconds: args.config?.durationSeconds || 4,
-          aspectRatio: args.config?.aspectRatio || '9:16',
-          resolution: args.config?.resolution || '720p',
-          numberOfVideos: args.config?.numberOfVideos || 1
+          prompt: args.prompt
         };
 
         if (args.image) instancePayload.image = args.image;
