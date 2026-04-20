@@ -24,6 +24,7 @@ import {
   Zap,
   LogOut,
   User,
+  Package,
   ShoppingBag,
   AlertCircle,
   Globe,
@@ -733,6 +734,8 @@ function AppContent() {
   // --- Creative Studio State ---
   const [useCreativeStudio, setUseCreativeStudio] = useState(false);
   const [creativeLogo, setCreativeLogo] = useState<{ data: string, mimeType: string } | null>(null);
+  const [creativeRefAsset, setCreativeRefAsset] = useState<{ data: string, mimeType: string, type: 'image' } | null>(null);
+  const [creativeProductAsset, setCreativeProductAsset] = useState<{ data: string, mimeType: string, type: 'image' } | null>(null);
   const [creativeColors, setCreativeColors] = useState<string[]>([]);
   const [creativeTypography, setCreativeTypography] = useState('Modern');
   const [creativeFormat, setCreativeFormat] = useState('Instagram Post 1:1');
@@ -1001,15 +1004,15 @@ function AppContent() {
       if (result.startsWith(',')) result = result.substring(1).trim();
 
       let prefix = '';
-      if (refAsset) prefix += actorTag;
-      if (productAsset) prefix += productTag;
+      if (creativeRefAsset || refAsset) prefix += actorTag;
+      if (creativeProductAsset || productAsset) prefix += productTag;
       
       if (prefix) {
         return result ? `${prefix}, ${result}` : prefix;
       }
       return result;
     });
-  }, [refAsset, productAsset]);
+  }, [creativeRefAsset, creativeProductAsset, refAsset, productAsset]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const refAssetInputRef = useRef<HTMLInputElement | null>(null);
@@ -1017,6 +1020,8 @@ function AppContent() {
   const lipsyncAssetInputRef = useRef<HTMLInputElement | null>(null);
   const lipsyncProductAssetInputRef = useRef<HTMLInputElement | null>(null);
   const creativeLogoInputRef = useRef<HTMLInputElement | null>(null);
+  const creativeRefAssetInputRef = useRef<HTMLInputElement | null>(null);
+  const creativeProductAssetInputRef = useRef<HTMLInputElement | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [fastMode, setFastMode] = useState(false);
@@ -1397,6 +1402,32 @@ function AppContent() {
     }
   };
 
+  const handleCreativeProductAssetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const compressedBase64 = await compressImage(file);
+      setCreativeProductAsset({
+        data: compressedBase64,
+        mimeType: 'image/jpeg',
+        type: 'image'
+      });
+    }
+    e.target.value = '';
+  };
+
+  const handleCreativeRefAssetUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const compressedBase64 = await compressImage(file);
+      setCreativeRefAsset({
+        data: compressedBase64,
+        mimeType: 'image/jpeg',
+        type: 'image'
+      });
+    }
+    e.target.value = '';
+  };
+
   const handleCreativeLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1657,8 +1688,8 @@ function AppContent() {
     ) : (isLipsyncActive ? lipsyncAspectRatio : aspectRatio);
     const currentResolution = isLipsyncActive ? lipsyncResolution : resolution;
     const currentUseGrounding = useGrounding;
-    const currentRefAsset = refAsset;
-    const currentProductAsset = productAsset;
+    const currentRefAsset = isCreativeActive ? (creativeRefAsset || refAsset) : refAsset;
+    const currentProductAsset = isCreativeActive ? (creativeProductAsset || productAsset) : productAsset;
     const currentLipsyncAsset = lipsyncAsset;
     const currentLipsyncProductAsset = lipsyncProductAsset;
     const currentModelType = modelType;
@@ -1710,6 +1741,8 @@ function AppContent() {
       setUseLipsync(false);
     } else {
       setCreativePrompt('');
+      setCreativeRefAsset(null);
+      setCreativeProductAsset(null);
     }
     
     setUseCreativeStudio(false);
@@ -4914,14 +4947,72 @@ function AppContent() {
 
                     {/* Middle: Prompt and Formats */}
                     <div className="flex-1 min-w-[350px] space-y-6">
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 mb-3 uppercase tracking-widest">Instruções do Criativo (Prompt)</label>
-                        <textarea 
-                          value={creativePrompt}
-                          onChange={(e) => setCreativePrompt(e.target.value)}
-                          placeholder="Ex: Crie um anúncio de verão com foco em frescor e elegância..."
-                          className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors resize-none h-32"
-                        />
+                      <div className="space-y-4">
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Instruções do Criativo (Prompt)</label>
+                        <div className="relative">
+                          <textarea 
+                            value={creativePrompt}
+                            onChange={(e) => setCreativePrompt(e.target.value)}
+                            placeholder="Ex: Crie um anúncio de verão com foco em frescor e elegância..."
+                            className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors resize-none h-32"
+                          />
+                        </div>
+                        
+                        {/* Reference Assets for Creative Studio */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <input 
+                            ref={creativeRefAssetInputRef}
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={handleCreativeRefAssetUpload} 
+                          />
+                          <input 
+                            ref={creativeProductAssetInputRef}
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={handleCreativeProductAssetUpload} 
+                          />
+                          
+                          <button
+                            type="button"
+                            onClick={() => creativeRefAssetInputRef.current?.click()}
+                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${creativeRefAsset ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/5 text-gray-500 hover:border-white/20'}`}
+                          >
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${creativeRefAsset ? 'bg-[#d4af37] text-black' : 'bg-[#222]'}`}>
+                              <User size={16} />
+                            </div>
+                            <div className="text-left">
+                              <span className="block text-[10px] font-black uppercase tracking-tighter">Personagem</span>
+                              <span className="block text-[9px] opacity-70">{creativeRefAsset ? 'Carregado ✓' : 'Add Referência'}</span>
+                            </div>
+                            {creativeRefAsset && (
+                              <div className="ml-auto" onClick={(e) => { e.stopPropagation(); setCreativeRefAsset(null); }}>
+                                <X size={14} className="hover:text-red-500" />
+                              </div>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => creativeProductAssetInputRef.current?.click()}
+                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${creativeProductAsset ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/5 text-gray-500 hover:border-white/20'}`}
+                          >
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${creativeProductAsset ? 'bg-[#d4af37] text-black' : 'bg-[#222]'}`}>
+                              <Package size={16} />
+                            </div>
+                            <div className="text-left">
+                              <span className="block text-[10px] font-black uppercase tracking-tighter">Produto</span>
+                              <span className="block text-[9px] opacity-70">{creativeProductAsset ? 'Carregado ✓' : 'Add Referência'}</span>
+                            </div>
+                            {creativeProductAsset && (
+                              <div className="ml-auto" onClick={(e) => { e.stopPropagation(); setCreativeProductAsset(null); }}>
+                                <X size={14} className="hover:text-red-500" />
+                              </div>
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
