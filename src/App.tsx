@@ -1107,7 +1107,7 @@ function AppContent() {
   }) => {
     const maxRetries = 2;
     let attempt = 0;
-    const { prompt, contents, model = "gemini-2.0-flash", config, method = 'generateContent' } = options;
+    const { prompt, contents, model = "gemini-flash-latest", config, method = 'generateContent' } = options;
 
     while (attempt < maxRetries) {
       try {
@@ -1464,7 +1464,7 @@ function AppContent() {
     setIsAnalyzingLogo(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-flash-latest",
         contents: [
           { 
             role: "user",
@@ -1524,7 +1524,7 @@ function AppContent() {
       });
 
       const response = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-3-flash-preview",
         contents: [{ role: 'user', parts }]
       });
 
@@ -1562,7 +1562,7 @@ function AppContent() {
     setIsMagicLoading(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-flash-latest",
         prompt: `Expanda o seguinte prompt de criação de imagem/vídeo para torná-lo profissional, detalhado e artístico. Mantenha o idioma original do prompt. Retorne APENAS o prompt expandido, sem explicações. Prompt original: "${prompt}"`
       });
       
@@ -1809,7 +1809,7 @@ function AppContent() {
               const hasCreativeLogo = currentUseCreativeStudio && currentCreativeLogo;
               
               const creativeContext = currentUseCreativeStudio ? `
-              [PROJETOS ADS MODE ACTIVE]
+              [ADS MODE ACTIVE]
               
               TEXT & SPELLING:
               - ONLY include text if explicitly requested by the user.
@@ -1822,28 +1822,33 @@ function AppContent() {
               ` : '';
 
               const studioContext = activeTab === 'creative_studio' ? `
-              [ESTÚDIO LUMINA MODE ACTIVE]
+              [STUDIO MODE ACTIVE]
               
               FOCUS:
               - High-end professional portraiture/headshots.
               - Perfect skin, natural light, 8k focus.
               - ABSOLUTELY NO TEXT, LOGOS, OR BRAND NAMES unless explicitly requested in the user prompt.
+              - DO NOT mention "Lumina" in the final prompt.
               ` : '';
               
               const styleContext = currentStyle ? `[STYLE: ${currentStyle}]` : '';
               
               const enhancerRes = await callGeminiAPI({
-                model: 'gemini-2.0-flash',
-                prompt: `You are an expert AI Prompt Engineer. Combine the following context into a descriptive visual prompt for Imagen 4.0.
+                model: 'gemini-3-flash-preview',
+                prompt: `You are an expert visual prompt engineer. 
+                TASK: Elaborate the user's idea into a rich, descriptive prompt for high-quality image generation.
                 
                 USER INTENT: "${itemPrompt}"
                 ${styleContext}
                 ${creativeContext}
                 ${studioContext}
                 
-                REQUIREMENTS:
-                - Output ONLY the final visual prompt in English. 
-                - Ensure any rendered text is in Portuguese (BR) and spelled perfectly.`
+                OUTPUT:
+                - Return ONLY the final detailed prompt in English.
+                - Focus on lighting, texture, and composition.
+                - NO meta-comments or explanations.
+                - CRITICAL: Never include the word "LUMINA" or "LUMINA ART" in the output unless it was in the USER INTENT.
+                - CRITICAL: No watermarks, signatures, or text overlays unless explicitly requested.`
               });
               
               if (enhancerRes && enhancerRes.text) {
@@ -1865,15 +1870,20 @@ function AppContent() {
           while (imageAttempt <= maxImageAttempts && !base64Data) {
             try {
               // Respect user model choice (Nano = Gemini 2.5 Flash Image, Imagen = Imagen 4.0)
-              const modelName = currentModelType === 'imagen' ? 'imagen-3.0-generate-001' : 'gemini-2.0-flash-exp'; 
+              const modelName = currentModelType === 'imagen' ? 'imagen-4.0-generate-001' : 'gemini-2.5-flash-image'; 
               const methodToUse = currentModelType === 'imagen' ? 'generateImages' : 'generateContent';
               
-              let promptText = currentRefAsset && currentRefAsset.type === 'image' 
-                ? `REFERENCE PERSON IDENTITY: Maintain the person from the reference image. ${enhancedPrompt}`
-                : enhancedPrompt;
+              let promptText = enhancedPrompt;
+              
+              if (currentRefAsset && currentRefAsset.type === 'image' && currentModelType === 'imagen') {
+                // Imagen 3 supports image-to-image or identity reference via specific prompts
+                // But for now, we just ensure the identity is requested in a natural way
+                promptText = `Maintain the person's identity from the reference. ${enhancedPrompt}`;
+              }
 
-              if (currentUseCreativeStudio) {
-                promptText = `OBJETIVO: ${currentAdGoal}. GATILHO: ${currentAdTrigger}. PLATAFORMA: ${currentAdPlatform}. ESTRATÉGIA: ${currentCreativeStrategy}. ESTÉTICA: ${currentCreativeAesthetic}. ${promptText}`;
+              // Final Branding & Text Guard: Force the model to NOT include any text/logos
+              if (!promptText.toLowerCase().includes("text") && !promptText.toLowerCase().includes("logo")) {
+                promptText += ". Absolutely no text, logos, watermarks, signatures, or brand names should be present in the final image.";
               }
 
               // Build contents for multimodal support (Reference Images)
@@ -2006,7 +2016,7 @@ function AppContent() {
           if (!fastMode && isLipsync && currentLipsyncAudio && currentLipsyncAudio.mimeType?.startsWith('audio/')) {
             try {
               const analysisRes = await callGeminiAPI({
-                model: 'gemini-2.0-flash',
+                model: 'gemini-flash-latest',
                 contents: [{
                   role: 'user',
                   parts: [
@@ -2072,7 +2082,7 @@ function AppContent() {
           // 3. Generate Video
           // Use current state-of-the-art models recommended in documentation
           const isLipsyncJob = currentUseLipsync;
-          const modelToUse = isLipsyncJob ? 'veo-2.0-generate-001' : 'veo-2.0-generate-001';
+          const modelToUse = isLipsyncJob ? 'veo-3.1-generate-preview' : 'veo-3.1-lite-generate-preview';
           
           const activeKey = await getActiveKey();
 
@@ -2328,7 +2338,7 @@ function AppContent() {
         if (currentQuantity > 1 && currentType === 'image' && !fastMode) {
           try {
             const expansionRes = await callGeminiAPI({
-              model: 'gemini-2.0-flash',
+              model: 'gemini-flash-latest',
               prompt: `The user wants ${currentQuantity} diverse and high-quality images based on this theme: "${itemPrompt}".
               Generate ${currentQuantity} distinct, highly detailed, and unique prompt variations. 
               Each variation MUST explore a completely different aspect, location, lighting, or artistic style related to the theme to avoid repetitive results.
@@ -2618,7 +2628,7 @@ function AppContent() {
       }
 
       const response = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-flash-latest",
         contents: [{
           role: 'user',
           parts: [
@@ -2646,7 +2656,7 @@ function AppContent() {
     setIsEnhancing(true);
     try {
       const result = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-flash-latest",
         prompt: `Enhance this video/image prompt to be more cinematic, detailed, and professional: "${prompt}". 
         IMPORTANT: Use American English for the description but KEEP ANY TEXT INSIDE QUOTES EXACTLY AS IS. 
         DO NOT translate or fix spelling of text meant to be rendered inside the image (e.g. Portuguese phrases). 
@@ -2733,7 +2743,7 @@ function AppContent() {
     try {
       // 3. Test Gemini
       const response = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-flash-latest",
         prompt: "ping"
       });
       
