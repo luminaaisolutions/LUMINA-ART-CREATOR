@@ -48,9 +48,7 @@ async function getVeoAccessToken(): Promise<string | null> {
     const auth = new GoogleAuth({
       credentials: serviceAccount,
       scopes: [
-        'https://www.googleapis.com/auth/cloud-platform',
-        'https://www.googleapis.com/auth/generative-language',
-        'https://www.googleapis.com/auth/cloud-platform.read-only'
+        'https://www.googleapis.com/auth/cloud-platform'
       ]
     });
     const client = await auth.getClient();
@@ -96,7 +94,7 @@ async function createServer() {
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
   app.use(express.json({ limit: '50mb' }));
 
-  console.log("=== SERVER STARTUP v9 ===");
+  console.log("=== SERVER STARTUP v10 ===");
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
 
@@ -326,10 +324,18 @@ async function createServer() {
         const oauthToken = await getVeoAccessToken();
         let response;
         if (oauthToken) {
-          response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/${opName}`,
-            { headers: { 'Authorization': `Bearer ${oauthToken}`, 'Content-Type': 'application/json' } }
-          );
+          // Use v1beta with full operation path
+          const opUrl = opName.startsWith('models/') 
+            ? `https://generativelanguage.googleapis.com/v1beta/${opName}`
+            : `https://generativelanguage.googleapis.com/v1beta/${opName}`;
+          console.log(`[Gemini Proxy] Polling URL: ${opUrl}`);
+          response = await fetch(opUrl, { 
+            headers: { 
+              'Authorization': `Bearer ${oauthToken}`, 
+              'x-goog-user-project': process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions',
+              'Content-Type': 'application/json' 
+            } 
+          });
         } else {
           const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
           response = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
