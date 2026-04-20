@@ -1870,7 +1870,7 @@ function AppContent() {
           while (imageAttempt <= maxImageAttempts && !base64Data) {
             try {
               // Respect user model choice (Nano = Gemini 2.5 Flash Image, Imagen = Imagen 4.0)
-              const modelName = currentModelType === 'imagen' ? 'imagen-3.0-generate-001' : 'gemini-2.0-flash-exp'; 
+              const modelName = currentModelType === 'imagen' ? 'imagen-3.0-generate-001' : 'gemini-2.0-flash'; 
               const methodToUse = currentModelType === 'imagen' ? 'generateImages' : 'generateContent';
               
               let promptText = enhancedPrompt;
