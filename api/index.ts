@@ -23,8 +23,10 @@ let dbAdmin: any = null;
 try {
   if (!admin.apps.length) {
     admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-      projectId: process.env.FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_I || 'gen-lang-client-0723352507'
+      credential: process.env.FIREBASE_SERVICE_ACCOUNT
+        ? admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+        : admin.credential.applicationDefault(),
+      projectId: process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0723352507'
     });
   }
   dbAdmin = admin.firestore();
@@ -33,10 +35,32 @@ try {
 }
 
 // Initialize Mercado Pago
-const mpClient = new MercadoPagoConfig({ 
+const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN || '',
   options: { timeout: 5000 }
 });
+
+// Helper: retry any async function up to maxAttempts times
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxAttempts: number = 3,
+  delayMs: number = 3000,
+  label: string = 'operation'
+): Promise<T> {
+  let lastError: any;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      if (attempt < maxAttempts) {
+        console.log(`[Retry] ${label} attempt ${attempt}/${maxAttempts} failed: ${err.message}. Retrying in ${delayMs * attempt}ms...`);
+        await new Promise(r => setTimeout(r, delayMs * attempt));
+      }
+    }
+  }
+  throw lastError;
+}
 
 async function createServer() {
   const app = express();
@@ -44,12 +68,11 @@ async function createServer() {
   app.use(express.json({ limit: '50mb' }));
 
   console.log("=== SERVER STARTUP ===");
-  // ... (rest of the logs)
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
-  
+
   // Log available keys (masked for security)
-  const possibleKeys = ['GEMINI_API_KEY', 'API_KEY', 'GOOGLE_API_KEY', 'VITE_GEMINI_API_KEY'];
+  const possibleKeys = ['GEMINI_API_KEY', 'API_KEY', 'GOOGLE_API_KEY'];
   possibleKeys.forEach(k => {
     const val = process.env[k];
     if (val) {
@@ -58,12 +81,12 @@ async function createServer() {
       console.log(`Env Var ${k}: Not found`);
     }
   });
-  
+
   const geminiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
   console.log("Final Gemini Key to use starts with:", geminiKey ? geminiKey.substring(0, 4) : "NONE");
   console.log("======================");
 
-  // API Routes
+  // Health check
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", message: "Lumina API is running" });
   });
@@ -72,7 +95,7 @@ async function createServer() {
   app.post("/api/create-payment", async (req, res) => {
     try {
       const { planName, credits, amount, userId, userEmail } = req.body;
-      
+
       const preference = new Preference(mpClient);
       const result = await preference.create({
         body: {
@@ -85,9 +108,7 @@ async function createServer() {
               currency_id: 'BRL'
             }
           ],
-          payer: {
-            email: userEmail
-          },
+          payer: { email: userEmail },
           back_urls: {
             success: `${req.headers.origin}/dashboard?payment=success`,
             failure: `${req.headers.origin}/dashboard?payment=failure`,
@@ -113,6 +134,16 @@ async function createServer() {
   // Mercado Pago Webhook
   app.post("/api/webhooks/mercadopago", async (req, res) => {
     try {
+      // Basic security: validate webhook secret if configured
+      const webhookSecret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+      if (webhookSecret) {
+        const signature = req.headers['x-signature'] as string;
+        if (!signature || !signature.includes(webhookSecret)) {
+          console.warn("[MercadoPago Webhook] Invalid signature - request rejected");
+          return res.status(401).send("Unauthorized");
+        }
+      }
+
       const { type, data } = req.body;
       console.log(`[MercadoPago Webhook] Type: ${type}, Data ID: ${data?.id}`);
 
@@ -122,22 +153,22 @@ async function createServer() {
 
         if (paymentData.status === 'approved') {
           const { user_id, plan_name, credits } = paymentData.metadata;
-          
+
           console.log(`[MercadoPago Webhook] Payment Approved! User: ${user_id}, Credits: ${credits}`);
 
-          // Update user credits in Firestore
+          if (!dbAdmin) throw new Error("Firebase Admin not initialized");
+
           const userRef = dbAdmin.collection('users').doc(user_id);
-          await dbAdmin.runTransaction(async (transaction) => {
+          await dbAdmin.runTransaction(async (transaction: any) => {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists) throw new Error("User not found");
-            
+
             const currentCredits = userDoc.data()?.credits || 0;
             transaction.update(userRef, {
               credits: currentCredits + Number(credits),
               plan: plan_name.toLowerCase()
             });
 
-            // Log payment
             const paymentRef = dbAdmin.collection('payments').doc(String(data.id));
             transaction.set(paymentRef, {
               id: String(data.id),
@@ -160,12 +191,12 @@ async function createServer() {
     }
   });
 
+  // Send OTP
   app.post("/api/send-otp", async (req, res) => {
     try {
       const { email, code, userId } = req.body;
-      console.log(`[OTP] Enviando código ${code} para ${email} (User: ${userId})`);
-      
-      // Store code in Firestore for verification if userId is provided
+      console.log(`[OTP] Enviando código para ${email} (User: ${userId})`);
+
       if (userId && dbAdmin) {
         await dbAdmin.collection('users').doc(userId).update({
           verificationCode: code
@@ -202,11 +233,11 @@ async function createServer() {
     }
   });
 
+  // Verify Account
   app.post("/api/verify-account", async (req, res) => {
     try {
       const { userId, code } = req.body;
       if (!userId || !code) return res.status(400).json({ error: "UserId and code are required" });
-
       if (!dbAdmin) return res.status(500).json({ error: "Firebase Admin not initialized" });
 
       const userRef = dbAdmin.collection('users').doc(userId);
@@ -215,22 +246,23 @@ async function createServer() {
 
       const userData = userDoc.data();
       if (userData.isVerified) return res.status(400).json({ error: "User already verified" });
-
       if (userData.verificationCode !== code) {
         return res.status(400).json({ error: "Código de verificação incorreto" });
       }
 
-      // 1. Verify user and grant trial credits
       await userRef.update({
         isVerified: true,
         credits: 40,
         verificationCode: admin.firestore.FieldValue.delete()
       });
 
-      // 2. Handle Referral Bonus
+      // Handle Referral Bonus
       if (userData.referredBy) {
         try {
-          const referrers = await dbAdmin.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
+          const referrers = await dbAdmin.collection('users')
+            .where('referralCode', '==', userData.referredBy)
+            .limit(1)
+            .get();
           if (!referrers.empty) {
             const referrerDoc = referrers.docs[0];
             if (referrerDoc.id !== userId) {
@@ -258,23 +290,21 @@ async function createServer() {
     try {
       const { url } = req.query;
       if (!url) return res.status(400).json({ error: "URL is required" });
-      
+
       const response = await fetch(url as string, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         },
         redirect: 'follow'
       });
 
       if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
-      
+
       const contentType = response.headers.get("content-type");
       if (contentType) res.setHeader("Content-Type", contentType);
-      
-      // Force download behavior
       res.setHeader("Content-Disposition", "attachment");
       res.setHeader("Access-Control-Allow-Origin", "*");
-      
+
       const buffer = await response.arrayBuffer();
       res.send(Buffer.from(buffer));
     } catch (error: any) {
@@ -283,114 +313,125 @@ async function createServer() {
     }
   });
 
-  // Proxy for video generation and polling
+  // Main Gemini API Proxy
   app.post("/api/gemini", async (req, res) => {
     try {
       const { method, args, apiKey: clientApiKey } = req.body;
-      
-      // COMMERCIAL STABILITY: Select the first valid key available (Master or Client)
+
+      // Select the first valid server-side key — never trust client keys in production
       const keysToTry = [
         process.env.GEMINI_API_KEY,
-        process.env.VITE_GEMINI_API_KEY,
         process.env.API_KEY,
         process.env.GOOGLE_API_KEY,
-        clientApiKey
+        clientApiKey // fallback only
       ];
 
       let apiKey = keysToTry.find(k => k && k.length > 20 && k.startsWith('AIza'));
-      
+
       if (!apiKey) {
-        console.error("[Gemini Proxy] CRITICAL: No valid API Key found in server env or client request.");
-        return res.status(503).json({ 
-          error: "Serviço Indisponível", 
-          message: "Estamos realizando uma manutenção rápida em nossos motores de IA. Por favor, tente novamente em alguns instantes." 
+        console.error("[Gemini Proxy] CRITICAL: No valid API Key found.");
+        return res.status(503).json({
+          error: "Serviço Indisponível",
+          message: "Estamos realizando uma manutenção rápida em nossos motores de IA. Por favor, tente novamente em alguns instantes."
         });
       }
 
       apiKey = apiKey.toString().trim();
       const client = new GoogleGenAI({ apiKey });
+
       const defaultSafetySettings = [
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'OFF' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'OFF' },
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'OFF' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'OFF' },
-        { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'OFF' }
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' }
       ];
 
+      // --- generateVideos ---
       if (method === 'generateVideos') {
         console.log(`[Gemini Proxy] Calling generateVideos for ${args.model}`);
-        const result = await (client as any).models.generateVideos({
-          model: args.model,
-          prompt: args.prompt,
-          config: {
-            ...args.config,
-            safetySettings: args.config?.safetySettings || defaultSafetySettings
-          },
-          image: args.image,
-          audio_input: args.audio_input
-        });
+        const result = await withRetry(
+          () => (client as any).models.generateVideos({
+            model: args.model,
+            prompt: args.prompt,
+            config: {
+              ...args.config,
+              safetySettings: args.config?.safetySettings || defaultSafetySettings
+            },
+            image: args.image,
+            audio_input: args.audio_input
+          }),
+          3, 5000, 'generateVideos'
+        );
         return res.json(result);
+
+      // --- getVideosOperation (polling) ---
       } else if (method === 'getVideosOperation') {
         const opName = args.operation?.name || args.operation;
         console.log(`[Gemini Proxy] Getting operation status: ${opName}`);
-        
-        // We use a manual fetch for operations because the SDK's internal operations 
-        // handling is sometimes tricky to proxy if it tries to follow links automatically.
         const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
         const response = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
         const data = await response.json();
         if (!response.ok) return res.status(response.status).json(data);
         return res.json(data);
+
+      // --- generateImages ---
       } else if (method === 'generateImages') {
         console.log(`[Gemini Proxy] Calling generateImages for ${args.model}`);
-        const result = await (client as any).models.generateImages({
-          model: args.model,
-          prompt: args.prompt,
-          config: {
-            ...args.config,
-            safetySettings: args.config?.safetySettings || defaultSafetySettings
-          }
-        });
+        const result = await withRetry(
+          () => (client as any).models.generateImages({
+            model: args.model,
+            prompt: args.prompt,
+            config: {
+              ...args.config,
+              safetySettings: args.config?.safetySettings || defaultSafetySettings
+            }
+          }),
+          3, 3000, 'generateImages'
+        );
         return res.json(result);
+
+      // --- generateContent ---
       } else if (method === 'generateContent') {
         const contents = args.contents || [{ role: 'user', parts: [{ text: args.prompt || "" }] }];
-        
-        const result = await client.models.generateContent({
-          model: args.model,
-          contents: contents,
-          config: {
-            ...args.config,
-            safetySettings: args.config?.safetySettings || defaultSafetySettings
-          }
-        });
-        
-        // Ensure text is included in JSON response as it's a getter in the SDK class
-        return res.json({
-          ...result,
-          text: result.text
-        });
+        const result = await withRetry(
+          () => client.models.generateContent({
+            model: args.model,
+            contents: contents,
+            config: {
+              ...args.config,
+              safetySettings: args.config?.safetySettings || defaultSafetySettings
+            }
+          }),
+          3, 2000, 'generateContent'
+        );
+        return res.json({ ...result, text: result.text });
+
       } else {
         return res.status(400).json({ error: "Invalid method" });
       }
+
     } catch (error: any) {
       console.error("Gemini API Proxy Exception:", error);
-      
+
       let errorMessage = error.message || "Erro desconhecido na API Gemini";
       let status = 500;
 
-      // Localize and humanize common Google API errors
       if (errorMessage.includes("API key not valid") || errorMessage.includes("API_KEY_INVALID")) {
         status = 401;
-        errorMessage = "A chave de API configurada é inválida ou expirou. Por favor, verifique sua GEMINI_API_KEY no menu de configurações do projeto.";
+        errorMessage = "A chave de API configurada é inválida ou expirou.";
       } else if (errorMessage.includes("quota") || errorMessage.includes("429")) {
         status = 429;
-        errorMessage = "Limite de requisições excedido. Aguarde alguns instantes ou verifique seu plano no Google AI Studio.";
+        errorMessage = "Limite de requisições excedido. Aguarde alguns instantes.";
       } else if (errorMessage.includes("Safety") || errorMessage.includes("blocked")) {
         status = 400;
         errorMessage = "O conteúdo solicitado foi bloqueado pelos filtros de segurança da IA. Tente reformular seu prompt.";
+      } else if (errorMessage.includes("timeout") || errorMessage.includes("504")) {
+        status = 504;
+        errorMessage = "A geração demorou mais que o esperado. Tente novamente.";
       }
-      
-      res.status(status).json({ 
+
+      res.status(status).json({
         error: errorMessage,
         message: errorMessage,
         details: error.stack?.substring(0, 200)
@@ -403,25 +444,25 @@ async function createServer() {
     try {
       let { url } = req.query;
       if (!url) return res.status(400).json({ error: "URL is required" });
-      
+
       let targetUrl = url as string;
-      
-      // If it's a Google API URL, we must append the API Key to authorize the download
+
+      // Use server-side key only (never VITE_ prefixed keys)
       if (targetUrl.includes("generativelanguage.googleapis.com")) {
-        const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.GOOGLE_API_KEY;
         if (apiKey) {
           const separator = targetUrl.includes("?") ? "&" : "?";
           targetUrl = `${targetUrl}${separator}key=${apiKey.trim()}`;
         }
       }
-      
+
       console.log(`[Proxy] Fetching video from: ${targetUrl.split('?')[0]}...`);
       const response = await fetch(targetUrl);
       if (!response.ok) throw new Error(`Failed to fetch video: ${response.statusText} (${response.status})`);
-      
+
       const contentType = response.headers.get("content-type");
       if (contentType) res.setHeader("Content-Type", contentType);
-      
+
       const buffer = await response.arrayBuffer();
       res.send(Buffer.from(buffer));
     } catch (error: any) {
@@ -456,7 +497,7 @@ async function createServer() {
     });
   }
 
-  // Handle errors
+  // Global error handler
   app.use((err: any, req: any, res: any, next: any) => {
     console.error("[Runtime Error]:", err);
     res.status(500).json({ error: "Internal Server Error", message: err.message });
