@@ -397,15 +397,21 @@ async function createServer() {
           if (args.image) requestBody.image = args.image;
           if (args.audio_input) requestBody.audio_input = args.audio_input;
 
+          // predictLongRunning requires instances wrapper format
+          const instancesBody = {
+            instances: [requestBody],
+            parameters: {}
+          };
+
           videoResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideos`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:predictLongRunning`,
             {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${oauthToken}`,
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify(requestBody)
+              body: JSON.stringify(instancesBody)
             }
           );
         } else {
