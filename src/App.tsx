@@ -1030,6 +1030,8 @@ function AppContent() {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [sessionPreviews, setSessionPreviews] = useState<Record<string, string>>({});
   const [activeGenerations, setActiveGenerations] = useState<Set<string>>(new Set());
+  const [selectedForDownload, setSelectedForDownload] = useState<Set<string>>(new Set());
+  const [isDownloadingBatch, setIsDownloadingBatch] = useState(false);
   const [diagStatus, setDiagStatus] = useState<{
     firebase: 'pending' | 'ok' | 'error',
     storage: 'pending' | 'ok' | 'error',
@@ -2426,7 +2428,55 @@ if (referenceImages.length > 0) {
       if (win) win.focus();
     }
   };
-
+const handleBatchDownload = async (ids: string[]) => {
+  setIsDownloadingBatch(true);
+  try {
+    const JSZip = (await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')).default;
+    const zip = new JSZip();
+    const folder = zip.folder('lumina-exports');
+    
+    for (const id of ids) {
+      const item = batch.find(b => b.id === id);
+      if (!item) continue;
+      const url = sessionPreviews[id] || item.previewUrl;
+      if (!url) continue;
+      
+      try {
+        let blob: Blob;
+        if (url.startsWith('data:')) {
+          const res = await fetch(url);
+          blob = await res.blob();
+        } else if (url.startsWith('blob:')) {
+          const res = await fetch(url);
+          blob = await res.blob();
+        } else {
+          const res = await fetch(`/api/proxy-download?url=${encodeURIComponent(url)}`);
+          blob = await res.blob();
+        }
+        const ext = blob.type.includes('video') ? 'mp4' : 'png';
+        folder?.file(`lumina-${id}.${ext}`, blob);
+      } catch (e) {
+        console.warn(`Failed to add ${id} to zip:`, e);
+      }
+    }
+    
+    const content = await zip.generateAsync({ type: 'blob' });
+    const blobUrl = URL.createObjectURL(content);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = `lumina-export-${Date.now()}.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+    setSelectedForDownload(new Set());
+    showNotification(`${ids.length} arquivo(s) exportados com sucesso!`, 'success');
+  } catch (e: any) {
+    showNotification('Erro ao gerar ZIP. Tente novamente.', 'error');
+  } finally {
+    setIsDownloadingBatch(false);
+  }
+};
   const compressImage = (file: File, maxWidth = 1024): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -4462,38 +4512,84 @@ if (referenceImages.length > 0) {
                             </div>
                           </div>
                         </div>
-
-                        <div className="p-3 flex items-center justify-between bg-[#161616]">
-                          <div className="flex items-center gap-1.5">
-                            <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'completed' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-[#d4af37] animate-pulse'}`} />
-                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
-                              {item.status === 'completed' ? 'OK' : item.status === 'failed' ? 'ERRO' : '...'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {(sessionPreviews[item.id] || item.previewUrl) && (
+                          
+                        <div className="p-3 flex flex-col gap-2 bg-[#161616]">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'completed' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-[#d4af37] animate-pulse'}`} />
+                              <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
+                                {item.status === 'completed' ? 'OK' : item.status === 'failed' ? 'ERRO' : '...'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {(sessionPreviews[item.id] || item.previewUrl) && (
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id);
+                                  }}
+                                  className="text-gray-600 hover:text-[#d4af37] transition-colors"
+                                  title="Baixar"
+                                >
+                                  <Download size={12} />
+                                </button>
+                              )}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id);
+                                  handleDelete(item.id);
                                 }}
-                                className="text-gray-600 hover:text-[#d4af37] transition-colors"
-                                title="Baixar"
+                                className="text-gray-600 hover:text-red-500 transition-colors"
+                                title="Excluir"
                               >
-                                <Download size={12} />
+                                <Trash2 size={12} />
                               </button>
-                            )}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(item.id);
-                              }}
-                              className="text-gray-600 hover:text-red-500 transition-colors"
-                              title="Excluir"
-                            >
-                              <Trash2 size={12} />
-                            </button>
+                            </div>
                           </div>
+                          {item.status === 'completed' && item.type === 'image' && (sessionPreviews[item.id] || item.previewUrl) && (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const url = sessionPreviews[item.id] || item.previewUrl!;
+                                  fetch(url.startsWith('data:') || url.startsWith('blob:') ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`)
+                                    .then(r => r.blob())
+                                    .then(blob => {
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        const base64 = (reader.result as string).split(',')[1];
+                                        setRefAsset({ data: base64, mimeType: 'image/png', type: 'image' });
+                                        showNotification('✅ Definida como Personagem!', 'success');
+                                      };
+                                      reader.readAsDataURL(blob);
+                                    });
+                                }}
+                                className="flex-1 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-blue-500/20 transition-all"
+                              >
+                                👤 Person.
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const url = sessionPreviews[item.id] || item.previewUrl!;
+                                  fetch(url.startsWith('data:') || url.startsWith('blob:') ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`)
+                                    .then(r => r.blob())
+                                    .then(blob => {
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        const base64 = (reader.result as string).split(',')[1];
+                                        setProductAsset({ data: base64, mimeType: 'image/png', type: 'image' });
+                                        showNotification('✅ Definida como Produto!', 'success');
+                                      };
+                                      reader.readAsDataURL(blob);
+                                    });
+                                }}
+                                className="flex-1 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-purple-500/20 transition-all"
+                              >
+                                📦 Produto
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     );
@@ -5361,22 +5457,79 @@ if (referenceImages.length > 0) {
         {/* --- Library Tab --- */}
         {activeTab === 'library' && (
           <div className="space-y-8">
-            <div className="flex gap-4 p-1 bg-[#111] rounded-2xl border border-[#222] w-fit">
-              {[
-                { id: 'all', label: 'TUDO', icon: Layers },
-                { id: 'image', label: 'IMAGENS', icon: ImageIcon },
-                { id: 'video', label: 'VÍDEOS', icon: Video },
-                { id: 'lipsync', label: 'LIPSYNC', icon: Mic },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setLibraryFilter(f.id as any)}
-                  className={`px-6 py-3 rounded-xl flex items-center gap-2 font-bold text-xs transition-all ${libraryFilter === f.id ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'text-gray-500 hover:text-white hover:bg-[#1a1a1a]'}`}
+            {/* Barra flutuante de download em lote */}
+            <AnimatePresence>
+              {selectedForDownload.size > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 60 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 60 }}
+                  className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9998] flex items-center gap-4 bg-[#111] border border-[#d4af37]/50 px-6 py-4 rounded-2xl shadow-2xl shadow-[#d4af37]/10"
                 >
-                  <f.icon size={16} />
-                  {f.label}
+                  <span className="text-sm font-black text-white">{selectedForDownload.size} selecionado(s)</span>
+                  <button
+                    onClick={() => setSelectedForDownload(new Set())}
+                    className="text-gray-500 hover:text-white text-xs font-bold uppercase tracking-widest"
+                  >
+                    Limpar
+                  </button>
+                  <button
+                    onClick={() => handleBatchDownload(Array.from(selectedForDownload))}
+                    disabled={isDownloadingBatch}
+                    className="flex items-center gap-2 bg-[#d4af37] text-black font-black px-6 py-2 rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-50"
+                  >
+                    {isDownloadingBatch ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <Download size={16} />}
+                    {isDownloadingBatch ? 'Gerando ZIP...' : 'Baixar ZIP'}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex gap-4 p-1 bg-[#111] rounded-2xl border border-[#222] w-fit">
+                {[
+                  { id: 'all', label: 'TUDO', icon: Layers },
+                  { id: 'image', label: 'IMAGENS', icon: ImageIcon },
+                  { id: 'video', label: 'VÍDEOS', icon: Video },
+                  { id: 'lipsync', label: 'LIPSYNC', icon: Mic },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setLibraryFilter(f.id as any)}
+                    className={`px-6 py-3 rounded-xl flex items-center gap-2 font-bold text-xs transition-all ${libraryFilter === f.id ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'text-gray-500 hover:text-white hover:bg-[#1a1a1a]'}`}
+                  >
+                    <f.icon size={16} />
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    const completedIds = batch
+                      .filter(item => item.status === 'completed' && (libraryFilter === 'all' || item.type === libraryFilter))
+                      .map(item => item.id);
+                    if (selectedForDownload.size === completedIds.length && completedIds.length > 0) {
+                      setSelectedForDownload(new Set());
+                    } else {
+                      setSelectedForDownload(new Set(completedIds));
+                    }
+                  }}
+                  className="px-4 py-2 bg-[#111] border border-[#222] rounded-xl text-xs font-bold text-gray-400 hover:border-[#d4af37] hover:text-white transition-all uppercase tracking-widest"
+                >
+                  {selectedForDownload.size > 0 ? 'Desmarcar Tudo' : 'Selecionar Tudo'}
                 </button>
-              ))}
+                {selectedForDownload.size > 0 && (
+                  <button
+                    onClick={() => handleBatchDownload(Array.from(selectedForDownload))}
+                    disabled={isDownloadingBatch}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#d4af37] text-black font-black rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-50"
+                  >
+                    <Download size={14} />
+                    Baixar {selectedForDownload.size} ZIP
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -5396,10 +5549,25 @@ if (referenceImages.length > 0) {
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="group bg-[#111] rounded-3xl border border-[#222] overflow-hidden hover:border-[#d4af37]/50 transition-all shadow-xl"
+                    className={`group rounded-3xl border overflow-hidden transition-all shadow-xl ${selectedForDownload.has(item.id) ? 'border-[#d4af37] bg-[#111] shadow-[#d4af37]/20' : 'bg-[#111] border-[#222] hover:border-[#d4af37]/50'}`}
                   >
                     <div className="aspect-[9/16] relative bg-[#1a1a1a] overflow-hidden cursor-pointer"
                       onClick={() => openPreview(item, filteredList)}
+                    >
+                      {/* Checkbox de seleção */}
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedForDownload(prev => {
+                            const next = new Set(prev);
+                            next.has(item.id) ? next.delete(item.id) : next.add(item.id);
+                            return next;
+                          });
+                        }}
+                        className={`absolute top-3 left-3 z-10 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all cursor-pointer ${selectedForDownload.has(item.id) ? 'bg-[#d4af37] border-[#d4af37]' : 'bg-black/50 border-white/30 hover:border-[#d4af37]'}`}
+                      >
+                        {selectedForDownload.has(item.id) && <CheckCircle2 size={14} className="text-black" />}
+                      </div>
                     >
                       {sessionPreviews[item.id] || item.previewUrl ? (
                         item.type === 'video' || item.type === 'lipsync' ? (
