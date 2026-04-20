@@ -95,7 +95,7 @@ async function createServer() {
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
   app.use(express.json({ limit: '50mb' }));
 
-  console.log("=== SERVER STARTUP v11 ===");
+  console.log("=== SERVER STARTUP v12 ===");
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
 
@@ -325,18 +325,22 @@ async function createServer() {
         const oauthToken = await getVeoAccessToken();
         let response;
         if (oauthToken) {
-          // Use v1beta with full operation path
-          const opUrl = opName.startsWith('models/') 
-            ? `https://generativelanguage.googleapis.com/v1beta/${opName}`
-            : `https://generativelanguage.googleapis.com/v1beta/${opName}`;
+          const opUrl = `https://generativelanguage.googleapis.com/v1beta/${opName}`;
           console.log(`[Gemini Proxy] Polling URL: ${opUrl}`);
           response = await fetch(opUrl, { 
             headers: { 
               'Authorization': `Bearer ${oauthToken}`, 
-              'x-goog-user-project': process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions',
               'Content-Type': 'application/json' 
             } 
           });
+          const pollStatus = response.status;
+          console.log(`[Gemini Proxy] Poll response status: ${pollStatus}`);
+          if (pollStatus === 403) {
+            console.log(`[Gemini Proxy] Poll 403 - trying with API key instead`);
+            const urlWithKey = `${opUrl}?key=${apiKey}`;
+            response = await fetch(urlWithKey, { headers: { 'Content-Type': 'application/json' } });
+            console.log(`[Gemini Proxy] Poll with API key status: ${response.status}`);
+          }
         } else {
           const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
           response = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
