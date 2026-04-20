@@ -343,9 +343,29 @@ async function createServer() {
         const data = await response.json();
         if (!response.ok) return res.status(response.status).json(data);
         return res.json(data);
-      } else if (method === 'generateImages') {
+} else if (method === 'generateImages') {
         console.log(`[Gemini Proxy] Calling generateImages for ${args.model}`);
-        const result = await (client as any).models.generateImages({
+        let result;
+        let attempts = 0;
+        while (attempts < 3) {
+          try {
+            result = await (client as any).models.generateImages({
+              model: args.model,
+              prompt: args.prompt,
+              config: {
+                ...args.config,
+                safetySettings: args.config?.safetySettings || defaultSafetySettings
+              }
+            });
+            break;
+          } catch (retryErr: any) {
+            attempts++;
+            if (attempts >= 3) throw retryErr;
+            console.log(`[Gemini] Retry ${attempts}/3 após erro: ${retryErr.message}`);
+            await new Promise(r => setTimeout(r, 3000 * attempts));
+          }
+        }
+        return res.json(result);
           model: args.model,
           prompt: args.prompt,
           config: {
