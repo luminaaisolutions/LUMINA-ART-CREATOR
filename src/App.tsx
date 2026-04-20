@@ -1763,54 +1763,46 @@ function AppContent() {
               const hasCreativeLogo = currentUseCreativeStudio && currentCreativeLogo;
               
               const creativeContext = currentUseCreativeStudio ? `
-              [CREATIVE STUDIO MODE ACTIVE - WORLD CLASS PERFORMANCE MARKETING STANDARDS]
+              [CREATIVE STUDIO MODE ACTIVE - ABSOLUTE FIDELITY]
               
-              BRAND STRATEGIC PATTERN (STRICT ADHERENCE):
-              ESTABLISHED STYLE: ${currentStyleAnalysis}
-              TONE OF VOICE: ${currentToneOfVoice}
+              SPELLING & TYPOGRAPHY VIGILANCE:
+              - BASE LANGUAGE: Portuguese (BR).
+              - MANDATORY WORD CHECK: If you write "VIVO", it is V-I-V-O. If you write "NEGÓCIOS", it is N-E-G-Ó-C-I-O-S.
+              - DO NOT miss letters. DO NOT swap V for L.
+              - Font: Ultra-bold, clean sans-serif.
               
-              OBJECTIVE: ${currentAdGoal} (Strategic focus on conversion and results)
-              PSYCHOLOGICAL TRIGGER: ${currentAdTrigger} (Apply branding techniques to evoke this emotion)
-              PLATFORM OPTIMIZATION: ${currentAdPlatform} (Native look for this platform)
-              STRATEGY: ${currentCreativeStrategy}
-              AESTHETIC: ${currentCreativeAesthetic}
-              FORMAT: ${currentCreativeFormat}
-              TYPOGRAPHY STYLE: ${currentCreativeTypography}
-              BRAND COLORS: ${currentCreativeColors.join(', ')}
+              LOGO ANCHORING (STRICT):
+              - POSITION: TOP LEFT CORNER (Canto Superior Esquerdo).
+              - CONTENT: Use the "LUMINA" minimalist wordmark or the provided logo asset.
+              - STYLE: Elegant, clean, professional. NEVER invent generic logos like "G" or circles.
               
-              GOAL: Create a HIGH-CONVERTING, professional marketing asset (Ad Creative).
-              DESIGN PRINCIPLES: Clear visual hierarchy, "Stop the Scroll" impact in the first 3 seconds, high-end commercial aesthetics.
-              COMPOSITION: Rule of thirds, focus on emotional expressions if human faces are present, professional studio lighting.
-              MARTECH: Use modern, agency-grade visual patterns common in high-spending TikTok/Meta Ads.
-              
-              STRICT NEGATIVE INSTRUCTIONS:
-              - DO NOT ADD ANY TEXT, LOGOS, OR WATERMARKS TO THE IMAGE UNLESS EXPLICITLY REQUESTED IN THE USER CONCEPT.
-              - NO OVERLAYS, NO BUTTONS, NO "ESTÚDIO LUMINA ADS" TEXT.
-              - THE OUTPUT MUST BE A CLEAN ARTISTIC/PHOTOGRAPHIC ASSET READY FOR MARKETERS TO ADD THEIR OWN COPY.
+              INSTRUCTIONS:
+              - Depict a professional "Treinamento ao Vivo" (Live Training) scene in an authentic Brazilian corporate/modern context.
+              - The background should be clean and objective.
               ` : '';
 
               const styleContext = currentStyle ? `[ESTILO OBRIGATÓRIO: ${currentStyle}]` : '';
               
               const enhancerRes = await callGeminiAPI({
                 model: 'gemini-3-flash-preview',
-                prompt: `You are an Elite Prompt Engineer for state-of-the-art AI image models (Imagen 4, Gemini 3).
-                TASK: Expand the user's concept into a WORLD-CLASS PHOTOGRAPHIC or ARTISTIC masterpiece.
+                prompt: `You are an Unstoppable Brand Director and Typographic Master.
+                TASK: Design a prompt for an AI that generates a visual ad with PERFECT SPELLING and LOGO PLACEMENT.
                 
-                USER CONCEPT: "${itemPrompt}"
+                USER COPY: "${itemPrompt}"
                 ${styleContext}
                 ${creativeContext}
                 
-                CRITICAL TECHNICAL SPECIFICATIONS:
-                - LIGHTING: Cinematic, volumetric, dramatic chiaroscuro, global illumination, ray-tracing.
-                - DETAIL: High-fidelity textures, skin pores, fabric weave, 8k resolution, extreme sharpness.
-                - CAMERA: f/1.8 lens, shallow depth of field, sharp focus on subject, rule of thirds, masterwork composition.
-                - RENDERING: Octane render, unreal engine 5.4, hyper-realistic, professional color grading.
+                CRITICAL SPELLING REQUIREMENTS:
+                - The phrase "TREINAMENTO AO VIVO" must be spelled perfectly. Check every letter: T-R-E-I-N-A-M-E-N-T-O A-O V-I-V-O.
+                - The phrase "IA PARA NEGÓCIOS" must be spelled perfectly: I-A P-A-R-A N-E-G-Ó-C-I-O-S.
+                
+                CRITICAL LOGO LOGIC:
+                - Place the text "LUMINA" in a minimalist font in the TOP LEFT CORNER of the image. This is the official brand placement.
                 
                 RULES:
-                1. ${hasRef || itemPrompt.includes('[Personagem/Referência]') ? 'FIDELITY: The character MUST BE 100% IDENTICAL to the reference image. Preserve facial structure, skin tone, and features perfectly.' : ''}
-                2. ${hasProduct || itemPrompt.includes('[Produto]') ? 'PRODUCT: The PRODUCT from reference MUST BE 100% FAITHFUL. Exact logo, shape, and material.' : ''}
-                3. STYLE: STRICTLY follow "${currentStyle || 'Realistic Photographic'}".
-                4. LANGUAGE: Output ONLY the expanded English prompt. NO CONVERSATION. BE CONCISE BUT POWERFUL.`
+                1. NO TYPOS. Spell check every word in your output prompt.
+                2. LOGO: Anchor to top left.
+                3. LANGUAGE: Output ONLY the expanded English visual prompt for the generator AI.`
               });
               
               if (enhancerRes && enhancerRes.text) {

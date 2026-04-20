@@ -309,13 +309,23 @@ async function createServer() {
 
       apiKey = apiKey.toString().trim();
       const client = new GoogleGenAI({ apiKey });
+      const defaultSafetySettings = [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_ONLY_HIGH' }
+      ];
 
       if (method === 'generateVideos') {
         console.log(`[Gemini Proxy] Calling generateVideos for ${args.model}`);
         const result = await (client as any).models.generateVideos({
           model: args.model,
           prompt: args.prompt,
-          config: args.config,
+          config: {
+            ...args.config,
+            safetySettings: args.config?.safetySettings || defaultSafetySettings
+          },
           image: args.image,
           audio_input: args.audio_input
         });
@@ -336,7 +346,10 @@ async function createServer() {
         const result = await (client as any).models.generateImages({
           model: args.model,
           prompt: args.prompt,
-          config: args.config
+          config: {
+            ...args.config,
+            safetySettings: args.config?.safetySettings || defaultSafetySettings
+          }
         });
         return res.json(result);
       } else if (method === 'generateContent') {
@@ -345,7 +358,10 @@ async function createServer() {
         const result = await client.models.generateContent({
           model: args.model,
           contents: contents,
-          config: args.config
+          config: {
+            ...args.config,
+            safetySettings: args.config?.safetySettings || defaultSafetySettings
+          }
         });
         
         // Ensure text is included in JSON response as it's a getter in the SDK class
