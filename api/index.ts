@@ -49,7 +49,8 @@ async function getVeoAccessToken(): Promise<string | null> {
       credentials: serviceAccount,
       scopes: [
         'https://www.googleapis.com/auth/cloud-platform',
-        'https://www.googleapis.com/auth/generative-language'
+        'https://www.googleapis.com/auth/generative-language',
+        'https://www.googleapis.com/auth/cloud-platform.read-only'
       ]
     });
     const client = await auth.getClient();
@@ -95,7 +96,7 @@ async function createServer() {
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
   app.use(express.json({ limit: '50mb' }));
 
-  console.log("=== SERVER STARTUP v8 ===");
+  console.log("=== SERVER STARTUP v9 ===");
   console.log("NODE_ENV:", process.env.NODE_ENV);
   console.log("VERCEL:", process.env.VERCEL);
 
