@@ -54,20 +54,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       label: "Gerado com Lumina"
     }
   ];
-    {
-      url: "https://cdn.openai.com/sora/videos/tokyo-walk.mp4",
-      label: "Realismo Urbano"
-    },
-    {
-      url: "https://cdn.openai.com/sora/videos/big-sur.mp4",
-      label: "Paisagem Cinematográfica"
-    },
-    {
-      url: "https://cdn.openai.com/sora/videos/mighty-surfing-wave.mp4",
-      label: "Dinâmica de Fluidos"
-    }
-  ];
-
+    
   const nextDemo = () => setCurrentDemoIdx(prev => (prev + 1) % demoVideos.length);
   const prevDemo = () => setCurrentDemoIdx(prev => (prev - 1 + demoVideos.length) % demoVideos.length);
 
