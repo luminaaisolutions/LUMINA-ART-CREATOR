@@ -4423,7 +4423,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     {[
                       { id: 'nano', label: '⚡ Gemini', desc: 'Rápido' },
                       { id: 'imagen', label: '🎨 Imagen', desc: 'Qualidade' },
-                      { id: 'ideogram', label: '✍️ Ideogram', desc: 'Texto PT-BR' }
+                      { id: 'ideogram', label: '✍️ Ideogram', desc: 'Design' }
                     ].map(m => (
                       <button
                         key={m.id}
@@ -5192,6 +5192,32 @@ const handleBatchDownload = async (ids: string[]) => {
                           />
                         </div>
                         
+                        {/* Motor de Geração — Projetos Criativos ADS */}
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Motor de Geração</label>
+                          <div className="grid grid-cols-3 gap-1">
+                            {[
+                              { id: 'nano', label: '⚡ Gemini', desc: 'Rápido' },
+                              { id: 'imagen', label: '🎨 Imagen', desc: 'Qualidade' },
+                              { id: 'ideogram', label: '✍️ Ideogram', desc: 'Texto PT-BR' }
+                            ].map(m => (
+                              <button
+                                type="button"
+                                key={m.id}
+                                onClick={() => setModelType(m.id as any)}
+                                className={`p-2 rounded-lg border text-center transition-all ${
+                                  modelType === m.id
+                                    ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]'
+                                    : 'border-[#222] bg-[#1a1a1a] text-gray-400 hover:border-[#444]'
+                                }`}
+                              >
+                                <div className="text-xs font-bold">{m.label}</div>
+                                <div className="text-[9px] opacity-70">{m.desc}</div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         {/* Reference Assets for Creative Studio */}
                         <div className="grid grid-cols-2 gap-3">
                           <input 
