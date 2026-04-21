@@ -4428,7 +4428,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       <button
                         type="button"
                         key={m.id}
-                        onClick={() => setModelType(m.id as any)}}
+                        onClick={() => setModelType(m.id as any)}
                         className={`p-2 rounded-lg border text-center transition-all ${
                           modelType === m.id
                             ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]'
