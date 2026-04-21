@@ -1804,11 +1804,54 @@ function AppContent() {
           await updateDoc(doc(db, itemPath), { progress: 20, status: 'processing' });
           
           let enhancedPrompt = itemPrompt;
+          let faceDescription = '';
           if (!fastMode) {
             try {
               const hasRef = currentRefAsset && currentRefAsset.type === 'image';
               const hasProduct = currentProductAsset && currentProductAsset.type === 'image';
-              const refContext = hasRef ? '\n- IMPORTANT: A CHARACTER REFERENCE IMAGE will be provided. The prompt must instruct the model to preserve the person\'s exact identity, face, and appearance.' : '';
+
+              // PASSO 1 — Analisar imagem de referência e extrair traços faciais
+              if (hasRef && currentRefAsset?.data) {
+                try {
+                  const faceAnalysis = await callGeminiAPI({
+                    model: 'gemini-2.5-flash',
+                    contents: [{
+                      role: 'user',
+                      parts: [
+                        {
+                          inlineData: {
+                            data: currentRefAsset.data,
+                            mimeType: currentRefAsset.mimeType
+                          }
+                        },
+                        {
+                          text: `Analyze this person's facial features in extreme detail for AI image generation consistency.
+                          Return ONLY a single dense paragraph in English describing:
+                          - Face shape (oval, round, square, heart, etc.)
+                          - Skin tone (exact shade: fair, light, medium, olive, tan, dark, deep, etc.)
+                          - Eye color and shape
+                          - Eyebrow shape and color
+                          - Nose shape
+                          - Lip shape and color
+                          - Hair color, texture and style
+                          - Any distinctive features (freckles, moles, jawline, cheekbones, etc.)
+                          - Approximate age range
+                          Be extremely specific. This description will be used to maintain identity consistency across different scenes.`
+                        }
+                      ]
+                    }]
+                  });
+                  if (faceAnalysis?.text) {
+                    faceDescription = faceAnalysis.text.trim();
+                  }
+                } catch (e) {
+                  console.warn('Face analysis failed, continuing without:', e);
+                }
+              }
+
+              const refContext = hasRef 
+                ? `\n- CRITICAL: A CHARACTER REFERENCE IMAGE is provided. The generated prompt MUST include this exact face description to maintain identity: "${faceDescription || 'preserve exact facial features, skin tone, hair and identity from reference'}". The character must look IDENTICAL even in distant shots — same face structure, skin tone, hair color and style.`
+                : '';
               const productContext = hasProduct ? '\n- IMPORTANT: A PRODUCT REFERENCE IMAGE will be provided. The prompt must instruct the model to feature this exact product with its real colors, shape, and branding.' : '';
               const hasCreativeLogo = currentUseCreativeStudio && currentCreativeLogo;
               
