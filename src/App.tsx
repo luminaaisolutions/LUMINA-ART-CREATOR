@@ -2237,7 +2237,14 @@ if (referenceImages.length > 0) {
           console.log("Video Operation Result:", operation);
           
           // Try multiple possible paths for the video URI to be as robust as possible
+          // Suporta Base64 (Vertex AI) e URI (GCS)
+          const videoBase64 = operation.response?.videos?.[0]?.uri?.startsWith('data:') 
+            ? operation.response.videos[0].uri 
+            : null;
           const videoUri = 
+            videoBase64 ||
+            operation.response?.videos?.[0]?.uri ||
+            operation.response?.videos?.[0]?.gcsUri ||
             operation.response?.generatedVideos?.[0]?.video?.uri || 
             operation.response?.generated_videos?.[0]?.video?.uri ||
             operation.response?.video?.uri ||
@@ -2247,12 +2254,24 @@ if (referenceImages.length > 0) {
             await updateDoc(doc(db, itemPath), { progress: 95 });
             
             try {
-              // Fetch via proxy to avoid exposing API key and bypass CORS if needed
-              const videoRes = await fetch(`/api/proxy-video?url=${encodeURIComponent(videoUri)}`);
-              if (!videoRes.ok) throw new Error(`Falha ao baixar vídeo: ${videoRes.statusText}`);
-              
-              const videoBlob = await videoRes.blob();
-              const localUrl = URL.createObjectURL(videoBlob);
+              let videoBlob: Blob;
+              let localUrl: string;
+
+              if (videoUri.startsWith('data:')) {
+                // Base64 direto — converte para Blob sem precisar de proxy
+                const base64Data = videoUri.split(',')[1];
+                const byteChars = atob(base64Data);
+                const byteArr = new Uint8Array(byteChars.length);
+                for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+                videoBlob = new Blob([byteArr], { type: 'video/mp4' });
+                localUrl = URL.createObjectURL(videoBlob);
+              } else {
+                // URI/GCS — busca via proxy
+                const videoRes = await fetch(`/api/proxy-video?url=${encodeURIComponent(videoUri)}`);
+                if (!videoRes.ok) throw new Error(`Falha ao baixar vídeo: ${videoRes.statusText}`);
+                videoBlob = await videoRes.blob();
+                localUrl = URL.createObjectURL(videoBlob);
+              }
               
               // INSTANT PREVIEW: Update UI immediately with local blob URL
               setSessionPreviews(prev => ({ ...prev, [itemId]: localUrl }));
