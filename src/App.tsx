@@ -11,7 +11,7 @@ import {
   Play, 
   Pause,
   Square,
-  Settings, 
+  Settings, handleGenerate
   Layers, 
   Sparkles, 
   CheckCircle2, 
@@ -4426,8 +4426,9 @@ const handleBatchDownload = async (ids: string[]) => {
                       { id: 'ideogram', label: '✍️ Ideogram', desc: 'Design' }
                     ].map(m => (
                       <button
+                        type="button"
                         key={m.id}
-                        onClick={() => setModelType(m.id as any)}
+                        onClick={() => setModelType(m.id as any)}}
                         className={`p-2 rounded-lg border text-center transition-all ${
                           modelType === m.id
                             ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]'
