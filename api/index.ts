@@ -280,8 +280,9 @@ async function createServer() {
         console.log(`[Gemini Proxy] Using OAuth token, sending to predictLongRunning`);
         console.log(`[Gemini Proxy] Payload: ${JSON.stringify({ prompt: instancePayload.prompt, durationSeconds: instancePayload.durationSeconds, aspectRatio: instancePayload.aspectRatio })}`);
 
+    const veoProjectId = process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions';
         const videoResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:predictLongRunning`,
+          `https://us-central1-aiplatform.googleapis.com/v1/projects/${veoProjectId}/locations/us-central1/publishers/google/models/${args.model}:predictLongRunning`,
           {
             method: 'POST',
             headers: {
