@@ -277,6 +277,12 @@ async function createServer() {
         if (args.image) instancePayload.image = args.image;
         if (args.audio_input) instancePayload.audio_input = args.audio_input;
 
+        // Veo 3.0 — habilitar geração de áudio nativo
+        const isVeo3 = (args.model || '').includes('veo-3');
+        if (isVeo3) {
+          instancePayload.generateAudio = true;
+        }
+
         console.log(`[Gemini Proxy] Using OAuth token, sending to predictLongRunning`);
         console.log(`[Gemini Proxy] Payload: ${JSON.stringify({ prompt: instancePayload.prompt, durationSeconds: instancePayload.durationSeconds, aspectRatio: instancePayload.aspectRatio })}`);
 
