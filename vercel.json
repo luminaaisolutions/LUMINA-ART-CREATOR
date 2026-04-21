@@ -3,7 +3,7 @@
     { "source": "/api/(.*)", "destination": "/api/index.ts" },
     { "source": "/app", "destination": "/index.html" },
     { "source": "/app/(.*)", "destination": "/index.html" },
-    { "source": "/", "destination": "/public/company.html" }
+    { "source": "/", "destination": "/company.html" }
   ],
   "functions": {
     "api/index.ts": {
