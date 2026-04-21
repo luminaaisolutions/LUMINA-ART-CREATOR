@@ -1889,8 +1889,16 @@ function AppContent() {
           while (imageAttempt <= maxImageAttempts && !base64Data) {
             try {
               // Respect user model choice (Nano = Gemini 2.5 Flash Image, Imagen = Imagen 4.0)
-              const modelName = currentModelType === 'imagen' ? 'imagen-3.0-generate-001' : 'gemini-2.5-flash-image'; 
-              const methodToUse = currentModelType === 'imagen' ? 'generateImages' : 'generateContent';
+              const modelName = currentModelType === 'imagen' 
+                ? 'imagen-3.0-generate-001' 
+                : currentModelType === 'ideogram'
+                ? 'ideogram-v3'
+                : 'gemini-2.5-flash-image';
+              const methodToUse = currentModelType === 'imagen' 
+                ? 'generateImages' 
+                : currentModelType === 'ideogram'
+                ? 'generateIdeogram'
+                : 'generateContent';
               
               let promptText = enhancedPrompt;
               
@@ -1947,14 +1955,20 @@ function AppContent() {
               parts.push({ text: finalPromptText });
 
               const response = await callGeminiAPI({
-                model: modelName, 
+                model: modelName,
                 method: methodToUse,
-                prompt: currentModelType === 'imagen' ? promptText : undefined,
-                contents: currentModelType === 'imagen' ? undefined : [{ role: 'user', parts }],
+                prompt: (currentModelType === 'imagen' || currentModelType === 'ideogram') ? promptText : undefined,
+                contents: (currentModelType === 'imagen' || currentModelType === 'ideogram') ? undefined : [{ role: 'user', parts }],
+                // Parâmetros específicos do Ideogram
+                ...(currentModelType === 'ideogram' && {
+                  aspectRatio: currentAspectRatio,
+                  quality: currentResolution === '2K' || currentResolution === '4K' ? 'QUALITY' : 'BALANCED',
+                  referenceImageUrl: currentRefAsset?.url || undefined
+                }),
                 config: currentModelType === 'imagen' ? {
                   numberOfImages: 1,
                   aspectRatio: currentAspectRatio as any,
-                } : {
+                } : currentModelType === 'ideogram' ? {} : {
                   responseModalities: ['IMAGE'],
                   imageConfig: {
                     aspectRatio: currentAspectRatio as any,
@@ -4403,15 +4417,38 @@ const handleBatchDownload = async (ids: string[]) => {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Formato</label>
-                            <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none">
-                              <option value="9:16">9:16</option>
-                              <option value="16:9">16:9</option>
-                              <option value="1:1">1:1</option>
-                            </select>
-                          </div>
+                        <div className="mb-3">
+                  <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Motor de Imagem</label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {[
+                      { id: 'nano', label: '⚡ Gemini', desc: 'Rápido' },
+                      { id: 'imagen', label: '🎨 Imagen', desc: 'Qualidade' },
+                      { id: 'ideogram', label: '✍️ Ideogram', desc: 'Texto PT-BR' }
+                    ].map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => setModelType(m.id as any)}
+                        className={`p-2 rounded-lg border text-center transition-all ${
+                          modelType === m.id
+                            ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]'
+                            : 'border-[#222] bg-[#1a1a1a] text-gray-400 hover:border-[#444]'
+                        }`}
+                      >
+                        <div className="text-xs font-bold">{m.label}</div>
+                        <div className="text-[9px] opacity-70">{m.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Formato</label>
+                  <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none">
+                    <option value="9:16">9:16</option>
+                    <option value="16:9">16:9</option>
+                    <option value="1:1">1:1</option>
+                  </select>
+                </div>
                           <div>
                             <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Qualidade</label>
                             <select value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none">
