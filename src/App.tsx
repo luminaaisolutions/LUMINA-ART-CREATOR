@@ -2084,7 +2084,7 @@ function AppContent() {
           // 3. Generate Video
           // Use current state-of-the-art models recommended in documentation
           const isLipsyncJob = currentUseLipsync;
-          const modelToUse = isLipsyncJob ? 'veo-2.0-generate-001' : 'veo-2.0-generate-001';
+          const modelToUse = isLipsyncJob ? 'veo-3.0-generate-001' : 'veo-3.0-generate-001';
           
           const activeKey = await getActiveKey();
 
