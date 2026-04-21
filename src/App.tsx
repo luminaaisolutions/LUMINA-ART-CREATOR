@@ -1890,7 +1890,7 @@ function AppContent() {
             try {
               // Respect user model choice (Nano = Gemini 2.5 Flash Image, Imagen = Imagen 4.0)
               const modelName = currentModelType === 'imagen' 
-                ? 'imagen-4.0-generate-preview-05-20' 
+                ? 'imagen-4.0-generate-001' 
                 : currentModelType === 'ideogram'
                 ? 'ideogram-v3'
                 : 'gemini-2.5-flash-image';
