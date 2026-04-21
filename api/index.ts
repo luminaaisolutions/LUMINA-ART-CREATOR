@@ -376,6 +376,65 @@ async function createServer() {
 
         return res.json(data);
 
+      // --- generateIdeogram (fal.ai) ---
+      } else if (method === 'generateIdeogram') {
+        console.log(`[Fal Proxy] Calling Ideogram V3: ${args.model || 'fal-ai/ideogram/v3'}`);
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(500).json({ error: "FAL_API_KEY não configurada." });
+
+        // Escolhe endpoint baseado no modelo
+        const falModel = args.referenceImageUrl
+          ? 'fal-ai/ideogram/character'  // Com referência de personagem
+          : 'fal-ai/ideogram/v3';         // Texto para imagem padrão
+
+        const falPayload: any = {
+          prompt: args.prompt,
+          aspect_ratio: args.aspectRatio || '1:1',
+          rendering_speed: args.quality === 'QUALITY' ? 'QUALITY' : 'BALANCED',
+          expand_prompt: true,
+        };
+
+        // Adiciona referência de personagem se houver
+        if (args.referenceImageUrl) {
+          falPayload.reference_image_urls = [args.referenceImageUrl];
+        }
+
+        const falResponse = await fetch(`https://fal.run/${falModel}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Key ${falKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(falPayload)
+        });
+
+        const falData = await falResponse.json();
+        console.log(`[Fal Proxy] Ideogram response status: ${falResponse.status}`);
+
+        if (!falResponse.ok) {
+          console.error('[Fal Proxy] Ideogram error:', JSON.stringify(falData));
+          return res.status(falResponse.status).json(falData);
+        }
+
+        // Retorna URL da imagem gerada
+        const imageUrl = falData?.images?.[0]?.url;
+        if (!imageUrl) return res.status(500).json({ error: "Ideogram não retornou imagem válida." });
+
+        // Baixa a imagem e converte para base64
+        const imgResponse = await fetch(imageUrl);
+        const imgBuffer = await imgResponse.arrayBuffer();
+        const base64 = Buffer.from(imgBuffer).toString('base64');
+        const mimeType = falData?.images?.[0]?.content_type || 'image/png';
+
+        return res.json({
+          generatedImages: [{
+            image: {
+              imageBytes: base64,
+              mimeType
+            }
+          }]
+        });
+
       // --- generateImages ---
       } else if (method === 'generateImages') {
         console.log(`[Gemini Proxy] Calling generateImages for ${args.model}`);
