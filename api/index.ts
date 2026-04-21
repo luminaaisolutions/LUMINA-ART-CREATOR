@@ -321,27 +321,30 @@ async function createServer() {
       } else if (method === 'getVideosOperation') {
         const opName = args.operation?.name || args.operation;
         console.log(`[Gemini Proxy] Polling operation: ${opName}`);
-        
+
         const oauthToken = await getVeoAccessToken();
         let response;
+
         if (oauthToken) {
-          const opUrl = `https://generativelanguage.googleapis.com/v1beta/${opName}`;
-          console.log(`[Gemini Proxy] Polling URL: ${opUrl}`);
-          response = await fetch(opUrl, { 
-            headers: { 
-              'Authorization': `Bearer ${oauthToken}`, 
-              'Content-Type': 'application/json' 
-            } 
+          // Endpoint correto para polling do Veo 2.0 via Vertex AI
+          const projectId = process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions';
+          const modelId = 'veo-2.0-generate-001';
+          const pollUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:fetchPredictOperation`;
+          console.log(`[Gemini Proxy] Polling URL (Vertex AI): ${pollUrl}`);
+          console.log(`[Gemini Proxy] operationName: ${opName}`);
+
+          response = await fetch(pollUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${oauthToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ operationName: opName })
           });
-          const pollStatus = response.status;
-          console.log(`[Gemini Proxy] Poll response status: ${pollStatus}`);
-          if (pollStatus === 403) {
-            console.log(`[Gemini Proxy] Poll 403 - trying with API key instead`);
-            const urlWithKey = `${opUrl}?key=${apiKey}`;
-            response = await fetch(urlWithKey, { headers: { 'Content-Type': 'application/json' } });
-            console.log(`[Gemini Proxy] Poll with API key status: ${response.status}`);
-          }
+          console.log(`[Gemini Proxy] Poll response status: ${response.status}`);
         } else {
+          // fallback sem OAuth — provavelmente vai falhar, mas loga para diagnóstico
+          console.log(`[Gemini Proxy] Sem OAuth token disponível para polling`);
           const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
           response = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
         }
