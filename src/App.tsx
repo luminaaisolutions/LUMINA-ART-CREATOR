@@ -1837,24 +1837,37 @@ function AppContent() {
               
               const styleContext = currentStyle ? `[STYLE: ${currentStyle}]` : '';
               
-              const enhancerRes = await callGeminiAPI({
-                model: 'gemini-2.0-flash',
-                prompt: `You are an expert visual prompt engineer. 
+              // Montar contents do enhancer — incluir imagem de referência se houver
+              const enhancerParts: any[] = [];
+
+              if (hasRef && currentRefAsset?.data && currentRefAsset.mimeType?.startsWith('image/')) {
+                enhancerParts.push({ inlineData: { data: currentRefAsset.data, mimeType: currentRefAsset.mimeType } });
+              }
+              if (hasProduct && currentProductAsset?.data && currentProductAsset.mimeType?.startsWith('image/')) {
+                enhancerParts.push({ inlineData: { data: currentProductAsset.data, mimeType: currentProductAsset.mimeType } });
+              }
+
+              enhancerParts.push({ text: `You are an expert visual prompt engineer.
                 TASK: Elaborate the user's idea into a rich, descriptive prompt for high-quality image generation.
                 
                 USER INTENT: "${itemPrompt}"
                 ${styleContext}
                 ${creativeContext}
                 ${studioContext}
+                ${hasRef ? `\n- A CHARACTER REFERENCE IMAGE is provided above. Analyze the person's exact face shape, skin tone, hair color/style, and distinctive features. The prompt MUST instruct the model to preserve ALL these features precisely.` : ''}
+                ${hasProduct ? `\n- A PRODUCT REFERENCE IMAGE is provided above. Analyze its exact shape, colors, logo, and branding. The prompt MUST instruct the model to feature this exact product.` : ''}
                 
                 OUTPUT:
                 - Return ONLY the final detailed prompt in English.
                 - Focus on lighting, texture, and composition.
                 - NO meta-comments or explanations.
                 - CRITICAL: Never include the word "LUMINA" or "LUMINA ART" in the output unless it was in the USER INTENT.
-                - CRITICAL: No watermarks, signatures, or text overlays unless explicitly requested.
-                ${refContext}
-                ${productContext}`
+                - CRITICAL: No watermarks, signatures, or text overlays unless explicitly requested.` 
+              });
+
+              const enhancerRes = await callGeminiAPI({
+                model: 'gemini-2.0-flash',
+                contents: [{ role: 'user', parts: enhancerParts }],
               });
               
               if (enhancerRes && enhancerRes.text) {
@@ -1908,10 +1921,10 @@ function AppContent() {
                 ? `${referenceInstruction}\n\n${promptText}` 
                 : promptText;
 
-              const parts: any[] = [{ text: finalPromptText }];
+              // Ordem correta segundo documentação Google: imagens ANTES do texto
+              const parts: any[] = [];
               
               if (currentModelType !== 'imagen') {
-                // Texto primeiro, imagens depois — melhor aderência do modelo
                 if (currentRefAsset && currentRefAsset.data && currentRefAsset.mimeType?.startsWith('image/')) {
                   parts.push({
                     inlineData: {
@@ -1930,6 +1943,9 @@ function AppContent() {
                 }
               }
 
+              // Texto sempre por último
+              parts.push({ text: finalPromptText });
+
               const response = await callGeminiAPI({
                 model: modelName, 
                 method: methodToUse,
@@ -1939,6 +1955,7 @@ function AppContent() {
                   numberOfImages: 1,
                   aspectRatio: currentAspectRatio as any,
                 } : {
+                  responseModalities: ['IMAGE'],
                   imageConfig: {
                     aspectRatio: currentAspectRatio as any,
                     imageSize: (currentResolution === '2K' || currentResolution === '4K') ? currentResolution as any : '1K'
