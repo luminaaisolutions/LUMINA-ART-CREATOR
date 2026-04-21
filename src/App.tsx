@@ -1808,6 +1808,8 @@ function AppContent() {
             try {
               const hasRef = currentRefAsset && currentRefAsset.type === 'image';
               const hasProduct = currentProductAsset && currentProductAsset.type === 'image';
+              const refContext = hasRef ? '\n- IMPORTANT: A CHARACTER REFERENCE IMAGE will be provided. The prompt must instruct the model to preserve the person\'s exact identity, face, and appearance.' : '';
+              const productContext = hasProduct ? '\n- IMPORTANT: A PRODUCT REFERENCE IMAGE will be provided. The prompt must instruct the model to feature this exact product with its real colors, shape, and branding.' : '';
               const hasCreativeLogo = currentUseCreativeStudio && currentCreativeLogo;
               
               const creativeContext = currentUseCreativeStudio ? `
@@ -1850,7 +1852,9 @@ function AppContent() {
                 - Focus on lighting, texture, and composition.
                 - NO meta-comments or explanations.
                 - CRITICAL: Never include the word "LUMINA" or "LUMINA ART" in the output unless it was in the USER INTENT.
-                - CRITICAL: No watermarks, signatures, or text overlays unless explicitly requested.`
+                - CRITICAL: No watermarks, signatures, or text overlays unless explicitly requested.
+                ${refContext}
+                ${productContext}`
               });
               
               if (enhancerRes && enhancerRes.text) {
@@ -1889,13 +1893,27 @@ function AppContent() {
               }
 
               // Build contents for multimodal support (Reference Images)
-              const parts: any[] = [{ text: promptText }];
+              // Montar instruções claras sobre cada referência
+              let referenceInstruction = '';
+              if (currentModelType !== 'imagen') {
+                if (currentRefAsset && currentRefAsset.data && currentRefAsset.mimeType?.startsWith('image/')) {
+                  referenceInstruction += 'Use the FIRST image as the CHARACTER/PERSON reference — preserve their exact face, skin tone, hair, and identity in the output. ';
+                }
+                if (currentProductAsset && currentProductAsset.data && currentProductAsset.mimeType?.startsWith('image/')) {
+                  referenceInstruction += 'Use the SECOND image as the PRODUCT reference — preserve its exact shape, color, branding, and details in the output. ';
+                }
+              }
+
+              const finalPromptText = referenceInstruction 
+                ? `${referenceInstruction}\n\n${promptText}` 
+                : promptText;
+
+              const parts: any[] = [{ text: finalPromptText }];
               
               if (currentModelType !== 'imagen') {
-                // IMPORTANT: Image generation models (Gemini 2.5 Flash Image) ONLY support image modality.
-                // We must filter out video/audio assets to avoid "Audio input modality not enabled" errors.
+                // Texto primeiro, imagens depois — melhor aderência do modelo
                 if (currentRefAsset && currentRefAsset.data && currentRefAsset.mimeType?.startsWith('image/')) {
-                  parts.unshift({
+                  parts.push({
                     inlineData: {
                       data: currentRefAsset.data,
                       mimeType: currentRefAsset.mimeType
@@ -1903,7 +1921,7 @@ function AppContent() {
                   });
                 }
                 if (currentProductAsset && currentProductAsset.data && currentProductAsset.mimeType?.startsWith('image/')) {
-                  parts.unshift({
+                  parts.push({
                     inlineData: {
                       data: currentProductAsset.data,
                       mimeType: currentProductAsset.mimeType
