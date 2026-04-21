@@ -329,7 +329,7 @@ async function createServer() {
         if (oauthToken) {
           // Endpoint correto para polling do Veo 2.0 via Vertex AI
           const projectId = process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions';
-          const modelId = 'veo-2.0-generate-001';
+          const modelId = 'veo-3.0-generate-001';
           const pollUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:fetchPredictOperation`;
           console.log(`[Gemini Proxy] Polling URL (Vertex AI): ${pollUrl}`);
           console.log(`[Gemini Proxy] operationName: ${opName}`);
