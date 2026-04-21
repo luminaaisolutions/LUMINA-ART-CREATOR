@@ -353,6 +353,21 @@ async function createServer() {
         }
         const data = await response.json();
         if (!response.ok) return res.status(response.status).json(data);
+
+        // Converter bytesBase64Encoded para URL utilizável pelo frontend
+        if (data?.done && data?.response?.videos?.length > 0) {
+          const videos = data.response.videos.map((v: any) => {
+            if (v.bytesBase64Encoded) {
+              return {
+                uri: `data:video/mp4;base64,${v.bytesBase64Encoded}`,
+                mimeType: v.mimeType || 'video/mp4'
+              };
+            }
+            return { uri: v.gcsUri || v.uri, mimeType: v.mimeType || 'video/mp4' };
+          });
+          return res.json({ ...data, response: { ...data.response, videos } });
+        }
+
         return res.json(data);
 
       // --- generateImages ---
