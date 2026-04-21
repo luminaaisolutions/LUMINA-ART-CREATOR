@@ -11,7 +11,7 @@ import {
   Play, 
   Pause,
   Square,
-  Settings, handleGenerate
+  Settings,
   Layers, 
   Sparkles, 
   CheckCircle2, 
