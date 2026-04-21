@@ -396,7 +396,7 @@ async function createServer() {
           () => client.models.generateContent({
             model: args.model,
             contents: contents,
-            config: { ...args.config, responseModalities: args.config?.responseModalities || ['TEXT', 'IMAGE'], safetySettings: args.config?.safetySettings || defaultSafetySettings }
+            config: { ...args.config, responseModalities: args.config?.responseModalities || (args.model?.includes('image') ? ['IMAGE'] : ['TEXT']), safetySettings: args.config?.safetySettings || defaultSafetySettings }
           }),
           3, 2000, 'generateContent'
         );
