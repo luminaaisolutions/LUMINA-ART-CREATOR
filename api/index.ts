@@ -343,6 +343,8 @@ async function createServer() {
             body: JSON.stringify({ operationName: opName.startsWith('projects/') ? opName : `projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}/operations/${opName.split('/operations/')[1]}` })
           });
           console.log(`[Gemini Proxy] Poll response status: ${response.status}`);
+          const pollText = await response.clone().text();
+          console.log(`[Gemini Proxy] Poll response body: ${pollText.substring(0, 500)}`);
         } else {
           // fallback sem OAuth — provavelmente vai falhar, mas loga para diagnóstico
           console.log(`[Gemini Proxy] Sem OAuth token disponível para polling`);
