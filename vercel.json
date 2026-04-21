@@ -1,7 +1,11 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.ts" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/app/suite/(.*)", "destination": "/index.html" },
+    { "source": "/app/suite", "destination": "/index.html" },
+    { "source": "/app/(.*)", "destination": "/index.html" },
+    { "source": "/app", "destination": "/index.html" },
+    { "source": "/", "destination": "/company.html" }
   ],
   "functions": {
     "api/index.ts": {
