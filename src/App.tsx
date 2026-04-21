@@ -1109,7 +1109,7 @@ function AppContent() {
   }) => {
     const maxRetries = 2;
     let attempt = 0;
-    const { prompt, contents, model = "gemini-2.0-flash", config, method = 'generateContent' } = options;
+    const { prompt, contents, model = "gemini-2.5-flash", config, method = 'generateContent' } = options;
 
     while (attempt < maxRetries) {
       try {
@@ -1466,7 +1466,7 @@ function AppContent() {
     setIsAnalyzingLogo(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: [
           { 
             role: "user",
@@ -1526,7 +1526,7 @@ function AppContent() {
       });
 
       const response = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: [{ role: 'user', parts }]
       });
 
@@ -1564,7 +1564,7 @@ function AppContent() {
     setIsMagicLoading(true);
     try {
       const response = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         prompt: `Expanda o seguinte prompt de criação de imagem/vídeo para torná-lo profissional, detalhado e artístico. Mantenha o idioma original do prompt. Retorne APENAS o prompt expandido, sem explicações. Prompt original: "${prompt}"`
       });
       
@@ -1866,7 +1866,7 @@ function AppContent() {
               });
 
               const enhancerRes = await callGeminiAPI({
-                model: 'gemini-2.0-flash',
+                model: 'gemini-2.5-flash',
                 contents: [{ role: 'user', parts: enhancerParts }],
               });
               
@@ -2053,7 +2053,7 @@ function AppContent() {
           if (!fastMode && isLipsync && currentLipsyncAudio && currentLipsyncAudio.mimeType?.startsWith('audio/')) {
             try {
               const analysisRes = await callGeminiAPI({
-                model: 'gemini-2.0-flash',
+                model: 'gemini-2.5-flash',
                 contents: [{
                   role: 'user',
                   parts: [
@@ -2400,7 +2400,7 @@ if (referenceImages.length > 0) {
         if (currentQuantity > 1 && currentType === 'image' && !fastMode) {
           try {
             const expansionRes = await callGeminiAPI({
-              model: 'gemini-2.0-flash',
+              model: 'gemini-2.5-flash',
               prompt: `The user wants ${currentQuantity} diverse and high-quality images based on this theme: "${itemPrompt}".
               Generate ${currentQuantity} distinct, highly detailed, and unique prompt variations. 
               Each variation MUST explore a completely different aspect, location, lighting, or artistic style related to the theme to avoid repetitive results.
@@ -2738,7 +2738,7 @@ const handleBatchDownload = async (ids: string[]) => {
       }
 
       const response = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         contents: [{
           role: 'user',
           parts: [
@@ -2766,7 +2766,7 @@ const handleBatchDownload = async (ids: string[]) => {
     setIsEnhancing(true);
     try {
       const result = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         prompt: `Enhance this video/image prompt to be more cinematic, detailed, and professional: "${prompt}". 
         IMPORTANT: Use American English for the description but KEEP ANY TEXT INSIDE QUOTES EXACTLY AS IS. 
         DO NOT translate or fix spelling of text meant to be rendered inside the image (e.g. Portuguese phrases). 
@@ -2853,7 +2853,7 @@ const handleBatchDownload = async (ids: string[]) => {
     try {
       // 3. Test Gemini
       const response = await callGeminiAPI({
-        model: "gemini-2.0-flash",
+        model: "gemini-2.5-flash",
         prompt: "ping"
       });
       
