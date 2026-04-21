@@ -339,7 +339,7 @@ async function createServer() {
               'Authorization': `Bearer ${oauthToken}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ operationName: opName })
+            body: JSON.stringify({ operationName: opName.startsWith('projects/') ? opName : `projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}/operations/${opName.split('/operations/')[1]}` })
           });
           console.log(`[Gemini Proxy] Poll response status: ${response.status}`);
         } else {
