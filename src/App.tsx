@@ -3104,6 +3104,7 @@ const handleBatchDownload = async (ids: string[]) => {
     if (selectedStyle === style) {
       setSelectedStyle('');
       setStyle('');
+      setPrompt('');
       return;
     }
     const isCreative = activeTab === 'projects';
@@ -4596,7 +4597,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'video' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
                             >
                               <Video size={20} />
-                              <span className="text-[11px] font-black uppercase tracking-widest">Vídeo Veo 3.1</span>
+                              <span className="text-xs font-black uppercase tracking-widest">Vídeo Veo 3.1</span>
                             </button>
                             <button 
                               type="button"
@@ -4604,7 +4605,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'image' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
                             >
                               <ImageIcon size={20} />
-                              <span className="text-[11px] font-black uppercase tracking-widest">Imagem Pro</span>
+                              <span className="text-xs font-black uppercase tracking-widest">Imagem Pro</span>
                             </button>
                           </div>
                         </div>
@@ -4641,7 +4642,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               ) : (
                                 <div className="text-center">
                                   <User size={14} className="text-gray-600 mx-auto mb-1" />
-                                  <span className="text-[10px] font-bold text-gray-500 uppercase">Personagem</span>
+                                  <span className="text-xs font-bold text-gray-500 uppercase">Personagem</span>
                                 </div>
                               )}
                             </div>
@@ -4666,7 +4667,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               ) : (
                                 <div className="text-center">
                                   <ShoppingBag size={14} className="text-gray-600 mx-auto mb-1" />
-                                  <span className="text-[8px] font-bold text-gray-500 uppercase">Produto</span>
+                                  <span className="text-xs font-bold text-gray-500 uppercase">Produto</span>
                                 </div>
                               )}
                             </div>
