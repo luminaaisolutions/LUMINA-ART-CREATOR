@@ -1113,8 +1113,12 @@ function AppContent() {
     contents?: any, 
     model?: string, 
     config?: any, 
-    method?: 'generateContent' | 'generateImages' | 'generateVideos' | 'getVideosOperation' | 'generateContentStream',
-    operation?: any
+    method?: 'generateContent' | 'generateImages' | 'generateVideos' | 'getVideosOperation' | 'generateContentStream' | 'generateIdeogram',
+    operation?: any,
+    // Parâmetros específicos do Ideogram
+    aspectRatio?: string,
+    quality?: string,
+    referenceImageUrl?: string
   }) => {
     const maxRetries = 2;
     let attempt = 0;
@@ -1136,7 +1140,11 @@ function AppContent() {
               prompt,
               contents,
               config,
-              operation: options.operation
+              operation: options.operation,
+              // Parâmetros extras para Ideogram
+              aspectRatio: options.aspectRatio,
+              quality: options.quality,
+              referenceImageUrl: options.referenceImageUrl
             }
           })
         });
@@ -2158,8 +2166,7 @@ function AppContent() {
                 // Parâmetros específicos do Ideogram
                 ...(currentModelType === 'ideogram' && {
                   aspectRatio: currentAspectRatio,
-                  quality: currentResolution === '2K' || currentResolution === '4K' ? 'QUALITY' : 'BALANCED',
-                  referenceImageUrl: currentRefAsset?.url || undefined
+                  quality: currentResolution === '2K' || currentResolution === '4K' ? 'QUALITY' : 'BALANCED'
                 }),
                 config: currentModelType === 'imagen' ? {
                   numberOfImages: 1,
