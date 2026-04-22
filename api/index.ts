@@ -445,6 +445,8 @@ Retorne APENAS o prompt em inglês, sem explicações.`;
         };
 
         // Adiciona referência de personagem se houver (base64 → upload fal.ai → URL)
+        const styleRefs: { image_url: string }[] = [];
+
         if (args.referenceImageBase64) {
           try {
             const uploadRes = await fetch('https://fal.run/files/upload', {
@@ -460,13 +462,42 @@ Retorne APENAS o prompt em inglês, sem explicações.`;
               const uploadData = await uploadRes.json();
               const refUrl = uploadData?.url || uploadData?.file_url;
               if (refUrl) {
-                ideogramBody.style_reference_images = [{ image_url: refUrl }];
-                console.log(`[Ideogram] Reference image uploaded: ${refUrl}`);
+                styleRefs.push({ image_url: refUrl });
+                console.log(`[Ideogram] Referência de personagem uploaded: ${refUrl}`);
               }
             }
           } catch (uploadErr) {
-            console.warn('[Ideogram] Upload de referência falhou, continuando sem ela:', uploadErr);
+            console.warn('[Ideogram] Upload de referência falhou:', uploadErr);
           }
+        }
+
+        // Adiciona logo da marca como referência visual
+        if (args.logoBase64) {
+          try {
+            const logoUploadRes = await fetch('https://fal.run/files/upload', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Key ${falKey}`,
+                'Content-Type': 'application/octet-stream',
+                'X-Fal-File-Name': 'logo.png'
+              },
+              body: Buffer.from(args.logoBase64, 'base64')
+            });
+            if (logoUploadRes.ok) {
+              const logoData = await logoUploadRes.json();
+              const logoUrl = logoData?.url || logoData?.file_url;
+              if (logoUrl) {
+                styleRefs.push({ image_url: logoUrl });
+                console.log(`[Ideogram] Logo uploaded: ${logoUrl}`);
+              }
+            }
+          } catch (logoErr) {
+            console.warn('[Ideogram] Upload de logo falhou:', logoErr);
+          }
+        }
+
+        if (styleRefs.length > 0) {
+          ideogramBody.style_reference_images = styleRefs;
         }
 
         console.log(`[Ideogram] Prompt: "${(args.prompt || '').substring(0, 80)}..." | Ratio: ${ideogramBody.aspect_ratio}`);
