@@ -46,49 +46,113 @@ try {
 }
 
 // Função para sobrepor logo na imagem gerada
-async function overlayLogoOnImage(
+// Engine de composição completa com template
+async function composeTemplateImage(
   imageBase64: string,
-  logoBase64: string,
-  position: string
+  layers: any[],
+  texts: any,
+  logoBase64?: string,
+  logoPosition: string = 'bottom-right'
 ): Promise<string> {
   try {
     const sharp = (await import('sharp')).default;
-    const imageBuffer = Buffer.from(imageBase64, 'base64');
-    const logoBuffer = Buffer.from(logoBase64, 'base64');
+    const { createCanvas, registerFont, GlobalFonts } = await import('@napi-rs/canvas').catch(() => null) as any;
 
-    const imageInfo = await sharp(imageBuffer).metadata();
-    const imgWidth = imageInfo.width || 1024;
-    const imgHeight = imageInfo.height || 1024;
-
-    const logoWidth = Math.round(imgWidth * 0.18);
-    const resizedLogo = await sharp(logoBuffer)
-      .resize(logoWidth, null, { fit: 'inside', withoutEnlargement: true })
-      .png()
-      .toBuffer();
-
-    const logoInfo = await sharp(resizedLogo).metadata();
-    const logoW = logoInfo.width || logoWidth;
-    const logoH = logoInfo.height || logoWidth;
-    const margin = Math.round(imgWidth * 0.04);
-
-    let left = 0, top = 0;
-    switch (position) {
-      case 'top-left': left = margin; top = margin; break;
-      case 'top-right': left = imgWidth - logoW - margin; top = margin; break;
-      case 'bottom-left': left = margin; top = imgHeight - logoH - margin; break;
-      case 'bottom-right': left = imgWidth - logoW - margin; top = imgHeight - logoH - margin; break;
-      case 'center': left = Math.round((imgWidth - logoW) / 2); top = Math.round((imgHeight - logoH) / 2); break;
-      default: left = imgWidth - logoW - margin; top = imgHeight - logoH - margin;
+    // Se não tiver canvas, usa só o Sharp para logo
+    if (!createCanvas) {
+      console.warn('[Sharp] Canvas não disponível, aplicando apenas logo');
+      if (logoBase64) {
+        return await overlayLogoOnImage(imageBase64, logoBase64, logoPosition);
+      }
+      return imageBase64;
     }
 
-    const finalBuffer = await sharp(imageBuffer)
-      .composite([{ input: resizedLogo, left, top, blend: 'over' }])
+    const imageBuffer = Buffer.from(imageBase64, 'base64');
+    const imageInfo = await sharp(imageBuffer).metadata();
+    const imgWidth = imageInfo.width || 1080;
+    const imgHeight = imageInfo.height || 1080;
+
+    // Cria canvas do mesmo tamanho
+    const canvas = createCanvas(imgWidth, imgHeight);
+    const ctx = canvas.getContext('2d');
+
+    // Desenha cada camada de texto
+    for (const layer of layers) {
+      if (!layer.type || layer.type === 'logo' || layer.type === 'divider') continue;
+
+      const text = texts[layer.type] || layer.placeholder;
+      if (!text) continue;
+
+      const fontSize = Math.round((layer.fontSize || 40) * (imgWidth / 1080));
+      const y = Math.round((layer.y / 100) * imgHeight);
+      const fontWeight = layer.fontWeight >= 700 ? 'bold' : 'normal';
+
+      ctx.font = `${fontWeight} ${fontSize}px ${layer.fontFamily || 'Arial'}`;
+      ctx.fillStyle = layer.color || '#FFFFFF';
+      ctx.textAlign = layer.align || 'center';
+      ctx.textBaseline = 'middle';
+
+      // Sombra
+      if (layer.shadow) {
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+      } else {
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      }
+
+      // Background do CTA
+      if (layer.backgroundColor && layer.backgroundColor !== 'transparent' && layer.type === 'cta') {
+        const textWidth = ctx.measureText(text).width;
+        const padX = Math.round((layer.paddingX || 40) * (imgWidth / 1080));
+        const padY = Math.round((layer.paddingY || 14) * (imgWidth / 1080));
+        const btnW = textWidth + padX * 2;
+        const btnH = fontSize + padY * 2;
+        const btnX = imgWidth / 2 - btnW / 2;
+        const btnY = y - btnH / 2;
+        const radius = Math.round((layer.borderRadius || 8) * (imgWidth / 1080));
+
+        ctx.fillStyle = layer.backgroundColor;
+        ctx.shadowColor = 'transparent';
+        ctx.beginPath();
+        ctx.roundRect(btnX, btnY, btnW, btnH, radius);
+        ctx.fill();
+
+        ctx.fillStyle = layer.color || '#FFFFFF';
+        if (layer.shadow) {
+          ctx.shadowColor = 'rgba(0,0,0,0.5)';
+          ctx.shadowBlur = 8;
+        }
+      }
+
+      const xPos = layer.align === 'center' ? imgWidth / 2 : layer.align === 'right' ? imgWidth - 40 : 40;
+      ctx.fillText(text, xPos, y);
+    }
+
+    // Converte canvas para buffer e composita sobre a imagem
+    const canvasBuffer = canvas.toBuffer('image/png');
+    const composited = await sharp(imageBuffer)
+      .composite([{ input: canvasBuffer, blend: 'over' }])
       .png()
       .toBuffer();
 
-    return finalBuffer.toString('base64');
+    let result = composited.toString('base64');
+
+    // Adiciona logo por cima de tudo
+    if (logoBase64) {
+      result = await overlayLogoOnImage(result, logoBase64, logoPosition);
+    }
+
+    console.log('[Sharp] Composição de template concluída com sucesso!');
+    return result;
+
   } catch (err) {
-    console.warn('[Sharp] Overlay falhou, retornando imagem original:', err);
+    console.warn('[Sharp] Composição falhou, tentando apenas logo:', err);
+    if (logoBase64) {
+      return await overlayLogoOnImage(imageBase64, logoBase64, logoPosition);
+    }
     return imageBase64;
   }
 }
@@ -590,10 +654,22 @@ Retorne APENAS o prompt em inglês, sem explicações adicionais.`;
           let base64 = Buffer.from(imgBuffer).toString('base64');
           const mimeType = imgResponse.headers.get('content-type') || 'image/jpeg';
 
-          // Sobrepõe logo real da marca se disponível
-          if (args.logoBase64 && args.logoPosition) {
+          // Sobrepõe logo real da marca se disponível (sem template)
+          if (args.logoBase64 && args.logoPosition && !args.templateLayers) {
             console.log(`[Sharp] Sobrepondo logo na posição: ${args.logoPosition}`);
             base64 = await overlayLogoOnImage(base64, args.logoBase64, args.logoPosition);
+          }
+
+          // ENGINE DE COMPOSIÇÃO — Template com camadas
+          if (args.templateLayers && args.templateTexts) {
+            console.log(`[Sharp] Iniciando composição de template com ${args.templateLayers.length} camadas`);
+            base64 = await composeTemplateImage(
+              base64,
+              args.templateLayers,
+              args.templateTexts,
+              args.logoBase64ForTemplate,
+              args.logoPositionForTemplate || 'bottom-right'
+            );
           }
 
           return res.json({
