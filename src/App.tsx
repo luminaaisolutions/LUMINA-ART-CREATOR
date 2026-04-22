@@ -735,6 +735,10 @@ function AppContent() {
   const [useCreativeStudio, setUseCreativeStudio] = useState(false);
   const [creativeLogo, setCreativeLogo] = useState<{ data: string, mimeType: string } | null>(null);
   const [useLogoInArt, setUseLogoInArt] = useState(true);
+  const [adTemplates, setAdTemplates] = useState<any[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [logoPosition, setLogoPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'>('bottom-right');
   const [useBrandColors, setUseBrandColors] = useState(true);
   const [useBrandTypography, setUseBrandTypography] = useState(true);
@@ -1644,7 +1648,37 @@ function AppContent() {
 
     return finalCost;
   };
+  
+  const loadAdTemplates = async () => {
+    if (adTemplates.length > 0) return;
+    setLoadingTemplates(true);
+    try {
+      const { collection, getDocs, query, where } = await import('firebase/firestore');
+      const q = query(collection(db, 'ad_templates'), where('active', '==', true));
+      const snap = await getDocs(q);
+      const templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setAdTemplates(templates);
+    } catch (e) {
+      console.error('Erro ao carregar templates:', e);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
 
+  const getTemplateGradient = (style: string) => {
+    const gradients: Record<string, string> = {
+      dark_premium: 'linear-gradient(135deg, #0A0A0A 0%, #1a1500 100%)',
+      vibrant_dark: 'linear-gradient(135deg, #0D1B2A 0%, #1e1040 100%)',
+      clean_premium: 'linear-gradient(135deg, #F5F0E8 0%, #E8E0D0 100%)',
+      bold_modern: 'linear-gradient(135deg, #1C1C1E 0%, #064E3B 100%)',
+      corporate_premium: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%)',
+      bold_colorful: 'linear-gradient(135deg, #EA580C 0%, #DB2777 100%)',
+      tech_modern: 'linear-gradient(135deg, #0A0A0F 0%, #2D1B69 100%)',
+      spiritual_light: 'linear-gradient(135deg, #4C1D95 0%, #78350F 100%)',
+    };
+    return gradients[style] || 'linear-gradient(135deg, #111 0%, #222 100%)';
+  };
+  
   const generateWizardPrompt = async () => {
     if (!wizardProduct.trim()) {
       showNotification('Descreva o produto ou serviço para continuar.', 'info');
@@ -5295,6 +5329,16 @@ const handleBatchDownload = async (ids: string[]) => {
                         <p className="text-[10px] text-gray-500 font-medium">Crie criativos profissionais para qualquer plataforma</p>
                       </div>
                     </div>
+                    {/* Botão Templates */}
+                    <button
+                      type="button"
+                      onClick={() => { setShowTemplateSelector(true); loadAdTemplates(); }}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#d4af37]/30 bg-[#d4af37]/5 text-[#d4af37] text-xs font-black transition-all hover:bg-[#d4af37]/10"
+                    >
+                      <Layers size={13} />
+                      Templates
+                    </button>
+
                     {/* Toggle */}
                     <div className="flex items-center gap-1 p-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded-2xl">
                       <button
@@ -5315,7 +5359,92 @@ const handleBatchDownload = async (ids: string[]) => {
                       </button>
                     </div>
                   </div>
+                  
+                  {/* ── Modal Templates ── */}
+                  {showTemplateSelector && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                      <div className="bg-[#111] border border-[#222] rounded-[32px] w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+                        
+                        {/* Header modal */}
+                        <div className="flex items-center justify-between p-6 border-b border-[#1c1c1c]">
+                          <div>
+                            <h3 className="font-black text-lg">Templates de Criativos</h3>
+                            <p className="text-[11px] text-gray-500 mt-0.5">Escolha um template para começar com estilo</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowTemplateSelector(false)}
+                            className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center text-gray-400 hover:text-white transition-all"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
 
+                        {/* Conteúdo */}
+                        <div className="overflow-y-auto p-6">
+                          {loadingTemplates ? (
+                            <div className="flex items-center justify-center py-16">
+                              <div className="w-8 h-8 border-2 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              {adTemplates.map(template => (
+                                <button
+                                  type="button"
+                                  key={template.id}
+                                  onClick={() => {
+                                    setSelectedTemplate(template);
+                                    setShowTemplateSelector(false);
+                                    // Preenche o prompt com o placeholder do headline
+                                    const headline = template.layers?.find((l: any) => l.type === 'headline');
+                                    if (headline?.placeholder) {
+                                      setCreativePrompt(headline.placeholder);
+                                    }
+                                  }}
+                                  className={`relative p-4 rounded-2xl border text-left transition-all hover:border-[#d4af37]/50 hover:scale-[1.02] ${selectedTemplate?.id === template.id ? 'border-[#d4af37] bg-[#d4af37]/10' : 'border-[#222] bg-[#1a1a1a]'}`}
+                                >
+                                  {/* Preview visual do template */}
+                                  <div className="w-full aspect-square rounded-xl mb-3 flex items-center justify-center overflow-hidden relative"
+                                    style={{ background: getTemplateGradient(template.style) }}
+                                  >
+                                    <div className="text-center p-2">
+                                      <div className="text-[8px] font-black text-white/80 uppercase tracking-widest mb-1">{template.layers?.find((l: any) => l.type === 'tag')?.placeholder || ''}</div>
+                                      <div className="text-[11px] font-black text-white leading-tight">{template.layers?.find((l: any) => l.type === 'headline')?.placeholder}</div>
+                                      <div className="text-[7px] text-white/60 mt-1">{template.layers?.find((l: any) => l.type === 'subheadline')?.placeholder}</div>
+                                    </div>
+                                    {selectedTemplate?.id === template.id && (
+                                      <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#d4af37] rounded-full flex items-center justify-center">
+                                        <CheckCircle2 size={12} className="text-black" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] font-black text-white">{template.name}</div>
+                                  <div className="text-[9px] text-gray-500 mt-0.5">{template.description}</div>
+                                  <div className="flex flex-wrap gap-1 mt-2">
+                                    {template.platform?.slice(0, 2).map((p: string) => (
+                                      <span key={p} className="text-[8px] bg-[#222] text-gray-400 px-1.5 py-0.5 rounded-full">{p}</span>
+                                    ))}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-4 border-t border-[#1c1c1c] flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => { setSelectedTemplate(null); setShowTemplateSelector(false); }}
+                            className="px-4 py-2 rounded-xl border border-[#222] text-gray-400 text-xs font-black hover:border-[#444] transition-all"
+                          >
+                            Sem template
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* ── Body ── */}
                   <div className="flex flex-wrap lg:flex-nowrap divide-y lg:divide-y-0 lg:divide-x divide-[#1c1c1c]">
 
