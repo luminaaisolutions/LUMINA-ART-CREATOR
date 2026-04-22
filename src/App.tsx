@@ -2000,8 +2000,9 @@ function AppContent() {
               // TÉCNICA 2 CHAMADAS — Gera personagem isolado primeiro para reforçar fidelidade
               let characterImageData: string | null = null;
               let characterMimeType: string = 'image/png';
+              const hasRefAsset = currentRefAsset && currentRefAsset.type === 'image';
 
-              if (hasRef && currentRefAsset?.data && currentModelType !== 'ideogram' && currentModelType !== 'imagen') {
+              if (hasRefAsset && currentRefAsset?.data && currentModelType !== 'ideogram' && currentModelType !== 'imagen') {
                 try {
                   console.log('[Fidelidade] Gerando personagem isolado para reforço de identidade...');
                   const charResponse = await callGeminiAPI({
