@@ -126,6 +126,79 @@ async function createServer() {
     res.json({ status: "ok", message: "Lumina API is running" });
   });
 
+  app.post("/api/generate-wizard-prompt", async (req, res) => {
+    try {
+      const { adGoal, adPlatform, wizardProduct, wizardAudience, wizardStyle, wizardCta, modelType, creativeStrategy, creativeAesthetic, brandContext } = req.body;
+
+      const geminiKey = process.env.GEMINI_API_KEY;
+      if (!geminiKey) return res.status(500).json({ error: "Chave de API não configurada." });
+
+      const client = new GoogleGenAI({ apiKey: geminiKey });
+
+      const goalMap: Record<string, string> = {
+        vender: 'VENDAS DIRETAS — foco em conversão imediata, preço, CTA forte',
+        engajar: 'ENGAJAMENTO — foco em emoção, compartilhamento, conexão',
+        leads: 'CAPTAÇÃO DE LEADS — foco em benefício, formulário, gratuidade',
+        awareness: 'AWARENESS DE MARCA — foco em identidade, valores, reconhecimento'
+      };
+
+      const platformMap: Record<string, string> = {
+        instagram: 'Instagram Feed/Stories — visual impactante, texto curto',
+        tiktok: 'TikTok Ads — dinâmico, jovem, autêntico, UGC style',
+        facebook: 'Facebook Feed — texto mais longo, público 30+',
+        youtube: 'YouTube Shorts/VSL — storytelling, gancho forte'
+      };
+
+      const styleMap: Record<string, string> = {
+        urgencia: 'URGÊNCIA — cores quentes, countdown, escassez',
+        elegante: 'ELEGANTE — minimalista, luxo, sofisticado',
+        divertido: 'DIVERTIDO — colorido, dinâmico, descontraído',
+        profissional: 'PROFISSIONAL — corporativo, sério, confiável'
+      };
+
+      const recommendedModel = adGoal === 'vender' || adGoal === 'leads' ? 'ideogram' : 'nano';
+
+      const systemPrompt = `Você é um especialista em marketing digital e criação de anúncios de alta conversão para o mercado brasileiro.
+      
+Crie um prompt detalhado em INGLÊS para geração de imagem de anúncio com as seguintes especificações:
+
+OBJETIVO: ${goalMap[adGoal] || adGoal}
+PLATAFORMA: ${platformMap[adPlatform] || adPlatform}
+PRODUTO/SERVIÇO: ${wizardProduct}
+PÚBLICO-ALVO: ${wizardAudience || 'público geral brasileiro'}
+ESTILO VISUAL: ${styleMap[wizardStyle] || wizardStyle}
+CTA: ${wizardCta || 'Saiba mais'}
+${brandContext ? `\n${brandContext}` : ''}
+${creativeStrategy ? `ESTRATÉGIA: ${creativeStrategy}` : ''}
+${creativeAesthetic ? `ESTÉTICA: ${creativeAesthetic}` : ''}
+
+REGRAS DO PROMPT:
+- Descreva a composição visual detalhadamente
+- Inclua iluminação, cores, tipografia e elementos visuais
+- Mencione o texto que deve aparecer na imagem em PORTUGUÊS
+- Foque em elementos que geram alta conversão para ${adGoal}
+- O resultado deve ser uma imagem pronta para veicular como anúncio
+- Máximo 200 palavras
+
+Retorne APENAS o prompt em inglês, sem explicações.`;
+
+      const result = await client.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{ role: 'user', parts: [{ text: systemPrompt }] }]
+      });
+
+      const prompt = result.text?.trim();
+      if (!prompt) return res.status(500).json({ error: "Não foi possível gerar o prompt." });
+
+      console.log(`[WizardPrompt] goal=${adGoal} model=${recommendedModel} cta="${wizardCta}" product="${(wizardProduct || '').substring(0, 30)}"`);
+
+      return res.json({ prompt, recommendedModel });
+    } catch (error: any) {
+      console.error("Wizard Prompt Error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+  });
+
   // Mercado Pago Payment Creation
   app.post("/api/create-payment", async (req, res) => {
     try {
