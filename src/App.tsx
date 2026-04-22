@@ -2195,6 +2195,7 @@ function AppContent() {
                   referenceImageBase64: currentRefAsset?.data || undefined,
                   referenceImageMimeType: currentRefAsset?.mimeType || 'image/jpeg',
                   logoBase64: (currentUseLogoInArt && currentCreativeLogo?.data) ? currentCreativeLogo.data : undefined,
+                  logoPosition: (currentUseLogoInArt && currentCreativeLogo?.data) ? currentLogoPosition : undefined,
                 }),
                 config: currentModelType === 'imagen' ? {
                   numberOfImages: 1,
