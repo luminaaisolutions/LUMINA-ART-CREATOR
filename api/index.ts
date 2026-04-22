@@ -497,6 +497,72 @@ async function createServer() {
         );
         return res.json({ ...result, text: result.text });
 
+      // --- generateIdeogram ---
+      } else if (method === 'generateIdeogram') {
+        console.log(`[Gemini Proxy] Calling Ideogram V3 via fal.ai`);
+
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) {
+          console.error("[Ideogram] FAL_API_KEY not configured");
+          return res.status(503).json({ error: "Serviço Ideogram indisponível. FAL_API_KEY não configurada." });
+        }
+
+        const aspectRatioMap: Record<string, string> = {
+          '1:1':    'SQUARE',
+          '9:16':   'PORTRAIT_9_16',
+          '16:9':   'LANDSCAPE_16_9',
+          '4:5':    'PORTRAIT_4_5',
+          '1.91:1': 'LANDSCAPE_16_9'
+        };
+
+        const ideogramBody: any = {
+          prompt: args.prompt,
+          aspect_ratio: aspectRatioMap[args.aspectRatio || '1:1'] || 'SQUARE',
+          rendering_speed: args.quality === 'QUALITY' ? 'QUALITY' : 'BALANCED',
+          magic_prompt_option: 'OFF' // Usamos nosso próprio prompt já otimizado
+        };
+
+        const ideogramResponse = await withRetry(
+          () => fetch('https://fal.run/fal-ai/ideogram/v3', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Key ${falKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(ideogramBody)
+          }),
+          3, 3000, 'generateIdeogram'
+        );
+
+        if (!ideogramResponse.ok) {
+          const errData = await ideogramResponse.json().catch(() => ({ error: ideogramResponse.statusText }));
+          console.error("[Ideogram] API error:", JSON.stringify(errData));
+          return res.status(ideogramResponse.status).json({ error: errData?.detail || errData?.error || 'Ideogram generation failed' });
+        }
+
+        const ideogramData = await ideogramResponse.json();
+        console.log(`[Ideogram] Gerado com sucesso. Images: ${ideogramData?.images?.length || 0}`);
+
+        // Normaliza resposta para o formato esperado pelo frontend
+        if (ideogramData?.images?.[0]?.url) {
+          // Busca a imagem e converte para base64 para consistência com outros motores
+          const imgResponse = await fetch(ideogramData.images[0].url);
+          const imgBuffer = await imgResponse.arrayBuffer();
+          const base64 = Buffer.from(imgBuffer).toString('base64');
+          const mimeType = imgResponse.headers.get('content-type') || 'image/jpeg';
+
+          return res.json({
+            generatedImages: [{
+              image: {
+                imageBytes: base64,
+                mimeType: mimeType
+              }
+            }]
+          });
+        }
+
+        return res.status(500).json({ error: 'Ideogram não retornou imagem válida.' });
+
       } else {
         return res.status(400).json({ error: "Invalid method" });
       }
