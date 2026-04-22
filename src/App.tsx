@@ -1997,6 +1997,56 @@ function AppContent() {
               // Texto sempre por último
               parts.push({ text: finalPromptText });
 
+              // TÉCNICA 2 CHAMADAS — Gera personagem isolado primeiro para reforçar fidelidade
+              let characterImageData: string | null = null;
+              let characterMimeType: string = 'image/png';
+
+              if (hasRef && currentRefAsset?.data && currentModelType !== 'ideogram' && currentModelType !== 'imagen') {
+                try {
+                  console.log('[Fidelidade] Gerando personagem isolado para reforço de identidade...');
+                  const charResponse = await callGeminiAPI({
+                    model: 'gemini-2.5-flash-image',
+                    method: 'generateContent',
+                    contents: [{
+                      role: 'user',
+                      parts: [
+                        { inlineData: { data: currentRefAsset.data, mimeType: currentRefAsset.mimeType } },
+                        { text: `Generate a high-quality portrait of this exact person on a clean white background. 
+                          Preserve ALL facial features with 100% accuracy: face shape, skin tone, eye color, hair color and style, nose, lips, and any distinctive features.
+                          Front-facing, neutral expression, professional lighting.
+                          The face must be IDENTICAL to the reference image.
+                          Output: portrait only, white background, no text, no props.` }
+                      ]
+                    }],
+                    config: {
+                      responseModalities: ['IMAGE'],
+                      imageConfig: { aspectRatio: '1:1' }
+                    }
+                  });
+
+                  // Extrai base64 do personagem gerado
+                  const charPart = charResponse?.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData);
+                  if (charPart?.inlineData?.data) {
+                    characterImageData = charPart.inlineData.data;
+                    characterMimeType = charPart.inlineData.mimeType || 'image/png';
+                    console.log('[Fidelidade] Personagem isolado gerado com sucesso!');
+                  }
+                } catch (e) {
+                  console.warn('[Fidelidade] Chamada 1 falhou, usando fluxo normal:', e);
+                }
+              }
+
+              // Adiciona personagem gerado como segunda referência se disponível
+              if (characterImageData) {
+                // Insere personagem gerado no início do parts para máxima fidelidade
+                parts.unshift({ inlineData: { data: characterImageData, mimeType: characterMimeType } });
+                // Atualiza o texto final para reforçar a consistência
+                const lastPart = parts[parts.length - 1];
+                if (lastPart.text) {
+                  lastPart.text = `IDENTITY LOCK: The person in the FIRST image is the character reference. The SECOND image shows the same person isolated. Use BOTH images to ensure the character in the final scene has the EXACT SAME face, skin tone, hair, and identity.\n\n${lastPart.text}`;
+                }
+              }
+
               const response = await callGeminiAPI({
                 model: modelName,
                 method: methodToUse,
