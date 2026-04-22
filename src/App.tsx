@@ -2166,7 +2166,9 @@ function AppContent() {
                 // Parâmetros específicos do Ideogram
                 ...(currentModelType === 'ideogram' && {
                   aspectRatio: currentAspectRatio,
-                  quality: currentResolution === '2K' || currentResolution === '4K' ? 'QUALITY' : 'BALANCED'
+                  quality: currentResolution === '2K' || currentResolution === '4K' ? 'QUALITY' : 'BALANCED',
+                  referenceImageBase64: currentRefAsset?.data || undefined,
+                  referenceImageMimeType: currentRefAsset?.mimeType || 'image/jpeg'
                 }),
                 config: currentModelType === 'imagen' ? {
                   numberOfImages: 1,
