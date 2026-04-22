@@ -746,6 +746,14 @@ function AppContent() {
   const [adGoal, setAdGoal] = useState<'conversoes' | 'awareness' | 'engajamento' | 'lead'>('conversoes');
   const [adTrigger, setAdTrigger] = useState<'escassez' | 'autoridade' | 'curiosidade' | 'urgencia' | 'prova_social' | 'desejo'>('desejo');
   const [adPlatform, setAdPlatform] = useState<'tiktok' | 'instagram' | 'youtube' | 'facebook'>('instagram');
+  // Wizard ADS states
+  const [adsMode, setAdsMode] = useState<'guided' | 'advanced'>('guided');
+  const [wizardStep, setWizardStep] = useState(1);
+  const [wizardProduct, setWizardProduct] = useState('');
+  const [wizardAudience, setWizardAudience] = useState('');
+  const [wizardStyle, setWizardStyle] = useState('');
+  const [wizardGeneratedPrompt, setWizardGeneratedPrompt] = useState('');
+  const [isGeneratingWizardPrompt, setIsGeneratingWizardPrompt] = useState(false);
   const [isAnalyzingLogo, setIsAnalyzingLogo] = useState(false);
   const [brandProfiles, setBrandProfiles] = useState<{ 
     id: string, 
@@ -1624,6 +1632,51 @@ function AppContent() {
     return finalCost;
   };
 
+  const generateWizardPrompt = async () => {
+    if (!wizardProduct.trim()) {
+      showNotification('Descreva o produto ou serviço para continuar.', 'info');
+      return;
+    }
+    setIsGeneratingWizardPrompt(true);
+    try {
+      const activeBrand = brandProfiles.find(b => b.id === activeBrandProfileId);
+      const brandContext = activeBrand
+        ? `MARCA: ${activeBrand.name}${activeBrand.styleAnalysis ? `\nDNA: ${activeBrand.styleAnalysis}` : ''}${activeBrand.colors?.length ? `\nCores: ${activeBrand.colors.join(', ')}` : ''}`
+        : '';
+
+      const response = await fetch('/api/generate-wizard-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adGoal,
+          adPlatform,
+          wizardProduct,
+          wizardAudience,
+          wizardStyle,
+          creativeStrategy,
+          creativeAesthetic,
+          brandContext
+        })
+      });
+
+      if (!response.ok) throw new Error(`Erro do servidor: ${response.status}`);
+
+      const data = await response.json();
+      if (data.prompt) {
+        setWizardGeneratedPrompt(data.prompt);
+        setCreativePrompt(data.prompt);
+        setWizardStep(3);
+      } else {
+        showNotification('Não foi possível gerar o prompt. Tente novamente.', 'info');
+      }
+    } catch (err) {
+      console.error('Wizard prompt generation failed:', err);
+      showNotification('Erro ao gerar briefing. Verifique sua conexão.', 'error');
+    } finally {
+      setIsGeneratingWizardPrompt(false);
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent, forceLipsync?: boolean, forceCreative?: boolean) => {
     e.preventDefault();
     if (!user || !userData) return;
@@ -1855,17 +1908,59 @@ function AppContent() {
               const productContext = hasProduct ? '\n- IMPORTANT: A PRODUCT REFERENCE IMAGE will be provided. The prompt must instruct the model to feature this exact product with its real colors, shape, and branding.' : '';
               const hasCreativeLogo = currentUseCreativeStudio && currentCreativeLogo;
               
+              const goalLabels: Record<string, string> = {
+                conversoes: 'Direct Sales / Conversion — maximize purchase intent, strong CTA, product as hero',
+                lead: 'Lead Generation — capture attention with promise of value, highlight benefit and free offer',
+                engajamento: 'Engagement / Viral — emotional hook, shareable visual, high energy composition',
+                awareness: 'Brand Awareness — elegant brand storytelling, aspirational mood, lifestyle over product'
+              };
+              const platformLabels: Record<string, string> = {
+                instagram: 'Instagram Feed/Reels — square or portrait, clean composition, scroll-stopping hook',
+                tiktok: 'TikTok Ads (UGC style) — vertical 9:16, raw authentic energy, faces or bold text if needed',
+                facebook: 'Facebook Feed Ad — wider format, trust-building, text-friendly layout',
+                youtube: 'YouTube / VSL — cinematic 16:9, professional mood, authoritative visual style'
+              };
+              const strategyLabels: Record<string, string> = {
+                'Oferta Direta': 'Direct Offer — price, deal, urgency triggers, scarcity cues',
+                'Autoridade': 'Authority — expert positioning, credibility signals, premium feel',
+                'Prova Social': 'Social Proof — testimonials, before/after, community validation',
+                'Educativo': 'Educational — tips, how-to, carousel-friendly composition',
+                'Engajamento': 'Viral Engagement — fast cuts, pattern interrupt, emotional reaction',
+                'Depoimento': 'Testimonial — human face, genuine emotion, quote overlay space',
+                'Polêmica Suave': 'Soft Controversy — debate-triggering visual, polarizing composition'
+              };
+              const aestheticLabels: Record<string, string> = {
+                'Minimalista': 'Minimalist — white space, clean lines, single focal point, neutral palette',
+                'Vibrante': 'Vibrant — saturated colors, bold contrasts, kinetic energy',
+                'Pastel/Soft': 'Pastel Soft — muted tones, gentle lighting, warm and approachable',
+                'Retro/Vintage': 'Retro Vintage — grain texture, faded tones, nostalgic typography space',
+                'Dark Mode': 'Dark Mode — deep blacks, neon accents, high contrast dramatic lighting',
+                '3D/Ilustrativo': '3D Illustrative — depth, stylized characters, dimensional product renders',
+                'Trendy': 'Trendy — Y2K, K-pop aesthetic, digital glitch, hyper-saturated'
+              };
+
               const creativeContext = currentUseCreativeStudio ? `
-              [ADS MODE ACTIVE]
+              [ADS MODE ACTIVE — PROFESSIONAL ADVERTISING IMAGE]
+              
+              CAMPAIGN OBJECTIVE: ${goalLabels[currentAdGoal] || currentAdGoal}
+              PLATFORM OPTIMIZATION: ${platformLabels[currentAdPlatform] || currentAdPlatform}
+              CREATIVE STRATEGY: ${strategyLabels[currentCreativeStrategy] || currentCreativeStrategy}
+              VISUAL AESTHETIC: ${aestheticLabels[currentCreativeAesthetic] || currentCreativeAesthetic}
+              ${currentStyleAnalysis ? `BRAND DNA: ${currentStyleAnalysis}` : ''}
+              ${currentToneOfVoice ? `BRAND TONE: ${currentToneOfVoice}` : ''}
+              FORMAT: ${currentCreativeFormat}
+              
+              COMPOSITION RULES:
+              - Design for the stated platform format and objective above.
+              - The visual hierarchy must serve the campaign objective — hero element should reinforce the goal.
+              - Lighting, color grading and mood must match the aesthetic profile above.
+              - Leave intentional negative space for copy overlay if strategy suggests text placement.
               
               TEXT & SPELLING:
               - ONLY include text if explicitly requested by the user.
               - If text is requested: ensure Perfect Spelling in Portuguese (BR).
               - WORD CHECK: "VIVO" (V-I-V-O). NEVER WRITE "LIVO".
-              - WORD CHECK: "NEGÓCIOS" (N-E-G-Ó-C-I-O-S). 
-              
-              INSTRUCTIONS:
-              - Depict a professional corporate scene based on user prompt.
+              - WORD CHECK: "NEGÓCIOS" (N-E-G-Ó-C-I-O-S).
               ` : '';
 
               const studioContext = activeTab === 'creative_studio' ? `
@@ -5139,40 +5234,67 @@ const handleBatchDownload = async (ids: string[]) => {
         {activeTab === 'projects' && (
           <div className="w-full max-w-full mx-auto py-8 px-4 md:px-8">
             <div className="flex flex-col gap-8">
-              {/* Projects Controls - Horizontal/Top Layout */}
+              {/* ===== PAINEL ADS — WIZARD + AVANÇADO ===== */}
               <div className="w-full">
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`bg-[#111] p-8 md:p-10 rounded-[40px] border transition-all ${useCreativeStudio ? 'border-[#d4af37] shadow-lg shadow-[#d4af37]/10' : 'border-[#222]'}`}
+                  className={`bg-[#111] rounded-[40px] border transition-all overflow-hidden ${useCreativeStudio ? 'border-[#d4af37] shadow-lg shadow-[#d4af37]/10' : 'border-[#222]'}`}
                 >
-                  <div className="flex flex-wrap items-start gap-10">
-                    {/* Left: Brand and Logo */}
-                    <div className="w-full lg:w-auto lg:min-w-[300px] space-y-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Target size={24} className="text-[#d4af37]" />
-                          <h3 className="font-bold text-xl">Projetos Criativos Ads</h3>
-                        </div>
-                        <div className="flex items-center gap-2 px-3 py-1 bg-[#d4af37]/10 border border-[#d4af37]/20 rounded-full">
-                          <div className="w-2 h-2 rounded-full bg-[#d4af37] animate-pulse" />
-                          <span className="text-[10px] font-black text-[#d4af37] uppercase tracking-widest">ADS Mode Active</span>
-                        </div>
+                  {/* ── Header ── */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 px-8 md:px-10 pt-8 pb-6 border-b border-[#1c1c1c]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#d4af37]/10 flex items-center justify-center border border-[#d4af37]/20">
+                        <Target size={18} className="text-[#d4af37]" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-lg leading-tight">Criador de Anúncios</h3>
+                        <p className="text-[10px] text-gray-500 font-medium">Crie criativos profissionais para qualquer plataforma</p>
+                      </div>
+                    </div>
+                    {/* Toggle */}
+                    <div className="flex items-center gap-1 p-1 bg-[#0a0a0a] border border-[#1c1c1c] rounded-2xl">
+                      <button
+                        type="button"
+                        onClick={() => { setAdsMode('guided'); setWizardStep(1); }}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${adsMode === 'guided' ? 'bg-[#d4af37] text-black shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
+                      >
+                        <Wand2 size={13} />
+                        Assistente
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAdsMode('advanced')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${adsMode === 'advanced' ? 'bg-[#222] text-white shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
+                      >
+                        <Settings size={13} />
+                        Avançado
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* ── Body ── */}
+                  <div className="flex flex-wrap lg:flex-nowrap divide-y lg:divide-y-0 lg:divide-x divide-[#1c1c1c]">
+
+                    {/* ── Coluna Esquerda: Sua Marca ── */}
+                    <div className="w-full lg:w-[260px] shrink-0 p-7 space-y-5">
+
+                      {/* Título da coluna */}
+                      <div className="flex items-center gap-2">
+                        <Palette size={14} className="text-[#d4af37]" />
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sua Marca</span>
                       </div>
 
-                      {/* Brand Selector Dropdown */}
+                      {/* Seletor de marca */}
                       <div className="relative">
-                        <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Marca Selecionada</label>
-                        <select 
-                          value={activeBrandProfileId || ''} 
+                        <select
+                          value={activeBrandProfileId || ''}
                           onChange={(e) => {
                             const brandId = e.target.value;
                             const brand = brandProfiles.find(b => b.id === brandId);
                             if (brand) {
                               setActiveBrandProfileId(brand.id);
-                              if (brand.logos && brand.logos.length > 0) {
-                                setCreativeLogo(brand.logos[0]);
-                              }
+                              if (brand.logos && brand.logos.length > 0) setCreativeLogo(brand.logos[0]);
                               setCreativeColors(brand.colors);
                               setCreativeTypography(brand.typography);
                             } else {
@@ -5182,9 +5304,9 @@ const handleBatchDownload = async (ids: string[]) => {
                               setCreativeTypography('Modern');
                             }
                           }}
-                          className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-sm font-bold focus:outline-none focus:border-[#d4af37] appearance-none cursor-pointer"
+                          className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-sm font-bold focus:outline-none focus:border-[#d4af37] appearance-none cursor-pointer text-white"
                         >
-                          <option value="">Selecione uma marca...</option>
+                          <option value="">Escolha uma marca...</option>
                           {brandProfiles.map(brand => (
                             <option key={brand.id} value={brand.id}>{brand.name}</option>
                           ))}
@@ -5192,368 +5314,667 @@ const handleBatchDownload = async (ids: string[]) => {
                         <ChevronDown size={14} className="absolute right-3 bottom-3.5 text-gray-500 pointer-events-none" />
                       </div>
 
+                      {/* DNA da marca ativo */}
                       {activeBrandProfileId && brandProfiles.find(b => b.id === activeBrandProfileId) && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 5 }}
+                        <motion.div
+                          initial={{ opacity: 0, y: 4 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="p-5 bg-gradient-to-br from-[#d4af37]/10 to-transparent border border-[#d4af37]/20 rounded-3xl space-y-3 relative overflow-hidden"
+                          className="p-3.5 bg-[#d4af37]/5 border border-[#d4af37]/20 rounded-2xl space-y-2.5"
                         >
-                          <div className="absolute top-0 right-0 p-3 opacity-5">
-                            <Zap size={40} className="text-[#d4af37]" />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-5 h-5 bg-[#d4af37] text-black rounded-lg flex items-center justify-center">
-                              <Zap size={10} fill="currentColor" />
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-4 h-4 rounded-md bg-[#d4af37] flex items-center justify-center">
+                              <Zap size={9} className="text-black" fill="currentColor" />
                             </div>
-                            <span className="text-[10px] font-black text-white uppercase tracking-widest">DNA da Marca Ativado</span>
+                            <span className="text-[9px] font-black text-[#d4af37] uppercase tracking-widest">Identidade carregada</span>
                           </div>
                           {brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis && (
-                            <p className="text-[11px] text-gray-400 leading-relaxed font-medium line-clamp-3">
-                              "{brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis}"
+                            <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-2">
+                              {brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis}
                             </p>
+                          )}
+                          {creativeColors.length > 0 && (
+                            <div className="flex gap-1.5 flex-wrap">
+                              {creativeColors.slice(0, 6).map((c, i) => (
+                                <div key={i} className="w-3.5 h-3.5 rounded-full border border-white/10 shadow-sm" style={{ backgroundColor: c }} title={c} />
+                              ))}
+                            </div>
                           )}
                         </motion.div>
                       )}
 
-                      {/* Logo Display/Upload */}
-                      <div className="flex flex-col gap-4">
-                        <div 
-                          className={`w-full max-w-[200px] aspect-square bg-[#1a1a1a] rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all relative group overflow-hidden ${creativeLogo ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#222] hover:border-[#333] cursor-pointer'}`}
+                      {/* Logomarca */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Logomarca</span>
+                          {!creativeLogo && <span className="text-[9px] text-amber-500 font-bold">Obrigatório</span>}
+                        </div>
+                        <div
+                          className={`w-full max-w-[140px] aspect-square bg-[#161616] rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all relative group overflow-hidden ${creativeLogo ? 'border-[#d4af37]' : 'border-dashed border-[#2a2a2a] hover:border-[#d4af37]/40 cursor-pointer'}`}
                           onClick={() => !creativeLogo && creativeLogoInputRef.current?.click()}
                         >
-                          <input 
-                            ref={creativeLogoInputRef}
-                            type="file" 
-                            className="hidden" 
-                            accept="image/*" 
-                            onChange={handleCreativeLogoUpload} 
-                          />
+                          <input ref={creativeLogoInputRef} type="file" className="hidden" accept="image/*" onChange={handleCreativeLogoUpload} />
                           {creativeLogo ? (
                             <>
-                              <img 
-                                src={`data:${creativeLogo.mimeType};base64,${creativeLogo.data}`} 
-                                alt="Logo" 
-                                className="w-full h-full object-contain p-4" 
-                              />
-                              <button 
+                              <img src={`data:${creativeLogo.mimeType};base64,${creativeLogo.data}`} alt="Logo" className="w-full h-full object-contain p-3" />
+                              <button
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCreativeLogo(null); setCreativeColors([]); }}
-                                className="absolute top-2 right-2 w-7 h-7 bg-black/80 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border border-red-500/30"
+                                className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/90 text-red-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border border-red-500/20"
                               >
-                                <Trash2 size={12} />
+                                <Trash2 size={10} />
                               </button>
                             </>
                           ) : (
                             <>
                               <ImagePlus size={20} className="text-gray-600" />
-                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest leading-none">Logo</span>
+                              <span className="text-[8px] font-bold text-gray-600 text-center leading-tight px-2">Clique para<br/>adicionar</span>
                             </>
                           )}
                         </div>
+                      </div>
 
-                        {activeBrandProfileId && (
-                          <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-2xl border border-white/10">
-                            <div>
-                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-2">Paleta Institucional</span>
-                              <div className="flex gap-1.5 flex-wrap">
-                                {creativeColors && creativeColors.length > 0 ? (
-                                  creativeColors.map((color, i) => (
-                                    <div key={i} className="w-4 h-4 rounded-full border border-white/10 shadow-sm" style={{ backgroundColor: color }} title={color} />
-                                  ))
-                                ) : (
-                                  <span className="text-[8px] text-gray-600 italic">Nenhuma cor</span>
+                      {/* Referências opcionais */}
+                      <div className="space-y-2">
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">Referências opcionais</span>
+                        <input ref={creativeRefAssetInputRef} type="file" className="hidden" accept="image/*" onChange={handleCreativeRefAssetUpload} />
+                        <input ref={creativeProductAssetInputRef} type="file" className="hidden" accept="image/*" onChange={handleCreativeProductAssetUpload} />
+                        <button
+                          type="button"
+                          onClick={() => creativeRefAssetInputRef.current?.click()}
+                          className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl border transition-all text-left ${creativeRefAsset ? 'bg-[#d4af37]/10 border-[#d4af37]/40' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
+                        >
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${creativeRefAsset ? 'bg-[#d4af37] text-black' : 'bg-[#222] text-gray-500'}`}>
+                            <User size={13} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="block text-[10px] font-black text-white">Foto de pessoa</span>
+                            <span className="block text-[9px] text-gray-500">{creativeRefAsset ? '✓ Adicionada' : 'Para manter o rosto'}</span>
+                          </div>
+                          {creativeRefAsset && (
+                            <X size={12} className="text-gray-500 hover:text-red-400 shrink-0" onClick={(e) => { e.stopPropagation(); setCreativeRefAsset(null); }} />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => creativeProductAssetInputRef.current?.click()}
+                          className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl border transition-all text-left ${creativeProductAsset ? 'bg-[#d4af37]/10 border-[#d4af37]/40' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
+                        >
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${creativeProductAsset ? 'bg-[#d4af37] text-black' : 'bg-[#222] text-gray-500'}`}>
+                            <Package size={13} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="block text-[10px] font-black text-white">Foto do produto</span>
+                            <span className="block text-[9px] text-gray-500">{creativeProductAsset ? '✓ Adicionada' : 'Para mostrar o item'}</span>
+                          </div>
+                          {creativeProductAsset && (
+                            <X size={12} className="text-gray-500 hover:text-red-400 shrink-0" onClick={(e) => { e.stopPropagation(); setCreativeProductAsset(null); }} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* ── Coluna Principal ── */}
+                    <div className="flex-1 min-w-0 p-7">
+
+                      {/* ====== MODO ASSISTENTE (GUIADO) ====== */}
+                      {adsMode === 'guided' && (
+                        <div className="space-y-7">
+
+                          {/* Barra de progresso dos passos */}
+                          <div className="flex items-center gap-3">
+                            {[
+                              { n: 1, label: 'Objetivo' },
+                              { n: 2, label: 'Detalhes' },
+                              { n: 3, label: 'Confirmar' },
+                            ].map(({ n, label }, i, arr) => (
+                              <React.Fragment key={n}>
+                                <button
+                                  type="button"
+                                  onClick={() => wizardStep > n && setWizardStep(n)}
+                                  className={`flex items-center gap-2 transition-all ${wizardStep === n ? 'opacity-100' : wizardStep > n ? 'opacity-70 hover:opacity-100 cursor-pointer' : 'opacity-25 cursor-default pointer-events-none'}`}
+                                >
+                                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all shrink-0 ${wizardStep === n ? 'bg-[#d4af37] border-[#d4af37] text-black' : wizardStep > n ? 'bg-transparent border-[#d4af37] text-[#d4af37]' : 'bg-transparent border-[#2a2a2a] text-gray-600'}`}>
+                                    {wizardStep > n ? '✓' : n}
+                                  </div>
+                                  <span className={`text-[10px] font-black uppercase tracking-wider hidden sm:block ${wizardStep === n ? 'text-white' : 'text-gray-600'}`}>{label}</span>
+                                </button>
+                                {i < arr.length - 1 && (
+                                  <div className={`flex-1 h-px transition-all ${wizardStep > n ? 'bg-[#d4af37]/40' : 'bg-[#1e1e1e]'}`} />
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </div>
+
+                          {/* ── PASSO 1: Objetivo + Plataforma ── */}
+                          {wizardStep === 1 && (
+                            <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
+
+                              <div className="space-y-3">
+                                <p className="text-sm font-bold text-white">O que você quer alcançar com este anúncio?</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                  {[
+                                    { id: 'conversoes', icon: '💰', label: 'Vender mais', sub: 'Levar o cliente à compra agora' },
+                                    { id: 'lead',       icon: '🎯', label: 'Captar contatos', sub: 'Gerar leads e cadastros' },
+                                    { id: 'engajamento',icon: '🔥', label: 'Viralizar', sub: 'Curtidas, shares e alcance' },
+                                    { id: 'awareness',  icon: '✨', label: 'Fortalecer marca', sub: 'Presença e reconhecimento' },
+                                  ].map(g => (
+                                    <button
+                                      key={g.id}
+                                      type="button"
+                                      onClick={() => setAdGoal(g.id as any)}
+                                      className={`p-4 rounded-2xl border text-left transition-all group ${adGoal === g.id ? 'bg-[#d4af37]/10 border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
+                                    >
+                                      <div className="text-2xl mb-2 leading-none">{g.icon}</div>
+                                      <div className={`text-sm font-black leading-tight mb-0.5 ${adGoal === g.id ? 'text-[#d4af37]' : 'text-white'}`}>{g.label}</div>
+                                      <div className="text-[10px] text-gray-500 leading-snug">{g.sub}</div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="space-y-3">
+                                <p className="text-sm font-bold text-white">Onde vai publicar?</p>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                  {[
+                                    { id: 'instagram', label: 'Instagram', sub: 'Feed e Stories', icon: '📸' },
+                                    { id: 'tiktok',    label: 'TikTok',    sub: 'Vídeo curto',   icon: '🎵' },
+                                    { id: 'facebook',  label: 'Facebook',  sub: 'Feed de notícias', icon: '👥' },
+                                    { id: 'youtube',   label: 'YouTube',   sub: 'Antes do vídeo', icon: '▶️' },
+                                  ].map(p => (
+                                    <button
+                                      key={p.id}
+                                      type="button"
+                                      onClick={() => setAdPlatform(p.id as any)}
+                                      className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border text-center transition-all ${adPlatform === p.id ? 'bg-[#1a2a4a] border-blue-500' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
+                                    >
+                                      <span className="text-xl leading-none">{p.icon}</span>
+                                      <span className={`text-[11px] font-black ${adPlatform === p.id ? 'text-blue-400' : 'text-gray-300'}`}>{p.label}</span>
+                                      <span className="text-[9px] text-gray-600 leading-tight">{p.sub}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => setWizardStep(2)}
+                                className="w-full py-4 bg-[#d4af37] text-black font-black rounded-2xl text-sm hover:bg-[#f0c832] active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#d4af37]/20"
+                              >
+                                Continuar <ChevronRight size={16} />
+                              </button>
+                            </motion.div>
+                          )}
+
+                          {/* ── PASSO 2: Produto + Público + Estilo ── */}
+                          {wizardStep === 2 && (
+                            <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
+
+                              <div className="space-y-2">
+                                <p className="text-sm font-bold text-white">O que você está anunciando? <span className="text-red-400">*</span></p>
+                                <input
+                                  type="text"
+                                  value={wizardProduct}
+                                  onChange={e => setWizardProduct(e.target.value)}
+                                  placeholder="Ex: curso de inglês online, clínica odontológica, loja de roupas..."
+                                  className="w-full bg-[#161616] border border-[#222] rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors placeholder-gray-600"
+                                  autoFocus
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <p className="text-sm font-bold text-white">Para quem é esse anúncio? <span className="text-gray-600 text-xs font-normal">(opcional)</span></p>
+                                <input
+                                  type="text"
+                                  value={wizardAudience}
+                                  onChange={e => setWizardAudience(e.target.value)}
+                                  placeholder="Ex: mães de 30 a 45 anos, donos de pequenos negócios..."
+                                  className="w-full bg-[#161616] border border-[#222] rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors placeholder-gray-600"
+                                />
+                              </div>
+
+                              <div className="space-y-3">
+                                <p className="text-sm font-bold text-white">Qual visual você prefere?</p>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {[
+                                    { id: 'urgencia',     emoji: '⚡', label: 'Urgente',      sub: 'Oferta e escassez' },
+                                    { id: 'elegante',     emoji: '💎', label: 'Elegante',     sub: 'Premium e clean' },
+                                    { id: 'divertido',    emoji: '🎉', label: 'Divertido',    sub: 'Leve e colorido' },
+                                    { id: 'profissional', emoji: '💼', label: 'Corporativo',  sub: 'Sério e confiável' },
+                                    { id: 'luxo',         emoji: '👑', label: 'Luxo',         sub: 'Sofisticado' },
+                                    { id: 'minimalista',  emoji: '○',  label: 'Minimalista',  sub: 'Simples e forte' },
+                                  ].map(s => (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      onClick={() => setWizardStyle(s.id)}
+                                      className={`py-3 px-2 rounded-xl border text-center transition-all ${wizardStyle === s.id ? 'bg-white/10 border-white' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
+                                    >
+                                      <div className="text-xl mb-1 leading-none">{s.emoji}</div>
+                                      <div className={`text-[10px] font-black leading-tight ${wizardStyle === s.id ? 'text-white' : 'text-gray-400'}`}>{s.label}</div>
+                                      <div className="text-[9px] text-gray-600 mt-0.5 leading-tight hidden sm:block">{s.sub}</div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="flex gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setWizardStep(1)}
+                                  className="flex items-center gap-1.5 px-5 py-3.5 bg-[#161616] border border-[#222] text-gray-400 font-bold rounded-2xl text-sm hover:border-[#333] transition-all"
+                                >
+                                  <ChevronLeft size={14} /> Voltar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={generateWizardPrompt}
+                                  disabled={isGeneratingWizardPrompt || !wizardProduct.trim()}
+                                  className="flex-1 py-3.5 bg-gradient-to-r from-[#d4af37] to-[#f0c832] text-black font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-40 shadow-lg shadow-[#d4af37]/20 hover:opacity-90"
+                                >
+                                  {isGeneratingWizardPrompt ? (
+                                    <>
+                                      <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" />
+                                      Criando seu briefing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Sparkles size={15} fill="currentColor" />
+                                      Criar anúncio com IA
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+
+                          {/* ── PASSO 3: Confirmação limpa ── */}
+                          {wizardStep === 3 && (
+                            <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
+
+                              {/* Resumo do briefing */}
+                              <div className="p-5 bg-[#0d0d0d] border border-[#1e1e1e] rounded-2xl space-y-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-5 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center">
+                                    <CheckCircle2 size={12} className="text-green-400" />
+                                  </div>
+                                  <span className="text-xs font-black text-white uppercase tracking-widest">Briefing pronto</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {[
+                                    { icon: '🎯', label: 'Objetivo', value: { conversoes: 'Vender mais', lead: 'Captar contatos', engajamento: 'Viralizar', awareness: 'Fortalecer marca' }[adGoal] || adGoal },
+                                    { icon: adPlatform === 'instagram' ? '📸' : adPlatform === 'tiktok' ? '🎵' : adPlatform === 'facebook' ? '👥' : '▶️', label: 'Plataforma', value: { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube' }[adPlatform] || adPlatform },
+                                    { icon: '📦', label: 'Produto', value: wizardProduct.length > 28 ? wizardProduct.slice(0, 28) + '…' : wizardProduct },
+                                    { icon: { urgencia: '⚡', elegante: '💎', divertido: '🎉', profissional: '💼', luxo: '👑', minimalista: '○' }[wizardStyle] || '🎨', label: 'Estilo', value: { urgencia: 'Urgente', elegante: 'Elegante', divertido: 'Divertido', profissional: 'Corporativo', luxo: 'Luxo', minimalista: 'Minimalista' }[wizardStyle] || 'Padrão' },
+                                  ].map((item, i) => (
+                                    <div key={i} className="flex items-start gap-2 p-2.5 bg-[#141414] rounded-xl">
+                                      <span className="text-sm leading-none mt-0.5">{item.icon}</span>
+                                      <div>
+                                        <span className="block text-[9px] text-gray-600 uppercase tracking-widest font-bold">{item.label}</span>
+                                        <span className="block text-[11px] text-white font-bold leading-snug mt-0.5">{item.value}</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setWizardStep(2)}
+                                  className="text-[10px] font-bold text-gray-500 hover:text-[#d4af37] transition-colors flex items-center gap-1"
+                                >
+                                  <ChevronLeft size={10} /> Ajustar detalhes
+                                </button>
+                              </div>
+
+                              {/* Quantidade */}
+                              <div className="space-y-2">
+                                <p className="text-sm font-bold text-white">Quantos anúncios gerar?</p>
+                                <div className="flex gap-2">
+                                  {[
+                                    { q: 1,  label: '1',  sub: '1 crédito' },
+                                    { q: 3,  label: '3',  sub: '3 créditos' },
+                                    { q: 5,  label: '5',  sub: '5 créditos' },
+                                    { q: 10, label: '10', sub: '10 créditos' },
+                                  ].map(({ q, label, sub }) => (
+                                    <button
+                                      key={q}
+                                      type="button"
+                                      onClick={() => setCreativeQuantity(q)}
+                                      className={`flex-1 py-3 rounded-xl border text-center transition-all ${creativeQuantity === q ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-400 hover:border-[#2a2a2a]'}`}
+                                    >
+                                      <div className="text-sm font-black">{label}</div>
+                                      <div className={`text-[9px] font-medium ${creativeQuantity === q ? 'text-black/60' : 'text-gray-600'}`}>{sub}</div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Formato */}
+                              <div className="space-y-2">
+                                <p className="text-sm font-bold text-white">Tamanho do criativo</p>
+                                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                                  {[
+                                    { value: 'Instagram Post 1:1', label: 'Quadrado', ratio: '1:1', icon: '◻' },
+                                    { value: 'Stories 9:16',        label: 'Stories',  ratio: '9:16', icon: '▯' },
+                                    { value: 'TikTok Video 9:16',   label: 'TikTok',   ratio: '9:16', icon: '▯' },
+                                    { value: 'Facebook Ad 1.91:1',  label: 'Facebook', ratio: '1.9:1', icon: '▭' },
+                                    { value: 'YouTube 16:9',        label: 'YouTube',  ratio: '16:9', icon: '▬' },
+                                  ].map(f => (
+                                    <button
+                                      key={f.value}
+                                      type="button"
+                                      onClick={() => setCreativeFormat(f.value)}
+                                      className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-all ${creativeFormat === f.value ? 'bg-[#d4af37]/10 border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
+                                    >
+                                      <span className={`text-base leading-none ${creativeFormat === f.value ? 'text-[#d4af37]' : 'text-gray-500'}`}>{f.icon}</span>
+                                      <span className={`text-[10px] font-black ${creativeFormat === f.value ? 'text-[#d4af37]' : 'text-gray-400'}`}>{f.label}</span>
+                                      <span className="text-[8px] text-gray-600">{f.ratio}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Prompt oculto — para quem quiser ver */}
+                              {creativePrompt && (
+                                <details className="group">
+                                  <summary className="text-[10px] font-bold text-gray-600 hover:text-gray-400 cursor-pointer select-none flex items-center gap-1.5 transition-colors">
+                                    <ChevronDown size={11} className="group-open:rotate-180 transition-transform" />
+                                    Ver e editar instrução técnica
+                                  </summary>
+                                  <div className="mt-3 relative">
+                                    <textarea
+                                      value={creativePrompt}
+                                      onChange={e => setCreativePrompt(e.target.value)}
+                                      className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4 text-xs focus:outline-none focus:border-[#333] transition-colors resize-none h-28 font-mono text-gray-500 leading-relaxed"
+                                    />
+                                  </div>
+                                </details>
+                              )}
+
+                              {/* CTA principal */}
+                              <div className="space-y-3">
+                                <button
+                                  type="button"
+                                  disabled={isProcessing || !creativeLogo}
+                                  onClick={(e) => handleCreate(e, false, true)}
+                                  className="w-full bg-gradient-to-r from-[#d4af37] to-[#f0c832] text-black font-black py-5 rounded-3xl shadow-xl shadow-[#d4af37]/25 hover:shadow-[#d4af37]/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 text-base disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  {isProcessing ? (
+                                    <>
+                                      <div className="w-5 h-5 border-3 border-black/30 border-t-black rounded-full animate-spin" />
+                                      Gerando seus anúncios...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Sparkles size={20} fill="currentColor" />
+                                      Gerar {creativeQuantity} anúncio{creativeQuantity > 1 ? 's' : ''}
+                                    </>
+                                  )}
+                                </button>
+                                {!creativeLogo && (
+                                  <div className="flex items-center justify-center gap-2 py-2 px-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                                    <AlertCircle size={13} className="text-amber-400 shrink-0" />
+                                    <p className="text-[10px] text-amber-400 font-bold">Adicione a logomarca da sua marca na coluna ao lado para continuar</p>
+                                  </div>
                                 )}
                               </div>
-                            </div>
-                            <div>
-                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Tipografia Base</span>
-                              <span className="text-[10px] font-bold text-[#d4af37] uppercase">{creativeTypography || 'Modern'}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Middle: Prompt and Formats */}
-                    <div className="flex-1 min-w-[350px] space-y-6">
-                      <div className="space-y-4">
-                        <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Instruções do Criativo (Prompt)</label>
-                        <div className="relative">
-                          <textarea 
-                            value={creativePrompt}
-                            onChange={(e) => setCreativePrompt(e.target.value)}
-                            placeholder="Ex: Crie um anúncio de verão com foco em frescor e elegância..."
-                            className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors resize-none h-32"
-                          />
+                            </motion.div>
+                          )}
                         </div>
-                        
-                        {/* Motor de Geração — Projetos Criativos ADS */}
-                        <div>
-                          <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Motor de Geração</label>
-                          <div className="grid grid-cols-3 gap-1">
-                            {[
-                              { id: 'nano', label: '⚡ Gemini', desc: 'Rápido' },
-                              { id: 'imagen', label: '🎨 Imagen', desc: 'Qualidade' },
-                              { id: 'ideogram', label: '✍️ Ideogram', desc: 'Texto PT-BR' }
-                            ].map(m => (
-                              <button
-                                type="button"
-                                key={m.id}
-                                onClick={() => setModelType(m.id as any)}
-                                className={`p-2 rounded-lg border text-center transition-all ${
-                                  modelType === m.id
-                                    ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]'
-                                    : 'border-[#222] bg-[#1a1a1a] text-gray-400 hover:border-[#444]'
-                                }`}
-                              >
-                                <div className="text-xs font-bold">{m.label}</div>
-                                <div className="text-[9px] opacity-70">{m.desc}</div>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                      )}
 
-                        {/* Reference Assets for Creative Studio */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <input 
-                            ref={creativeRefAssetInputRef}
-                            type="file" 
-                            className="hidden" 
-                            accept="image/*" 
-                            onChange={handleCreativeRefAssetUpload} 
-                          />
-                          <input 
-                            ref={creativeProductAssetInputRef}
-                            type="file" 
-                            className="hidden" 
-                            accept="image/*" 
-                            onChange={handleCreativeProductAssetUpload} 
-                          />
-                          
-                          <button
-                            type="button"
-                            onClick={() => creativeRefAssetInputRef.current?.click()}
-                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${creativeRefAsset ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/5 text-gray-500 hover:border-white/20'}`}
-                          >
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${creativeRefAsset ? 'bg-[#d4af37] text-black' : 'bg-[#222]'}`}>
-                              <User size={16} />
-                            </div>
-                            <div className="text-left">
-                              <span className="block text-[10px] font-black uppercase tracking-tighter">Personagem</span>
-                              <span className="block text-[9px] opacity-70">{creativeRefAsset ? 'Carregado ✓' : 'Add Referência'}</span>
-                            </div>
-                            {creativeRefAsset && (
-                              <div className="ml-auto" onClick={(e) => { e.stopPropagation(); setCreativeRefAsset(null); }}>
-                                <X size={14} className="hover:text-red-500" />
-                              </div>
-                            )}
-                          </button>
+                      {/* ====== MODO AVANÇADO ====== */}
+                      {adsMode === 'advanced' && (
+                        <div className="space-y-5">
 
-                          <button
-                            type="button"
-                            onClick={() => creativeProductAssetInputRef.current?.click()}
-                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${creativeProductAsset ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/5 text-gray-500 hover:border-white/20'}`}
-                          >
-                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${creativeProductAsset ? 'bg-[#d4af37] text-black' : 'bg-[#222]'}`}>
-                              <Package size={16} />
-                            </div>
-                            <div className="text-left">
-                              <span className="block text-[10px] font-black uppercase tracking-tighter">Produto</span>
-                              <span className="block text-[9px] opacity-70">{creativeProductAsset ? 'Carregado ✓' : 'Add Referência'}</span>
-                            </div>
-                            {creativeProductAsset && (
-                              <div className="ml-auto" onClick={(e) => { e.stopPropagation(); setCreativeProductAsset(null); }}>
-                                <X size={14} className="hover:text-red-500" />
-                              </div>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Formato</label>
-                          <select 
-                            value={creativeFormat} 
-                            onChange={(e) => setCreativeFormat(e.target.value)}
-                            className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-xs font-bold focus:outline-none focus:border-[#d4af37] appearance-none"
-                          >
-                            <option value="Instagram Post 1:1">Instagram Post (1:1)</option>
-                            <option value="Facebook Ad 1.91:1">Facebook Ad (1.91:1)</option>
-                            <option value="TikTok Video 9:16">TikTok Video (9:16)</option>
-                            <option value="Stories 9:16">Stories (9:16)</option>
-                            <option value="YouTube 16:9">YouTube (16:9)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Tipografia</label>
-                          <select 
-                            value={creativeTypography} 
-                            onChange={(e) => setCreativeTypography(e.target.value)}
-                            className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-xs font-bold focus:outline-none focus:border-[#d4af37] appearance-none"
-                          >
-                            <option value="Modern">Modern Sans</option>
-                            <option value="Elegant">Elegant Serif</option>
-                            <option value="Bold">Bold Impact</option>
-                            <option value="Minimalist">Minimalist</option>
-                            <option value="Tech">Futuristic Tech</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Actions */}
-                    <div className="w-full lg:w-auto lg:min-w-[280px] space-y-6 pt-6 lg:pt-0">
-                      <div className="bg-black/20 p-5 rounded-2xl border border-white/5">
-                        <label className="block text-[10px] font-bold text-gray-400 mb-3 uppercase tracking-widest">Quantidade</label>
-                        <div className="flex gap-2">
-                          {[1, 3, 5, 10].map((q) => (
-                            <button
-                              key={q}
-                              type="button"
-                              onClick={() => setCreativeQuantity(q)}
-                              className={`flex-1 py-3 rounded-xl border text-xs font-bold transition-all ${creativeQuantity === q ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500 hover:border-[#333]'}`}
-                            >
-                              {q}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        disabled={isProcessing || !creativeLogo}
-                        onClick={(e) => handleCreate(e, false, true)}
-                        className="w-full bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black py-6 rounded-3xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex flex-col items-center justify-center gap-1 text-base disabled:opacity-50"
-                      >
-                        <div className="flex items-center gap-2">
-                          {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <Sparkles size={20} fill="currentColor" />}
-                          <span>GERAR CRIATIVOS</span>
-                        </div>
-                        <span className="text-[10px] opacity-80 font-bold uppercase tracking-tighter">Custo: {getCostPerItem(false, true) * creativeQuantity} CRÉDITOS</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Creative Styles and Strategies - Unified Performance Panel */}
-                  <div className="w-full mt-10 pt-10 border-t border-[#222]">
-                    <div className="flex flex-col lg:flex-row gap-10">
-                      
-                      {/* Left: Performance Core */}
-                      <div className="flex-1 space-y-8">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#d4af37]/10 flex items-center justify-center border border-[#d4af37]/20">
-                            <TrendingUp size={20} className="text-[#d4af37]" />
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-black text-white uppercase tracking-[0.2em]">Estratégia de Performance</h4>
-                            <p className="text-[10px] text-gray-500 font-medium">Configure os pilares psicológicos do seu anúncio</p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <div className="space-y-4">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Objetivo da Campanha</label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {[
-                                { id: 'conversoes', label: 'Vendas/Conversão' },
-                                { id: 'lead', label: 'Captação Leads' },
-                                { id: 'engajamento', label: 'Viral/Social' },
-                                { id: 'awareness', label: 'Branding/Impacto' }
-                              ].map(goal => (
-                                <button
-                                  key={goal.id}
-                                  type="button"
-                                  onClick={() => setAdGoal(goal.id as any)}
-                                  className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all ${adGoal === goal.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-black/40 border-white/5 text-gray-500 hover:border-[#d4af37]/30'}`}
-                                >
-                                  {goal.label}
-                                </button>
-                              ))}
-                            </div>
+                          <div className="space-y-2">
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Descreva o criativo</label>
+                            <textarea
+                              value={creativePrompt}
+                              onChange={e => setCreativePrompt(e.target.value)}
+                              placeholder="Descreva o visual, cenário, produto em destaque, clima do anúncio..."
+                              className="w-full bg-[#161616] border border-[#1e1e1e] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#d4af37] transition-colors resize-none h-28 placeholder-gray-600"
+                            />
                           </div>
 
-                          <div className="space-y-4">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Gatilho Psicológico Master</label>
+                          {/* Motor */}
+                          <div className="space-y-2">
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Motor de geração</label>
                             <div className="grid grid-cols-3 gap-2">
                               {[
-                                { id: 'desejo', label: 'DESEJO' },
-                                { id: 'escassez', label: 'ESCASSEZ' },
-                                { id: 'urgencia', label: 'URGÊNCIA' },
-                                { id: 'autoridade', label: 'AUTORIDADE' },
-                                { id: 'prova_social', label: 'PROVA SOCIAL' },
-                                { id: 'curiosidade', label: 'CURIOSIDADE' }
-                              ].map(trigger => (
+                                { id: 'nano',     label: 'Gemini',   sub: '⚡ Rápido',      badge: 'Padrão' },
+                                { id: 'imagen',   label: 'Imagen 4', sub: '🎨 Alta qualidade', badge: 'Pro' },
+                                { id: 'ideogram', label: 'Ideogram', sub: '✍️ Melhor com texto', badge: 'Copy' },
+                              ].map(m => (
                                 <button
-                                  key={trigger.id}
                                   type="button"
-                                  onClick={() => setAdTrigger(trigger.id as any)}
-                                  className={`px-1 py-2 rounded-xl border text-[10px] font-black transition-all ${adTrigger === trigger.id ? 'bg-white text-black border-white' : 'bg-black/40 border-white/5 text-gray-500 hover:border-white/20'}`}
+                                  key={m.id}
+                                  onClick={() => setModelType(m.id as any)}
+                                  className={`p-3 rounded-xl border text-center transition-all relative ${modelType === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#1e1e1e] bg-[#161616] hover:border-[#2a2a2a]'}`}
                                 >
-                                  {trigger.label}
+                                  <div className={`text-xs font-black mb-0.5 ${modelType === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                  <div className="text-[9px] text-gray-500">{m.sub}</div>
                                 </button>
                               ))}
                             </div>
                           </div>
-                        </div>
 
-                        <div className="space-y-4 pt-4">
-                          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Otimização Plataforma Nativa</label>
-                          <div className="flex gap-2">
-                            {[
-                              { id: 'instagram', label: 'META (Insta/FB Ad)' },
-                              { id: 'tiktok', label: 'TIKTOK ADS (UGC)' },
-                              { id: 'youtube', label: 'YT SHORTS / VSL' },
-                              { id: 'facebook', label: 'FACEBOOK FEED' }
-                            ].map(plat => (
-                              <button
-                                key={plat.id}
-                                type="button"
-                                onClick={() => setAdPlatform(plat.id as any)}
-                                className={`flex-1 px-3 py-3 rounded-xl border text-xs font-black transition-all ${adPlatform === plat.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-black/40 border-white/5 text-gray-500 hover:border-blue-600/30'}`}
-                              >
-                                {plat.label}
-                              </button>
-                            ))}
+                          {/* Objetivo + Plataforma */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Objetivo</label>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {[
+                                  { id: 'conversoes', label: 'Vendas' },
+                                  { id: 'lead',       label: 'Leads' },
+                                  { id: 'engajamento',label: 'Viral' },
+                                  { id: 'awareness',  label: 'Marca' },
+                                ].map(g => (
+                                  <button key={g.id} type="button" onClick={() => setAdGoal(g.id as any)}
+                                    className={`py-2 rounded-xl border text-[10px] font-black transition-all ${adGoal === g.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                    {g.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plataforma</label>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {[
+                                  { id: 'instagram', label: 'Meta' },
+                                  { id: 'tiktok',    label: 'TikTok' },
+                                  { id: 'facebook',  label: 'Facebook' },
+                                  { id: 'youtube',   label: 'YouTube' },
+                                ].map(p => (
+                                  <button key={p.id} type="button" onClick={() => setAdPlatform(p.id as any)}
+                                    className={`py-2 rounded-xl border text-[10px] font-black transition-all ${adPlatform === p.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                    {p.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
 
-                      {/* Right: Style & Aesthetic */}
-                      <div className="w-full lg:w-[350px] space-y-8">
-                        <div className="space-y-4">
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ângulo de Venda</label>
-                          <select 
-                            value={creativeStrategy}
-                            onChange={(e) => setCreativeStrategy(e.target.value)}
-                            className="w-full bg-black/40 border border-white/5 text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37]"
-                          >
-                            {CREATIVE_STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name} - {s.description}</option>)}
-                          </select>
-                        </div>
-
-                        <div className="space-y-4">
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estética do Criativo</label>
-                          <select 
-                            value={creativeAesthetic}
-                            onChange={(e) => setCreativeAesthetic(e.target.value)}
-                            className="w-full bg-black/40 border border-white/5 text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37]"
-                          >
-                            {CREATIVE_AESTHETICS.map(a => <option key={a.id} value={a.name}>{a.name} - {a.description}</option>)}
-                          </select>
-                        </div>
-                        
-                        <div className="p-5 bg-[#d4af37]/5 border border-[#d4af37]/20 rounded-2xl flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#d4af37] flex items-center justify-center text-black">
-                            <Sparkles size={16} fill="currentColor" />
+                          {/* Estratégia + Estética */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estratégia</label>
+                              <select value={creativeStrategy} onChange={e => setCreativeStrategy(e.target.value)}
+                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
+                                {CREATIVE_STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estética</label>
+                              <select value={creativeAesthetic} onChange={e => setCreativeAesthetic(e.target.value)}
+                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
+                                {CREATIVE_AESTHETICS.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+                              </select>
+                            </div>
                           </div>
-                          <p className="text-[10px] text-gray-400 leading-tight">
-                            <span className="text-white font-bold block mb-0.5">IA Smart Optimization Ativa</span>
-                            A IA ajustará automaticamente a composição para o formato <span className="text-[#d4af37]">{creativeFormat}</span>.
-                          </p>
+
+                          {/* Quantidade + Formato */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Quantidade</label>
+                              <div className="flex gap-1.5">
+                                {[1, 3, 5, 10].map(q => (
+                                  <button key={q} type="button" onClick={() => setCreativeQuantity(q)}
+                                    className={`flex-1 py-2.5 rounded-xl border text-xs font-black transition-all ${creativeQuantity === q ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                    {q}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Formato</label>
+                              <select value={creativeFormat} onChange={e => setCreativeFormat(e.target.value)}
+                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
+                                <option value="Instagram Post 1:1">Instagram 1:1</option>
+                                <option value="Stories 9:16">Stories 9:16</option>
+                                <option value="TikTok Video 9:16">TikTok 9:16</option>
+                                <option value="Facebook Ad 1.91:1">Facebook 1.91:1</option>
+                                <option value="YouTube 16:9">YouTube 16:9</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={isProcessing || !creativeLogo}
+                            onClick={(e) => handleCreate(e, false, true)}
+                            className="w-full bg-gradient-to-r from-[#d4af37] to-[#f0c832] text-black font-black py-5 rounded-3xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base disabled:opacity-40"
+                          >
+                            {isProcessing ? <div className="w-5 h-5 border-3 border-black/30 border-t-black rounded-full animate-spin" /> : <Sparkles size={18} fill="currentColor" />}
+                            Gerar {creativeQuantity} criativo{creativeQuantity > 1 ? 's' : ''}
+                          </button>
+
+                          {!creativeLogo && (
+                            <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                              <AlertCircle size={13} className="text-amber-400 shrink-0" />
+                              <p className="text-[10px] text-amber-400 font-bold">Adicione a logomarca na coluna ao lado</p>
+                            </div>
+                          )}
                         </div>
-                      </div>
+                      )}
                     </div>
+                      {/* ====== MODO AVANÇADO ====== */}
+                      {adsMode === 'advanced' && (
+                        <div className="space-y-5">
+                          <div className="space-y-2">
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Descreva o criativo</label>
+                            <textarea
+                              value={creativePrompt}
+                              onChange={e => setCreativePrompt(e.target.value)}
+                              placeholder="Descreva o visual, cenário, produto em destaque, clima do anúncio..."
+                              className="w-full bg-[#161616] border border-[#1e1e1e] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#d4af37] transition-colors resize-none h-28 placeholder-gray-600"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Motor de geração</label>
+                            <div className="grid grid-cols-3 gap-2">
+                              {[
+                                { id: 'nano',     label: 'Gemini',   sub: '⚡ Rápido' },
+                                { id: 'imagen',   label: 'Imagen 4', sub: '🎨 Alta qualidade' },
+                                { id: 'ideogram', label: 'Ideogram', sub: '✍️ Melhor com texto' },
+                              ].map(m => (
+                                <button type="button" key={m.id} onClick={() => setModelType(m.id as any)}
+                                  className={`p-3 rounded-xl border text-center transition-all ${modelType === m.id ? 'border-[#d4af37] bg-[#d4af37]/10' : 'border-[#1e1e1e] bg-[#161616] hover:border-[#2a2a2a]'}`}>
+                                  <div className={`text-xs font-black mb-0.5 ${modelType === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                  <div className="text-[9px] text-gray-500">{m.sub}</div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Objetivo</label>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {[
+                                  { id: 'conversoes', label: 'Vendas' },
+                                  { id: 'lead', label: 'Leads' },
+                                  { id: 'engajamento', label: 'Viral' },
+                                  { id: 'awareness', label: 'Marca' },
+                                ].map(g => (
+                                  <button key={g.id} type="button" onClick={() => setAdGoal(g.id as any)}
+                                    className={`py-2 rounded-xl border text-[10px] font-black transition-all ${adGoal === g.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                    {g.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plataforma</label>
+                              <div className="grid grid-cols-2 gap-1.5">
+                                {[
+                                  { id: 'instagram', label: 'Meta' },
+                                  { id: 'tiktok', label: 'TikTok' },
+                                  { id: 'facebook', label: 'Facebook' },
+                                  { id: 'youtube', label: 'YouTube' },
+                                ].map(p => (
+                                  <button key={p.id} type="button" onClick={() => setAdPlatform(p.id as any)}
+                                    className={`py-2 rounded-xl border text-[10px] font-black transition-all ${adPlatform === p.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                    {p.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estratégia</label>
+                              <select value={creativeStrategy} onChange={e => setCreativeStrategy(e.target.value)}
+                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
+                                {CREATIVE_STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estética</label>
+                              <select value={creativeAesthetic} onChange={e => setCreativeAesthetic(e.target.value)}
+                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
+                                {CREATIVE_AESTHETICS.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Quantidade</label>
+                              <div className="flex gap-1.5">
+                                {[1, 3, 5, 10].map(q => (
+                                  <button key={q} type="button" onClick={() => setCreativeQuantity(q)}
+                                    className={`flex-1 py-2.5 rounded-xl border text-xs font-black transition-all ${creativeQuantity === q ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                    {q}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Formato</label>
+                              <select value={creativeFormat} onChange={e => setCreativeFormat(e.target.value)}
+                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
+                                <option value="Instagram Post 1:1">Instagram 1:1</option>
+                                <option value="Stories 9:16">Stories 9:16</option>
+                                <option value="TikTok Video 9:16">TikTok 9:16</option>
+                                <option value="Facebook Ad 1.91:1">Facebook 1.91:1</option>
+                                <option value="YouTube 16:9">YouTube 16:9</option>
+                              </select>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={isProcessing || !creativeLogo}
+                            onClick={(e) => handleCreate(e, false, true)}
+                            className="w-full bg-gradient-to-r from-[#d4af37] to-[#f0c832] text-black font-black py-5 rounded-3xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base disabled:opacity-40"
+                          >
+                            {isProcessing ? <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <Sparkles size={18} fill="currentColor" />}
+                            Gerar {creativeQuantity} criativo{creativeQuantity > 1 ? 's' : ''}
+                          </button>
+                          {!creativeLogo && (
+                            <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                              <AlertCircle size={13} className="text-amber-400 shrink-0" />
+                              <p className="text-[10px] text-amber-400 font-bold">Adicione a logomarca na coluna ao lado</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                   </div>
                 </motion.div>
               </div>
