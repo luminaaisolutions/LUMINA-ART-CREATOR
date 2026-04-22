@@ -45,6 +45,54 @@ try {
   console.error("[Startup] Firebase Admin failed to initialize:", e);
 }
 
+// Função para sobrepor logo na imagem gerada
+async function overlayLogoOnImage(
+  imageBase64: string,
+  logoBase64: string,
+  position: string
+): Promise<string> {
+  try {
+    const sharp = (await import('sharp')).default;
+    const imageBuffer = Buffer.from(imageBase64, 'base64');
+    const logoBuffer = Buffer.from(logoBase64, 'base64');
+
+    const imageInfo = await sharp(imageBuffer).metadata();
+    const imgWidth = imageInfo.width || 1024;
+    const imgHeight = imageInfo.height || 1024;
+
+    const logoWidth = Math.round(imgWidth * 0.18);
+    const resizedLogo = await sharp(logoBuffer)
+      .resize(logoWidth, null, { fit: 'inside', withoutEnlargement: true })
+      .png()
+      .toBuffer();
+
+    const logoInfo = await sharp(resizedLogo).metadata();
+    const logoW = logoInfo.width || logoWidth;
+    const logoH = logoInfo.height || logoWidth;
+    const margin = Math.round(imgWidth * 0.04);
+
+    let left = 0, top = 0;
+    switch (position) {
+      case 'top-left': left = margin; top = margin; break;
+      case 'top-right': left = imgWidth - logoW - margin; top = margin; break;
+      case 'bottom-left': left = margin; top = imgHeight - logoH - margin; break;
+      case 'bottom-right': left = imgWidth - logoW - margin; top = imgHeight - logoH - margin; break;
+      case 'center': left = Math.round((imgWidth - logoW) / 2); top = Math.round((imgHeight - logoH) / 2); break;
+      default: left = imgWidth - logoW - margin; top = imgHeight - logoH - margin;
+    }
+
+    const finalBuffer = await sharp(imageBuffer)
+      .composite([{ input: resizedLogo, left, top, blend: 'over' }])
+      .png()
+      .toBuffer();
+
+    return finalBuffer.toString('base64');
+  } catch (err) {
+    console.warn('[Sharp] Overlay falhou, retornando imagem original:', err);
+    return imageBase64;
+  }
+}
+
 // Helper: get OAuth2 access token from service account for Vertex AI
 async function getServiceAccountAccessToken(): Promise<string | null> {
   try {
@@ -532,14 +580,20 @@ Retorne APENAS o prompt em inglês, sem explicações.`;
         if (ideogramData?.images?.[0]?.url) {
           const imgResponse = await fetch(ideogramData.images[0].url);
           const imgBuffer = await imgResponse.arrayBuffer();
-          const base64 = Buffer.from(imgBuffer).toString('base64');
+          let base64 = Buffer.from(imgBuffer).toString('base64');
           const mimeType = imgResponse.headers.get('content-type') || 'image/jpeg';
+
+          // Sobrepõe logo real da marca se disponível
+          if (args.logoBase64 && args.logoPosition) {
+            console.log(`[Sharp] Sobrepondo logo na posição: ${args.logoPosition}`);
+            base64 = await overlayLogoOnImage(base64, args.logoBase64, args.logoPosition);
+          }
 
           return res.json({
             generatedImages: [{
               image: {
                 imageBytes: base64,
-                mimeType: mimeType
+                mimeType: 'image/png'
               }
             }]
           });
