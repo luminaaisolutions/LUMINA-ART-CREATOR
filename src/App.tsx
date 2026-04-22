@@ -2051,8 +2051,11 @@ function AppContent() {
               }
 
               // Final Branding & Text Guard: Force the model to NOT include any text/logos
-              if (!promptText.toLowerCase().includes("text") && !promptText.toLowerCase().includes("logo")) {
-                promptText += ". Absolutely no text, logos, watermarks, signatures, or brand names should be present in the final image.";
+              // Exception: Ideogram is specifically used to generate ads WITH text
+              if (currentModelType !== 'ideogram') {
+                if (!promptText.toLowerCase().includes("text") && !promptText.toLowerCase().includes("logo")) {
+                  promptText += ". Absolutely no text, logos, watermarks, signatures, or brand names should be present in the final image.";
+                }
               }
 
               // Build contents for multimodal support (Reference Images)
