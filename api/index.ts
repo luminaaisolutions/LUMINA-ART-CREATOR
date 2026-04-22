@@ -535,7 +535,11 @@ async function createServer() {
   // ── Wizard ADS: Geração de prompt via IA ──
   app.post("/api/generate-wizard-prompt", async (req, res) => {
     try {
-      const { adGoal, adPlatform, wizardProduct, wizardAudience, wizardStyle, creativeStrategy, creativeAesthetic, brandContext } = req.body;
+      const {
+        adGoal, adPlatform, wizardProduct, wizardAudience,
+        wizardStyle, wizardCta, modelType,
+        creativeStrategy, creativeAesthetic, brandContext
+      } = req.body;
 
       if (!wizardProduct?.trim()) {
         return res.status(400).json({ error: "Produto é obrigatório." });
@@ -546,86 +550,139 @@ async function createServer() {
         return res.status(503).json({ error: "Serviço de IA indisponível." });
       }
 
+      // ── Motor recomendado por objetivo ──
+      const needsTextInImage = adGoal === 'conversoes' || adGoal === 'lead';
+      const recommendedModel = needsTextInImage ? 'ideogram' : (modelType || 'nano');
+
+      // ── CTA automático por objetivo se não foi preenchido ──
+      const ctaMap: Record<string, string> = {
+        conversoes: 'Shop Now — Limited Time Offer',
+        lead:       'Get Started Free — Sign Up Today',
+        engajamento:'Share This With a Friend',
+        awareness:  'Discover More'
+      };
+      const finalCta = wizardCta?.trim() || ctaMap[adGoal] || 'Learn More';
+
+      // ── Headline automática por objetivo + produto ──
+      const headlineMap: Record<string, string> = {
+        conversoes: `Get ${wizardProduct} — Best Deal Today`,
+        lead:       `Discover ${wizardProduct} — Start Free`,
+        engajamento:`Why Everyone Is Talking About ${wizardProduct}`,
+        awareness:  `Meet ${wizardProduct}`
+      };
+      const autoHeadline = headlineMap[adGoal] || wizardProduct;
+
       const goalMap: Record<string, string> = {
-        conversoes: 'Vendas e Conversão — urgência, produto como herói, CTA forte',
-        lead: 'Captação de Leads — promessa de valor, benefício claro, oferta irresistível',
-        engajamento: 'Engajamento e Viral — gancho emocional, visual compartilhável, alta energia',
-        awareness: 'Branding e Awareness — narrativa aspiracional, lifestyle, elegância de marca'
+        conversoes: 'Direct Sales & Conversion — urgency, scarcity, strong purchase intent',
+        lead:       'Lead Generation — clear value promise, low-friction offer',
+        engajamento:'Viral Engagement — emotional hook, shareable, high energy',
+        awareness:  'Brand Awareness — aspirational narrative, lifestyle, elegance'
       };
       const platformMap: Record<string, string> = {
-        instagram: 'Instagram Feed/Reels (quadrado ou retrato, composição limpa)',
-        tiktok: 'TikTok Ads — estilo UGC, vertical 9:16, energia autêntica',
-        facebook: 'Facebook Feed Ad — formato mais amplo, layout de confiança',
-        youtube: 'YouTube/VSL — cinemático 16:9, estilo profissional e autoritário'
+        instagram: 'Instagram Feed/Reels — square or portrait, clean composition',
+        tiktok:    'TikTok Ads — UGC style, vertical 9:16, authentic energy',
+        facebook:  'Facebook Feed Ad — wider format, trust-building layout',
+        youtube:   'YouTube Pre-roll — cinematic 16:9, professional authority'
       };
       const styleMap: Record<string, string> = {
-        urgencia: 'Urgência — cores quentes, contraste extremo, energia de escassez',
-        elegante: 'Elegante — tons neutros premium, luz suave, minimalismo sofisticado',
-        divertido: 'Divertido — vibrante, personagens, composição lúdica e energética',
-        profissional: 'Profissional Corporativo — azul/cinza, lighting de estúdio, pose confiante',
-        luxo: 'Luxo — dourado, preto profundo, texturas premium, iluminação dramática',
-        minimalista: 'Minimalista — espaço em branco, ponto focal único, paleta neutra'
+        urgencia:     'Urgency — hot colors, extreme contrast, scarcity energy, bold typography',
+        elegante:     'Elegant Premium — soft diffused light, neutral tones, minimalist sophistication',
+        divertido:    'Playful & Fun — vibrant colors, dynamic composition, youthful energy',
+        profissional: 'Corporate Professional — cool blue-grey tones, studio lighting, confident mood',
+        luxo:         'Luxury — deep blacks, gold accents, dramatic directional lighting, ultra-premium',
+        minimalista:  'Minimalist — white space, single focal point, neutral palette, strong hierarchy'
       };
 
       const briefing = `
-OBJETIVO: ${goalMap[adGoal] || adGoal}
-PRODUTO/SERVIÇO: ${wizardProduct}
-PÚBLICO-ALVO: ${wizardAudience || 'Público geral adulto'}
-PLATAFORMA: ${platformMap[adPlatform] || adPlatform}
-ESTILO VISUAL: ${styleMap[wizardStyle] || wizardStyle || 'Profissional'}
-ESTRATÉGIA CRIATIVA: ${creativeStrategy || 'Oferta Direta'}
-ESTÉTICA: ${creativeAesthetic || 'Minimalista'}${brandContext ? `\n${brandContext}` : ''}
+GOAL: ${goalMap[adGoal] || adGoal}
+PRODUCT/SERVICE: ${wizardProduct}
+TARGET AUDIENCE: ${wizardAudience || 'General adult audience'}
+PLATFORM: ${platformMap[adPlatform] || adPlatform}
+VISUAL STYLE: ${styleMap[wizardStyle] || wizardStyle || 'Professional'}
+HEADLINE TO INCLUDE: "${autoHeadline}"
+CTA TO INCLUDE: "${finalCta}"
+CREATIVE STRATEGY: ${creativeStrategy || 'Direct Offer'}
+AESTHETICS: ${creativeAesthetic || 'Minimalist'}${brandContext ? `\nBRAND CONTEXT: ${brandContext}` : ''}
       `.trim();
+
+      // ── Template de prompt por tipo de motor ──
+      const promptTemplate = needsTextInImage
+        ? `You are an expert in creating high-conversion advertising prompts for AI image generation with text.
+
+Based on the briefing below, create a detailed prompt in ENGLISH for a professional advertising image using Ideogram (which renders text accurately).
+
+BRIEFING:
+${briefing}
+
+MANDATORY RULES:
+- The PRODUCT/SERVICE is the main visual hero — largest, sharpest, most lit element
+- Include the HEADLINE text prominently in the composition: bold, large, readable font
+- Include the CTA text as a visible button or banner element
+- If there is a person/persona reference, they are SUPPORT — interact with the product without dominating
+- Describe: scene, lighting, composition, color palette, depth of field, text placement and font style
+- Include technical references (lighting type, lens, color grade)
+- Output in Ideogram prompt style: describe text elements with quotes and placement
+- DO NOT include meta-comments, only the final prompt
+- DO NOT start with "A" or "An"
+
+Return ONLY the prompt, no explanations.`
+        : `You are an expert in creating high-conversion advertising prompts for AI image generation.
+
+Based on the briefing below, create a detailed prompt in ENGLISH for a professional advertising image.
+
+BRIEFING:
+${briefing}
+
+MANDATORY RULES:
+- The PRODUCT/SERVICE is the main visual hero — largest, sharpest, most lit element
+- If there is a person/persona reference, they are SUPPORT — appear in background or interact with product
+- Describe: scene, lighting, composition, color palette, depth of field and mood
+- Include technical references (lighting type, lens, color grade)
+- NO text in image, NO logos or watermarks
+- DO NOT include meta-comments, only the final prompt
+- DO NOT start with "A" or "An" — start with the main visual element (the product)
+
+Return ONLY the prompt, no explanations.`;
 
       const client = new GoogleGenAI({ apiKey });
       const result = await withRetry(
         () => client.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: [{
-            role: 'user',
-            parts: [{ text: `Você é um especialista em criação de prompts para anúncios publicitários de alta conversão.
-
-Com base no briefing abaixo, crie um prompt em INGLÊS para geração de imagem publicitária profissional.
-
-BRIEFING:
-${briefing}
-
-REGRAS DO PROMPT:
-- Escreva em inglês, denso e descritivo (3-5 linhas)
-- Descreva a cena, iluminação, composição, paleta de cores e mood
-- O prompt deve servir ao objetivo de marketing acima
-- Inclua referências técnicas de fotografia/design (lighting type, lens, color grade)
-- NÃO inclua texto na imagem, logotipos ou marcas d'água
-- NÃO inclua meta-comentários, apenas o prompt final
-- NÃO comece com "A" ou "An" — comece com o elemento visual principal
-
-Retorne APENAS o prompt, sem explicações.` }]
-          }]
+          contents: [{ role: 'user', parts: [{ text: promptTemplate }] }]
         }),
         2, 2000, 'generateWizardPrompt'
       );
 
       const text = result.text?.trim() || '';
-      if (!text) throw new Error('Resposta vazia da IA');
+      if (!text) throw new Error('Empty AI response');
 
-      console.log(`[WizardPrompt] Gerado para produto: "${wizardProduct.substring(0, 30)}..."`);
-      return res.json({ prompt: text });
+      console.log(`[WizardPrompt] goal=${adGoal} model=${recommendedModel} cta="${finalCta}" product="${wizardProduct.substring(0, 30)}"`);
+      return res.json({ prompt: text, recommendedModel });
 
     } catch (error: any) {
-      console.error("[WizardPrompt] Erro:", error.message);
+      console.error("[WizardPrompt] Error:", error.message);
 
-      // Fallback determinístico — nunca retorna erro pro usuário
-      const { wizardProduct = 'product', wizardAudience = '', adPlatform = 'instagram', wizardStyle = '' } = req.body;
-      const fallback = `Professional advertising photograph for ${wizardProduct}, targeted at ${wizardAudience || 'general audience'}, optimized for ${adPlatform} platform. ${
-        wizardStyle === 'luxo'        ? 'Luxury editorial style, deep blacks, golden accents, dramatic directional lighting, ultra-premium feel.' :
-        wizardStyle === 'urgencia'    ? 'High-energy composition, warm saturated colors, bold contrast, kinetic urgency, strong visual hierarchy.' :
-        wizardStyle === 'elegante'    ? 'Soft diffused studio lighting, neutral premium palette, minimalist negative space, sophisticated mood.' :
-        wizardStyle === 'divertido'   ? 'Vibrant saturated colors, playful composition, dynamic energy, lifestyle feel, youthful aesthetic.' :
-        wizardStyle === 'profissional'? 'Clean corporate aesthetic, cool blue-grey tones, studio lighting, confident professional mood.' :
-                                        'Clean professional composition, balanced lighting, sharp focus on product, modern aesthetic.'
-      } Cinematic depth of field, 8K detail, no text or logos.`;
+      const { wizardProduct = 'product', wizardAudience = '', adPlatform = 'instagram', wizardStyle = '', adGoal = 'conversoes', wizardCta = '' } = req.body;
+      const needsText = adGoal === 'conversoes' || adGoal === 'lead';
+      const ctaFallback = wizardCta || (adGoal === 'conversoes' ? 'Shop Now — Limited Offer' : adGoal === 'lead' ? 'Sign Up Free Today' : 'Learn More');
+      const recModel = needsText ? 'ideogram' : 'nano';
 
-      return res.json({ prompt: fallback });
+      const fallback = needsText
+        ? `${wizardProduct} product hero shot centered in frame, bold headline text "${wizardProduct}" in large white font at top, CTA button "${ctaFallback}" prominent at bottom, ${
+            wizardStyle === 'urgencia' ? 'urgent warm red-orange palette, extreme contrast, kinetic energy.' :
+            wizardStyle === 'luxo'     ? 'luxury dark background, gold accents, dramatic studio lighting.' :
+                                         'clean professional background, balanced studio lighting.'
+          } Sharp product focus, 8K detail, Ideogram text rendering style.`
+        : `${wizardProduct} as the central visual hero, dramatically lit, sharply focused, ${
+            wizardStyle === 'elegante'    ? 'soft diffused light, neutral premium palette, sophisticated minimalist composition.' :
+            wizardStyle === 'urgencia'    ? 'warm saturated colors, bold contrast, kinetic urgency, strong visual hierarchy.' :
+            wizardStyle === 'luxo'        ? 'deep blacks, golden accents, dramatic directional light, ultra-premium feel.' :
+            wizardStyle === 'divertido'   ? 'vibrant colors, playful composition, dynamic energy, lifestyle aesthetic.' :
+            wizardStyle === 'profissional'? 'cool blue-grey tones, studio lighting, confident professional mood.' :
+                                            'clean composition, balanced lighting, sharp focus, modern aesthetic.'
+          } Cinematic depth of field, 8K detail, no text or logos.`;
+
+      return res.json({ prompt: fallback, recommendedModel: recModel });
     }
   });
 
