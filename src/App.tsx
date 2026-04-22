@@ -752,6 +752,7 @@ function AppContent() {
   const [wizardProduct, setWizardProduct] = useState('');
   const [wizardAudience, setWizardAudience] = useState('');
   const [wizardStyle, setWizardStyle] = useState('');
+  const [wizardCta, setWizardCta] = useState('');
   const [wizardGeneratedPrompt, setWizardGeneratedPrompt] = useState('');
   const [isGeneratingWizardPrompt, setIsGeneratingWizardPrompt] = useState(false);
   const [isAnalyzingLogo, setIsAnalyzingLogo] = useState(false);
@@ -1653,6 +1654,8 @@ function AppContent() {
           wizardProduct,
           wizardAudience,
           wizardStyle,
+          wizardCta,
+          modelType,
           creativeStrategy,
           creativeAesthetic,
           brandContext
@@ -1665,6 +1668,7 @@ function AppContent() {
       if (data.prompt) {
         setWizardGeneratedPrompt(data.prompt);
         setCreativePrompt(data.prompt);
+        if (data.recommendedModel) setModelType(data.recommendedModel as any);
         setWizardStep(3);
       } else {
         showNotification('Não foi possível gerar o prompt. Tente novamente.', 'info');
@@ -5461,7 +5465,15 @@ const handleBatchDownload = async (ids: string[]) => {
                                     <button
                                       key={g.id}
                                       type="button"
-                                      onClick={() => setAdGoal(g.id as any)}
+                                      onClick={() => {
+                                        setAdGoal(g.id as any);
+                                        // Auto-seleciona motor ideal por objetivo
+                                        if (g.id === 'conversoes' || g.id === 'lead') {
+                                          setModelType('ideogram');
+                                        } else {
+                                          setModelType('nano');
+                                        }
+                                      }}
                                       className={`p-4 rounded-2xl border text-left transition-all group ${adGoal === g.id ? 'bg-[#d4af37]/10 border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
                                     >
                                       <div className="text-2xl mb-2 leading-none">{g.icon}</div>
@@ -5530,6 +5542,34 @@ const handleBatchDownload = async (ids: string[]) => {
                                   placeholder="Ex: mães de 30 a 45 anos, donos de pequenos negócios..."
                                   className="w-full bg-[#161616] border border-[#222] rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors placeholder-gray-600"
                                 />
+                              </div>
+
+                              {/* Campo CTA / Oferta */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm font-bold text-white">Oferta ou CTA <span className="text-gray-600 text-xs font-normal">(opcional)</span></p>
+                                  {(adGoal === 'conversoes' || adGoal === 'lead') && (
+                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-full">
+                                      <Sparkles size={10} />
+                                      Ideogram — texto na imagem ativo
+                                    </span>
+                                  )}
+                                </div>
+                                <input
+                                  type="text"
+                                  value={wizardCta}
+                                  onChange={e => setWizardCta(e.target.value)}
+                                  placeholder={
+                                    adGoal === 'conversoes' ? 'Ex: 50% OFF hoje, Frete Grátis, Últimas vagas...' :
+                                    adGoal === 'lead'       ? 'Ex: Cadastre-se grátis, Baixe agora, Agende sua consulta...' :
+                                    adGoal === 'engajamento'? 'Ex: Compartilhe com quem precisa, Você sabia que...' :
+                                                              'Ex: Conheça nossa história, Desde 2010...'
+                                  }
+                                  className="w-full bg-[#161616] border border-[#222] rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors placeholder-gray-600"
+                                />
+                                <p className="text-[10px] text-gray-600 leading-relaxed">
+                                  Se deixar em branco, a IA cria automaticamente o melhor CTA para seu objetivo.
+                                </p>
                               </div>
 
                               <div className="space-y-3">
@@ -5856,125 +5896,6 @@ const handleBatchDownload = async (ids: string[]) => {
                         </div>
                       )}
                     </div>
-                      {/* ====== MODO AVANÇADO ====== */}
-                      {adsMode === 'advanced' && (
-                        <div className="space-y-5">
-                          <div className="space-y-2">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Descreva o criativo</label>
-                            <textarea
-                              value={creativePrompt}
-                              onChange={e => setCreativePrompt(e.target.value)}
-                              placeholder="Descreva o visual, cenário, produto em destaque, clima do anúncio..."
-                              className="w-full bg-[#161616] border border-[#1e1e1e] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#d4af37] transition-colors resize-none h-28 placeholder-gray-600"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Motor de geração</label>
-                            <div className="grid grid-cols-3 gap-2">
-                              {[
-                                { id: 'nano',     label: 'Gemini',   sub: '⚡ Rápido' },
-                                { id: 'imagen',   label: 'Imagen 4', sub: '🎨 Alta qualidade' },
-                                { id: 'ideogram', label: 'Ideogram', sub: '✍️ Melhor com texto' },
-                              ].map(m => (
-                                <button type="button" key={m.id} onClick={() => setModelType(m.id as any)}
-                                  className={`p-3 rounded-xl border text-center transition-all ${modelType === m.id ? 'border-[#d4af37] bg-[#d4af37]/10' : 'border-[#1e1e1e] bg-[#161616] hover:border-[#2a2a2a]'}`}>
-                                  <div className={`text-xs font-black mb-0.5 ${modelType === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
-                                  <div className="text-[9px] text-gray-500">{m.sub}</div>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Objetivo</label>
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {[
-                                  { id: 'conversoes', label: 'Vendas' },
-                                  { id: 'lead', label: 'Leads' },
-                                  { id: 'engajamento', label: 'Viral' },
-                                  { id: 'awareness', label: 'Marca' },
-                                ].map(g => (
-                                  <button key={g.id} type="button" onClick={() => setAdGoal(g.id as any)}
-                                    className={`py-2 rounded-xl border text-[10px] font-black transition-all ${adGoal === g.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
-                                    {g.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plataforma</label>
-                              <div className="grid grid-cols-2 gap-1.5">
-                                {[
-                                  { id: 'instagram', label: 'Meta' },
-                                  { id: 'tiktok', label: 'TikTok' },
-                                  { id: 'facebook', label: 'Facebook' },
-                                  { id: 'youtube', label: 'YouTube' },
-                                ].map(p => (
-                                  <button key={p.id} type="button" onClick={() => setAdPlatform(p.id as any)}
-                                    className={`py-2 rounded-xl border text-[10px] font-black transition-all ${adPlatform === p.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
-                                    {p.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estratégia</label>
-                              <select value={creativeStrategy} onChange={e => setCreativeStrategy(e.target.value)}
-                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
-                                {CREATIVE_STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                              </select>
-                            </div>
-                            <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estética</label>
-                              <select value={creativeAesthetic} onChange={e => setCreativeAesthetic(e.target.value)}
-                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
-                                {CREATIVE_AESTHETICS.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
-                              </select>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Quantidade</label>
-                              <div className="flex gap-1.5">
-                                {[1, 3, 5, 10].map(q => (
-                                  <button key={q} type="button" onClick={() => setCreativeQuantity(q)}
-                                    className={`flex-1 py-2.5 rounded-xl border text-xs font-black transition-all ${creativeQuantity === q ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
-                                    {q}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Formato</label>
-                              <select value={creativeFormat} onChange={e => setCreativeFormat(e.target.value)}
-                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
-                                <option value="Instagram Post 1:1">Instagram 1:1</option>
-                                <option value="Stories 9:16">Stories 9:16</option>
-                                <option value="TikTok Video 9:16">TikTok 9:16</option>
-                                <option value="Facebook Ad 1.91:1">Facebook 1.91:1</option>
-                                <option value="YouTube 16:9">YouTube 16:9</option>
-                              </select>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            disabled={isProcessing || !creativeLogo}
-                            onClick={(e) => handleCreate(e, false, true)}
-                            className="w-full bg-gradient-to-r from-[#d4af37] to-[#f0c832] text-black font-black py-5 rounded-3xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base disabled:opacity-40"
-                          >
-                            {isProcessing ? <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <Sparkles size={18} fill="currentColor" />}
-                            Gerar {creativeQuantity} criativo{creativeQuantity > 1 ? 's' : ''}
-                          </button>
-                          {!creativeLogo && (
-                            <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
-                              <AlertCircle size={13} className="text-amber-400 shrink-0" />
-                              <p className="text-[10px] text-amber-400 font-bold">Adicione a logomarca na coluna ao lado</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
                   </div>
                 </motion.div>
               </div>
