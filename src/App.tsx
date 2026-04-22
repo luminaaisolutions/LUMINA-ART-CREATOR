@@ -2193,7 +2193,8 @@ function AppContent() {
                   aspectRatio: currentAspectRatio,
                   quality: currentResolution === '2K' || currentResolution === '4K' ? 'QUALITY' : 'BALANCED',
                   referenceImageBase64: currentRefAsset?.data || undefined,
-                  referenceImageMimeType: currentRefAsset?.mimeType || 'image/jpeg'
+                  referenceImageMimeType: currentRefAsset?.mimeType || 'image/jpeg',
+                  logoBase64: (currentUseLogoInArt && currentCreativeLogo?.data) ? currentCreativeLogo.data : undefined,
                 }),
                 config: currentModelType === 'imagen' ? {
                   numberOfImages: 1,
