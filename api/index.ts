@@ -371,8 +371,32 @@ async function createServer() {
           magic_prompt_option: 'OFF'
         };
 
-        console.log(`[Ideogram] Prompt: "${(args.prompt || '').substring(0, 80)}..." | Ratio: ${ideogramBody.aspect_ratio}`);
+        // Adiciona referência de personagem se houver (base64 → upload fal.ai → URL)
+        if (args.referenceImageBase64) {
+          try {
+            const uploadRes = await fetch('https://fal.run/files/upload', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Key ${falKey}`,
+                'Content-Type': 'application/octet-stream',
+                'X-Fal-File-Name': 'reference.jpg'
+              },
+              body: Buffer.from(args.referenceImageBase64, 'base64')
+            });
+            if (uploadRes.ok) {
+              const uploadData = await uploadRes.json();
+              const refUrl = uploadData?.url || uploadData?.file_url;
+              if (refUrl) {
+                ideogramBody.style_reference_images = [{ image_url: refUrl }];
+                console.log(`[Ideogram] Reference image uploaded: ${refUrl}`);
+              }
+            }
+          } catch (uploadErr) {
+            console.warn('[Ideogram] Upload de referência falhou, continuando sem ela:', uploadErr);
+          }
+        }
 
+        console.log(`[Ideogram] Prompt: "${(args.prompt || '').substring(0, 80)}..." | Ratio: ${ideogramBody.aspect_ratio}`);
         const ideogramResponse = await withRetry(
           () => fetch('https://fal.run/fal-ai/ideogram/v3', {
             method: 'POST',
