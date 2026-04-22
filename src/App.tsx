@@ -3100,6 +3100,12 @@ const handleBatchDownload = async (ids: string[]) => {
   };
 
   const applyStyle = (style: string) => {
+    // Toggle — clica de novo para deselecionar
+    if (selectedStyle === style) {
+      setSelectedStyle('');
+      setStyle('');
+      return;
+    }
     const isCreative = activeTab === 'projects';
     const styles: Record<string, string> = {
       'Cinematográfico': 'cinematic lighting, 8k resolution, highly detailed, professional color grading, dramatic atmosphere',
@@ -4565,7 +4571,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                 <div className={`p-1 rounded-lg ${studioMode === mode.id ? 'bg-[#d4af37] text-black' : 'bg-[#222] text-gray-400'}`}>
                                   <mode.icon size={12} />
                                 </div>
-                                <span className="text-[10px] font-bold text-left leading-tight uppercase tracking-wider">{mode.label}</span>
+                                <span className="text-xs font-bold text-left leading-tight uppercase tracking-wider">{mode.label}</span>
                               </button>
                             ))}
                           </div>
@@ -4717,7 +4723,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                   className={`p-1.5 rounded-lg flex flex-col items-center gap-0.5 transition-all group ${selectedStyle === style.id ? 'bg-[#d4af37]/20 border-[#d4af37]' : 'bg-black/20 border border-white/5 hover:border-[#d4af37]/50'}`}
                                 >
                                   <style.icon size={12} className={selectedStyle === style.id ? 'text-[#d4af37]' : 'text-gray-600 group-hover:text-[#d4af37]'} />
-                                  <span className={`text-[10px] font-black tracking-tighter uppercase ${selectedStyle === style.id ? 'text-white' : 'text-gray-500 group-hover:text-white'}`}>
+                                  <span className={`text-xs font-black tracking-tighter uppercase ${selectedStyle === style.id ? 'text-white' : 'text-gray-500 group-hover:text-white'}`}>
                                     {style.label}
                                   </span>
                                 </button>
@@ -5738,12 +5744,16 @@ const handleBatchDownload = async (ids: string[]) => {
                                       key={g.id}
                                       type="button"
                                       onClick={() => {
-                                        setAdGoal(g.id as any);
-                                        // Auto-seleciona motor ideal por objetivo
-                                        if (g.id === 'conversoes' || g.id === 'lead') {
-                                          setModelType('ideogram');
-                                        } else {
+                                        if (adGoal === g.id) {
+                                          setAdGoal('' as any);
                                           setModelType('nano');
+                                        } else {
+                                          setAdGoal(g.id as any);
+                                          if (g.id === 'conversoes' || g.id === 'lead') {
+                                            setModelType('ideogram');
+                                          } else {
+                                            setModelType('nano');
+                                          }
                                         }
                                       }}
                                       className={`p-4 rounded-2xl border text-left transition-all group ${adGoal === g.id ? 'bg-[#d4af37]/10 border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
@@ -5768,12 +5778,12 @@ const handleBatchDownload = async (ids: string[]) => {
                                     <button
                                       key={p.id}
                                       type="button"
-                                      onClick={() => setAdPlatform(p.id as any)}
+                                      onClick={() => setAdPlatform(adPlatform === p.id ? '' as any : p.id as any)}
                                       className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border text-center transition-all ${adPlatform === p.id ? 'bg-[#1a2a4a] border-blue-500' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
                                     >
                                       <span className="text-xl leading-none">{p.icon}</span>
-                                      <span className={`text-[11px] font-black ${adPlatform === p.id ? 'text-blue-400' : 'text-gray-300'}`}>{p.label}</span>
-                                      <span className="text-[9px] text-gray-600 leading-tight">{p.sub}</span>
+                                      <span className={`text-xs font-black ${adPlatform === p.id ? 'text-blue-400' : 'text-gray-300'}`}>{p.label}</span>
+                                      <span className="text-[10px] text-gray-600 leading-tight">{p.sub}</span>
                                     </button>
                                   ))}
                                 </div>
@@ -6080,8 +6090,8 @@ const handleBatchDownload = async (ids: string[]) => {
                                   { id: 'engajamento',label: 'Viral' },
                                   { id: 'awareness',  label: 'Marca' },
                                 ].map(g => (
-                                  <button key={g.id} type="button" onClick={() => setAdGoal(g.id as any)}
-                                    className={`py-2 rounded-xl border text-[10px] font-black transition-all ${adGoal === g.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                  <button key={g.id} type="button" onClick={() => setAdGoal(adGoal === g.id ? '' as any : g.id as any)}
+                                    className={`py-2 rounded-xl border text-xs font-black transition-all ${adGoal === g.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
                                     {g.label}
                                   </button>
                                 ))}
@@ -6096,8 +6106,8 @@ const handleBatchDownload = async (ids: string[]) => {
                                   { id: 'facebook',  label: 'Facebook' },
                                   { id: 'youtube',   label: 'YouTube' },
                                 ].map(p => (
-                                  <button key={p.id} type="button" onClick={() => setAdPlatform(p.id as any)}
-                                    className={`py-2 rounded-xl border text-[10px] font-black transition-all ${adPlatform === p.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                  <button key={p.id} type="button" onClick={() => setAdPlatform(adPlatform === p.id ? '' as any : p.id as any)}
+                                    className={`py-2 rounded-xl border text-xs font-black transition-all ${adPlatform === p.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
                                     {p.label}
                                   </button>
                                 ))}
