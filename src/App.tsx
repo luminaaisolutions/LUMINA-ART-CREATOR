@@ -1860,6 +1860,7 @@ function AppContent() {
     const currentAdGoal = adGoal;
     const currentAdTrigger = adTrigger;
     const currentAdPlatform = adPlatform;
+    const currentSelectedTemplate = selectedTemplate;
 
     // Brand Strategic Patterns
     const activeBrand = brandProfiles.find(b => b.id === activeBrandProfileId);
@@ -2130,7 +2131,10 @@ function AppContent() {
                 ? 'generateIdeogram'
                 : 'generateContent';
               
-              let promptText = enhancedPrompt;
+              // Se tem template selecionado, usa o backgroundPrompt do template
+              let promptText = currentSelectedTemplate 
+                ? `${currentSelectedTemplate.backgroundPrompt} ${enhancedPrompt}`
+                : enhancedPrompt;
               
               if (currentRefAsset && currentRefAsset.type === 'image' && currentModelType === 'imagen') {
                 // Imagen 3 supports image-to-image or identity reference via specific prompts
@@ -2251,6 +2255,19 @@ function AppContent() {
                   referenceImageMimeType: currentRefAsset?.mimeType || 'image/jpeg',
                   logoBase64: (currentUseLogoInArt && currentCreativeLogo?.data) ? currentCreativeLogo.data : undefined,
                   logoPosition: (currentUseLogoInArt && currentCreativeLogo?.data) ? currentLogoPosition : undefined,
+                }),
+                // Passa dados do template para composição no backend
+                ...(currentSelectedTemplate && {
+                  templateLayers: currentSelectedTemplate.layers,
+                  templateTexts: {
+                    headline: currentCreativePrompt || currentSelectedTemplate.layers?.find((l: any) => l.type === 'headline')?.placeholder,
+                    subheadline: currentSelectedTemplate.layers?.find((l: any) => l.type === 'subheadline')?.placeholder,
+                    cta: currentSelectedTemplate.layers?.find((l: any) => l.type === 'cta')?.placeholder,
+                    tag: currentSelectedTemplate.layers?.find((l: any) => l.type === 'tag')?.placeholder,
+                    highlight: currentSelectedTemplate.layers?.find((l: any) => l.type === 'highlight')?.placeholder,
+                  },
+                  logoBase64ForTemplate: (currentUseLogoInArt && currentCreativeLogo?.data) ? currentCreativeLogo.data : undefined,
+                  logoPositionForTemplate: currentLogoPosition,
                 }),
                 config: currentModelType === 'imagen' ? {
                   numberOfImages: 1,
