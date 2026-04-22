@@ -734,6 +734,10 @@ function AppContent() {
   // --- Creative Studio State ---
   const [useCreativeStudio, setUseCreativeStudio] = useState(false);
   const [creativeLogo, setCreativeLogo] = useState<{ data: string, mimeType: string } | null>(null);
+  const [useLogoInArt, setUseLogoInArt] = useState(true);
+  const [logoPosition, setLogoPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'>('bottom-right');
+  const [useBrandColors, setUseBrandColors] = useState(true);
+  const [useBrandTypography, setUseBrandTypography] = useState(true);
   const [creativeRefAsset, setCreativeRefAsset] = useState<{ data: string, mimeType: string, type: 'image' } | null>(null);
   const [creativeProductAsset, setCreativeProductAsset] = useState<{ data: string, mimeType: string, type: 'image' } | null>(null);
   const [creativeColors, setCreativeColors] = useState<string[]>([]);
@@ -1787,6 +1791,10 @@ function AppContent() {
     // Creative Studio Capture
     const currentUseCreativeStudio = isCreativeActive;
     const currentCreativeLogo = creativeLogo;
+              const currentUseLogoInArt = useLogoInArt;
+              const currentLogoPosition = logoPosition;
+              const currentUseBrandColors = useBrandColors;
+              const currentUseBrandTypography = useBrandTypography;
     const currentCreativeColors = creativeColors;
     const currentCreativeTypography = creativeTypography;
     const currentCreativeFormat = creativeFormat;
@@ -1951,6 +1959,14 @@ function AppContent() {
                 'Trendy': 'Trendy — Y2K, K-pop aesthetic, digital glitch, hyper-saturated'
               };
 
+              const logoPositionMap: Record<string, string> = {
+                'top-left': 'top-left corner',
+                'top-right': 'top-right corner',
+                'bottom-left': 'bottom-left corner',
+                'bottom-right': 'bottom-right corner',
+                'center': 'center bottom'
+              };
+
               const creativeContext = currentUseCreativeStudio ? `
               [ADS MODE ACTIVE — PROFESSIONAL ADVERTISING IMAGE]
               
@@ -1962,11 +1978,20 @@ function AppContent() {
               ${currentToneOfVoice ? `BRAND TONE: ${currentToneOfVoice}` : ''}
               FORMAT: ${currentCreativeFormat}
               
+              BRAND IDENTITY:
+              ${currentUseLogoInArt && currentCreativeLogo ? `- LOGO: Include the brand logo at the ${logoPositionMap[currentLogoPosition] || 'bottom-right corner'} of the image. Size: approximately 15-20% of the artwork width. Must be clearly visible, clean and professional.` : '- LOGO: Do NOT include any logo or watermark in this artwork.'}
+              ${currentUseBrandColors && creativeColors.length > 0 ? `- COLORS: Use EXCLUSIVELY these brand colors throughout the composition: ${creativeColors.join(', ')}. These are mandatory — no other colors allowed.` : '- COLORS: Choose colors that best match the campaign objective and platform.'}
+              ${currentUseBrandTypography && creativeTypography ? `- TYPOGRAPHY: All text elements must use ${creativeTypography} typography style.` : '- TYPOGRAPHY: Choose typography that best fits the creative style and objective.'}
+              
+              REFERENCES:
+              ${hasRef ? '- CHARACTER: The reference person MUST appear in the creative. Preserve EXACTLY their face shape, skin tone, hair color/style, eyes and all distinctive features. Even in full-body or distant shots, the face must be recognizable and identical.' : ''}
+              ${hasProduct ? '- PRODUCT: Feature the reference product as the HERO element. Preserve its exact shape, colors, logo, packaging and all visual details.' : ''}
+              
               COMPOSITION RULES:
               - Design for the stated platform format and objective above.
-              - The visual hierarchy must serve the campaign objective — hero element should reinforce the goal.
-              - Lighting, color grading and mood must match the aesthetic profile above.
-              - Leave intentional negative space for copy overlay if strategy suggests text placement.
+              - Visual hierarchy must serve the campaign objective.
+              - Lighting, color grading and mood must match the aesthetic profile.
+              - Leave intentional space for copy overlay if needed.
               
               TEXT & SPELLING:
               - ONLY include text if explicitly requested by the user.
@@ -5362,7 +5387,18 @@ const handleBatchDownload = async (ids: string[]) => {
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Logomarca</span>
-                          {!creativeLogo && <span className="text-[9px] text-amber-500 font-bold">Obrigatório</span>}
+                          <div className="flex items-center gap-2">
+                            {creativeLogo && (
+                              <button
+                                type="button"
+                                onClick={() => setUseLogoInArt(v => !v)}
+                                className={`text-[9px] font-black px-2 py-0.5 rounded-full border transition-all ${useLogoInArt ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/10 text-gray-500'}`}
+                              >
+                                {useLogoInArt ? 'INCLUIR ✓' : 'NÃO INCLUIR'}
+                              </button>
+                            )}
+                            {!creativeLogo && <span className="text-[9px] text-amber-500 font-bold">Obrigatório</span>}
+                          </div>
                         </div>
                         <div
                           className={`w-full max-w-[140px] aspect-square bg-[#161616] rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all relative group overflow-hidden ${creativeLogo ? 'border-[#d4af37]' : 'border-dashed border-[#2a2a2a] hover:border-[#d4af37]/40 cursor-pointer'}`}
@@ -5388,6 +5424,56 @@ const handleBatchDownload = async (ids: string[]) => {
                           )}
                         </div>
                       </div>
+
+                      {/* Posição do logo */}
+                      {creativeLogo && useLogoInArt && (
+                        <div>
+                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-2">Posição do Logo</span>
+                          <div className="grid grid-cols-2 gap-1">
+                            {[
+                              { id: 'top-left', label: '↖ Topo Esq' },
+                              { id: 'top-right', label: '↗ Topo Dir' },
+                              { id: 'bottom-left', label: '↙ Base Esq' },
+                              { id: 'bottom-right', label: '↘ Base Dir' },
+                            ].map(pos => (
+                              <button
+                                type="button"
+                                key={pos.id}
+                                onClick={() => setLogoPosition(pos.id as any)}
+                                className={`py-1.5 rounded-lg border text-[9px] font-black transition-all ${logoPosition === pos.id ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]' : 'border-[#222] bg-[#111] text-gray-500 hover:border-[#444]'}`}
+                              >
+                                {pos.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Toggles cores e tipografia */}
+                      {creativeColors.length > 0 && (
+                        <div className="flex items-center justify-between py-2 border-t border-[#1c1c1c]">
+                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Paleta de Cores</span>
+                          <button
+                            type="button"
+                            onClick={() => setUseBrandColors(v => !v)}
+                            className={`text-[9px] font-black px-2 py-0.5 rounded-full border transition-all ${useBrandColors ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/10 text-gray-500'}`}
+                          >
+                            {useBrandColors ? 'ATIVO ✓' : 'INATIVO'}
+                          </button>
+                        </div>
+                      )}
+                      {creativeTypography && (
+                        <div className="flex items-center justify-between py-2 border-t border-[#1c1c1c]">
+                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Tipografia</span>
+                          <button
+                            type="button"
+                            onClick={() => setUseBrandTypography(v => !v)}
+                            className={`text-[9px] font-black px-2 py-0.5 rounded-full border transition-all ${useBrandTypography ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/10 text-gray-500'}`}
+                          >
+                            {useBrandTypography ? 'ATIVO ✓' : 'INATIVO'}
+                          </button>
+                        </div>
+                      )}
 
                       {/* Referências opcionais */}
                       <div className="space-y-2">
