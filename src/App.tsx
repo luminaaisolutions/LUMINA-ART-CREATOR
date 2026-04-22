@@ -4551,9 +4551,14 @@ const handleBatchDownload = async (ids: string[]) => {
                                 key={mode.id}
                                 type="button"
                                 onClick={() => {
-                                  setStudioMode(mode.id);
-                                  setPrompt(mode.prompt);
-                                  setType('image');
+                                  if (studioMode === mode.id) {
+                                    setStudioMode('');
+                                    setPrompt('');
+                                  } else {
+                                    setStudioMode(mode.id);
+                                    setPrompt(mode.prompt);
+                                    setType('image');
+                                  }
                                 }}
                                 className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${studioMode === mode.id ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500 hover:border-[#333]'}`}
                               >
