@@ -180,6 +180,13 @@ REGRAS DO PROMPT:
 - O resultado deve ser uma imagem pronta para veicular como anúncio
 - Máximo 200 palavras
 
+CRITICAL RULES FOR THE PROMPT:
+- All text elements in the image MUST be in perfect Portuguese (BR).
+- NEVER generate countdown timers or urgency elements unless explicitly requested.
+- For typography: specify EXACTLY the font style — bold condensed, serif elegant, geometric sans-serif, etc. Be very specific.
+- Double-check ALL Portuguese words in the prompt for correct spelling.
+- Common errors to avoid: "aplicada" not "aplicaad", "participação" not "particitação", "promoção" not "promoçao".
+
 Retorne APENAS o prompt em inglês, sem explicações.`;
 
       const result = await client.models.generateContent({
