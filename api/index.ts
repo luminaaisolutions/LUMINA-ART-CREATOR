@@ -228,14 +228,21 @@ REGRAS DO PROMPT:
 - O resultado deve ser uma imagem pronta para veicular como anúncio
 - Máximo 200 palavras
 
-CRITICAL RULES FOR THE PROMPT:
-- All text elements in the image MUST be in perfect Portuguese (BR).
-- NEVER generate countdown timers or urgency elements unless explicitly requested.
-- For typography: specify EXACTLY the font style — bold condensed, serif elegant, geometric sans-serif, etc. Be very specific.
-- Double-check ALL Portuguese words in the prompt for correct spelling.
-- Common errors to avoid: "aplicada" not "aplicaad", "participação" not "particitação", "promoção" not "promoçao".
+CRITICAL RULES — STRICTLY FOLLOW:
+1. FORBIDDEN ELEMENTS — NEVER include unless explicitly requested by user:
+   - Countdown timers, "00:00:00", time countdowns
+   - "Últimas Vagas", urgency/scarcity messages
+   - Any element NOT requested by the user
+2. TYPOGRAPHY — Be extremely specific:
+   - Always name a font style: "Bebas Neue bold condensed", "Playfair Display elegant serif", "Montserrat geometric bold", etc.
+   - NEVER use generic "sans-serif" or "basic font"
+3. TEXT IN IMAGE — All text MUST be in perfect Portuguese (BR):
+   - Spell-check every word before including it
+   - Known errors to avoid: "aplicada" NOT "aplicaad", "participação" NOT "particitação", "promoção" NOT "promoçao", "negócios" NOT "negocios"
+4. CONTENT — Reflect EXACTLY the user objective, no dramatization
+5. The prompt must describe a READY-TO-USE professional ad image
 
-Retorne APENAS o prompt em inglês, sem explicações.`;
+Retorne APENAS o prompt em inglês, sem explicações adicionais.`;
 
       const result = await client.models.generateContent({
         model: 'gemini-2.5-flash',
