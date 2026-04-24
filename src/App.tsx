@@ -4171,52 +4171,6 @@ const handleBatchDownload = async (ids: string[]) => {
                     )}
                   </motion.div>
                 ))}
-
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-bold text-xl text-white">{brand.name}</h3>
-                        <p className="text-gray-500 text-xs uppercase tracking-widest font-bold mt-1">{brand.typography}</p>
-                      </div>
-
-                      <div className="flex gap-2">
-                        {brand.colors.map((color, idx) => (
-                          <div key={idx} className="w-6 h-6 rounded-full border border-white/10" style={{ backgroundColor: color }} />
-                        ))}
-                        {brand.colors.length === 0 && <div className="text-[10px] text-gray-600 italic">Nenhuma cor detectada</div>}
-                      </div>
-
-                      {(brand.styleAnalysis || brand.toneOfVoice) && (
-                        <div className="pt-4 border-t border-[#222] space-y-3">
-                          {brand.styleAnalysis && (
-                            <div className="space-y-1">
-                              <span className="text-[8px] font-bold text-gray-600 uppercase">Estilo</span>
-                              <p className="text-[10px] text-gray-400 line-clamp-2 leading-relaxed">{brand.styleAnalysis}</p>
-                            </div>
-                          )}
-                          {brand.toneOfVoice && (
-                            <div className="space-y-1">
-                              <span className="text-[8px] font-bold text-gray-600 uppercase">Tom de Voz</span>
-                              <p className="text-[10px] text-gray-400 line-clamp-1 leading-relaxed">{brand.toneOfVoice}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Edit Overlay */}
-                    <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-[40px]">
-                      <button 
-                        onClick={() => {
-                          setEditingBrand(brand);
-                          setBrandStep('upload');
-                        }}
-                        className="px-6 py-3 bg-[#d4af37] text-black font-black rounded-2xl text-xs uppercase tracking-widest hover:scale-105 transition-all"
-                      >
-                        Editar Marca
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
               </div>
             </>
           )}
