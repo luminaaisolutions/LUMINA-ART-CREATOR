@@ -1808,10 +1808,7 @@ function AppContent() {
       return;
     }
     
-    // Logo é opcional — apenas avisa se não tiver
-    if (isCreativeActive && !creativeLogo) {
-      showNotification("Dica: adicione a logomarca da marca para incluir no criativo.", "info");
-    }
+    // Logo é opcional 
 
     setIsProcessing(true);
     // Remove automatic switch to dashboard to stay in the current tab and show results
