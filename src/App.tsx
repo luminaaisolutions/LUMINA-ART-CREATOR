@@ -1908,7 +1908,7 @@ function AppContent() {
         const newItem: BatchItem = {
           id: itemId,
           type: currentUseLipsync ? 'lipsync' : currentType,
-          sourceTab: currentUseLipsync ? 'lipsync' : currentUseCreativeStudio ? 'projects' : 'creative_studio',
+          sourceTab: currentUseLipsync ? 'lipsync' : isCreativeActive ? 'projects' : 'creative_studio',
           status: currentLowPriority ? 'pending' : 'processing',
           prompt: itemPrompt,
           aspectRatio: currentAspectRatio,
