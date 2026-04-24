@@ -4024,7 +4024,7 @@ const handleBatchDownload = async (ids: string[]) => {
               </div>
             </motion.div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="flex flex-wrap gap-4">
                 {/* Add New Brand Card */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
