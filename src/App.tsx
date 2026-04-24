@@ -1889,7 +1889,8 @@ function AppContent() {
     if (!isCreativeActive) {
       setUseCreativeStudio(false);
     }
-    setIsProcessing(false); 
+    // NÃO chamar setIsProcessing(false) aqui — a geração ainda não terminou!
+    // setIsProcessing é chamado após todas as gerações completarem 
     
     // Track active generations globally to prevent cancellation on tab switch
     const totalItems = finalPrompts.length * currentQuantity;
