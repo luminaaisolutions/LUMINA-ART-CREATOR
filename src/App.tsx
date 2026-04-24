@@ -1886,7 +1886,9 @@ function AppContent() {
       setCreativeProductAsset(null);
     }
     
-    setUseCreativeStudio(false);
+    if (!isCreativeActive) {
+      setUseCreativeStudio(false);
+    }
     setIsProcessing(false); 
     
     // Track active generations globally to prevent cancellation on tab switch
