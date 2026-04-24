@@ -2282,11 +2282,23 @@ function AppContent() {
               });
               
           if (response.generatedImages?.[0]?.image?.imageBytes) {
+            // Imagen 4 format
             base64Data = response.generatedImages[0].image.imageBytes;
             mimeType = response.generatedImages[0].image.mimeType || 'image/png';
           } else if (response.candidates?.[0]?.content?.parts) {
-            // Fallback for different API response shapes
-            const imagePart = response.candidates[0].content.parts.find((p: any) => p.inlineData);
+            // Gemini generateContent format
+            const parts = response.candidates[0].content.parts;
+            const imagePart = parts.find((p: any) => p.inlineData?.data);
+            if (imagePart) {
+              base64Data = imagePart.inlineData.data;
+              mimeType = imagePart.inlineData.mimeType || 'image/png';
+            }
+          } else if (response.candidates?.[0]?.content?.parts === undefined && response.text) {
+            // Texto apenas — sem imagem
+            console.warn('[Parser] Resposta só tem texto, sem imagem');
+          } else if (Array.isArray(response)) {
+            // Array direto de parts
+            const imagePart = response.find((p: any) => p.inlineData?.data);
             if (imagePart) {
               base64Data = imagePart.inlineData.data;
               mimeType = imagePart.inlineData.mimeType || 'image/png';
