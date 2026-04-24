@@ -4073,7 +4073,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     >
                       {/* Chevron */}
                       <ChevronDown
-                        size={13}
+                        size={15}
                         className={`absolute top-3 right-3 text-gray-500 transition-transform ${expandedBrandId === brand.id ? 'rotate-180' : ''}`}
                       />
                       {/* Badge ativo */}
