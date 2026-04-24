@@ -6056,6 +6056,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                       Gerar {creativeQuantity} anúncio{creativeQuantity > 1 ? 's' : ''}
                                     </>
                                   )}
+                                </button>
                                 {!creativeLogo && (
                                   <div className="flex items-center justify-center gap-2 py-2 px-4 bg-[#1a1a1a] border border-[#222] rounded-2xl">
                                     <AlertCircle size={13} className="text-gray-600 shrink-0" />
