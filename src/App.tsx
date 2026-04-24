@@ -2747,22 +2747,27 @@ if (referenceImages.length > 0) {
 
         const concurrencyLimit = 3;
         let taskIdx = 0;
-
-        const processQueue = async () => {
+        const processQueue = async (): Promise<void> => {
           if (taskIdx >= tasks.length) return;
-          
           const task = tasks[taskIdx++];
           await generateItem(task.itemId, task.p, task.i);
-          processQueue();
+          await processQueue();
         };
-
-        for (let i = 0; i < Math.min(concurrencyLimit, tasks.length); i++) {
-          processQueue();
-        }
+        await Promise.all(
+          Array.from({ length: Math.min(concurrencyLimit, tasks.length) }, () => processQueue())
+        );
       }
     };
 
-    executeGenerations();
+    executeGenerations()
+      .then(() => {
+        console.log('[Generation] Todas as gerações concluídas!');
+        setIsProcessing(false);
+      })
+      .catch(err => {
+        console.error('executeGenerations failed:', err);
+        setIsProcessing(false);
+      });
   };
 
   const handleDelete = async (itemId: string) => {
