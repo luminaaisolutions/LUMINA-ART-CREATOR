@@ -1808,10 +1808,9 @@ function AppContent() {
       return;
     }
     
-    // Validation for Estúdio Lumina
+    // Logo é opcional — apenas avisa se não tiver
     if (isCreativeActive && !creativeLogo) {
-      showNotification("Para gerar criativos, você precisa subir a logomarca.", "info");
-      return;
+      showNotification("Dica: adicione a logomarca da marca para incluir no criativo.", "info");
     }
 
     setIsProcessing(true);
