@@ -3952,22 +3952,22 @@ const handleBatchDownload = async (ids: string[]) => {
               
               <div className="flex items-center gap-6">
                 <div className="hidden md:flex flex-col items-end">
-                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Marcas Ativas</span>
+                  <span className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Marcas Ativas</span>
                   <div className="flex items-center gap-4">
                     <div className="flex -space-x-3">
                       {brandProfiles.slice(0, 5).map((brand, i) => (
-                        <div key={brand.id} className="w-10 h-10 rounded-full border-2 border-[#111] bg-[#1a1a1a] overflow-hidden flex items-center justify-center shadow-lg">
+                        <div key={brand.id} className="w-14 h-14 rounded-full border-2 border-[#111] bg-[#1a1a1a] overflow-hidden flex items-center justify-center shadow-lg">
                           {brand.logos && brand.logos.length > 0 ? (
                             <img src={`data:${brand.logos[0].mimeType};base64,${brand.logos[0].data}`} className="w-full h-full object-contain p-1.5" />
                           ) : (
-                            <span className="text-[10px] font-bold text-gray-500">{brand.name.charAt(0)}</span>
+                            <span className="text-xs font-bold text-gray-500">{brand.name.charAt(0)}</span>
                           )}
                         </div>
                       ))}
                     </div>
                     
                     <div className="relative">
-                      <select 
+                      <select
                         value={activeBrandProfileId || ''}
                         onChange={(e) => {
                           const brandId = e.target.value;
@@ -3983,14 +3983,14 @@ const handleBatchDownload = async (ids: string[]) => {
                             }
                           }
                         }}
-                        className="bg-[#1a1a1a] border border-[#222] rounded-xl px-4 py-2 text-[10px] font-bold text-gray-300 focus:outline-none focus:border-[#d4af37] appearance-none pr-8 cursor-pointer"
+                        className="bg-[#1a1a1a] border border-[#222] rounded-xl px-4 py-2 text-xs font-bold text-gray-300 focus:outline-none focus:border-[#d4af37] appearance-none pr-8 cursor-pointer"
                       >
                         <option value="">Seletor Rápido...</option>
                         {brandProfiles.map(brand => (
                           <option key={brand.id} value={brand.id}>{brand.name}</option>
                         ))}
                       </select>
-                      <ChevronDown size={10} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                      <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
                     </div>
                   </div>
                 </div>
