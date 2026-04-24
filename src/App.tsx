@@ -4068,7 +4068,7 @@ const handleBatchDownload = async (ids: string[]) => {
                   >
                     {/* Card compacto — formato quadrado */}
                     <div
-                      className="flex flex-col items-center justify-center gap-2 p-4 cursor-pointer aspect-square relative"
+                      className="flex flex-col items-center justify-center gap-2 p-3 cursor-pointer w-32 h-32 relative"
                       onClick={() => setExpandedBrandId(expandedBrandId === brand.id ? null : brand.id)}
                     >
                       {/* Chevron */}
@@ -4081,7 +4081,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         <span className="absolute top-3 left-3 text-[8px] font-black bg-[#d4af37] text-black px-2 py-0.5 rounded-full uppercase">Ativo</span>
                       )}
                       {/* Logo centralizada */}
-                      <div className="w-24 h-24 bg-[#1a1a1a] rounded-2xl border border-[#222] overflow-hidden flex items-center justify-center">
+                      <div className="w-20 h-20 bg-[#1a1a1a] rounded-2xl border border-[#222] overflow-hidden flex items-center justify-center">
                         {brand.logos && brand.logos.length > 0 ? (
                           <img src={`data:${brand.logos[0].mimeType};base64,${brand.logos[0].data}`} alt={brand.name} className="w-full h-full object-contain p-2" />
                         ) : (
@@ -4090,8 +4090,8 @@ const handleBatchDownload = async (ids: string[]) => {
                       </div>
                       {/* Nome */}
                       <div className="text-center">
-                        <h3 className="font-black text-sm text-white leading-tight">{brand.name}</h3>
-                        {brand.niche && <p className="text-[9px] text-gray-500 mt-0.5">{brand.niche}</p>}
+                        <h3 className="font-black text-xs text-white leading-tight">{brand.name}</h3>
+                        {brand.niche && <p className="text-[10px] text-gray-500 mt-0.5">{brand.niche}</p>}
                       </div>
                     </div>
 
@@ -4117,21 +4117,21 @@ const handleBatchDownload = async (ids: string[]) => {
                         {/* Tipografia */}
                         {brand.typography && (
                           <div>
-                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">Tipografia</span>
+                            <span className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">Tipografia</span>
                             <span className="text-xs text-gray-300">{brand.typography}</span>
                           </div>
                         )}
                         {/* Estilo e Tom */}
                         {brand.styleAnalysis && (
                           <div>
-                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">Estilo</span>
-                            <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-3">{brand.styleAnalysis}</p>
+                            <span className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">Estilo</span>
+                            <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">{brand.styleAnalysis}</p>
                           </div>
                         )}
                         {brand.toneOfVoice && (
                           <div>
-                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">Tom de Voz</span>
-                            <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-2">{brand.toneOfVoice}</p>
+                            <span className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">Tom de Voz</span>
+                            <p className="text-xs text-gray-400 leading-relaxed line-clamp-2">{brand.toneOfVoice}</p>
                           </div>
                         )}
                         {/* Botões de ação */}
