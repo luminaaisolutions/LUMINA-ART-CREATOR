@@ -739,6 +739,7 @@ function AppContent() {
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [expandedBrandId, setExpandedBrandId] = useState<string | null>(null);
   const [logoPosition, setLogoPosition] = useState<'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center'>('bottom-right');
   const [useBrandColors, setUseBrandColors] = useState(true);
   const [useBrandTypography, setUseBrandTypography] = useState(true);
@@ -4063,44 +4064,113 @@ const handleBatchDownload = async (ids: string[]) => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className={`bg-[#111] p-8 rounded-[40px] border transition-all relative group ${activeBrandProfileId === brand.id ? 'border-[#d4af37] shadow-lg shadow-[#d4af37]/10' : 'border-[#222]'}`}
+                    className={`bg-[#111] rounded-[28px] border transition-all relative ${activeBrandProfileId === brand.id ? 'border-[#d4af37] shadow-lg shadow-[#d4af37]/10' : 'border-[#222] hover:border-[#333]'}`}
                   >
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="w-16 h-16 bg-[#1a1a1a] rounded-2xl border border-[#222] overflow-hidden flex items-center justify-center">
+                    {/* Card compacto — sempre visível */}
+                    <div
+                      className="flex items-center gap-4 p-4 cursor-pointer"
+                      onClick={() => setExpandedBrandId(expandedBrandId === brand.id ? null : brand.id)}
+                    >
+                      <div className="w-12 h-12 bg-[#1a1a1a] rounded-xl border border-[#222] overflow-hidden flex items-center justify-center shrink-0">
                         {brand.logos && brand.logos.length > 0 ? (
-                          <img src={`data:${brand.logos[0].mimeType};base64,${brand.logos[0].data}`} alt={brand.name} className="w-full h-full object-contain p-2" />
+                          <img src={`data:${brand.logos[0].mimeType};base64,${brand.logos[0].data}`} alt={brand.name} className="w-full h-full object-contain p-1.5" />
                         ) : (
-                          <Palette size={24} className="text-gray-600" />
+                          <Palette size={18} className="text-gray-600" />
                         )}
                       </div>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => {
-                            setActiveBrandProfileId(brand.id);
-                            if (brand.logos && brand.logos.length > 0) {
-                              setCreativeLogo(brand.logos[0]);
-                            }
-                            setCreativeColors(brand.colors || []);
-                            setCreativeTypography(brand.typography || 'Modern');
-                          }}
-                          className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeBrandProfileId === brand.id ? 'bg-[#d4af37] text-black' : 'bg-[#1a1a1a] text-gray-500 border border-[#222]'}`}
-                        >
-                          {activeBrandProfileId === brand.id ? 'Ativo' : 'Ativar'}
-                        </button>
-                        <button 
-                          onClick={async () => {
-                            if (confirm('Tem certeza que deseja excluir esta marca?')) {
-                              if (user) {
-                                await deleteDoc(doc(db, `users/${user.uid}/brands`, brand.id)).catch(console.error);
-                              }
-                            }
-                          }}
-                          className="p-2 bg-red-500/10 text-red-500 rounded-full hover:bg-red-500 hover:text-white transition-all"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-black text-sm text-white truncate">{brand.name}</h3>
+                          {activeBrandProfileId === brand.id && (
+                            <span className="text-[8px] font-black bg-[#d4af37] text-black px-2 py-0.5 rounded-full uppercase shrink-0">Ativo</span>
+                          )}
+                        </div>
+                        {brand.niche && <p className="text-[10px] text-gray-500 truncate">{brand.niche}</p>}
                       </div>
+                      <ChevronDown
+                        size={14}
+                        className={`text-gray-500 transition-transform shrink-0 ${expandedBrandId === brand.id ? 'rotate-180' : ''}`}
+                      />
                     </div>
+
+                    {/* Detalhes expandidos */}
+                    {expandedBrandId === brand.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="border-t border-[#1c1c1c] p-5 space-y-4"
+                      >
+                        {/* Cores */}
+                        {brand.colors && brand.colors.length > 0 && (
+                          <div>
+                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-2">Paleta de Cores</span>
+                            <div className="flex gap-2 flex-wrap">
+                              {brand.colors.map((c, ci) => (
+                                <div key={ci} className="w-6 h-6 rounded-full border border-white/10" style={{ backgroundColor: c }} title={c} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {/* Tipografia */}
+                        {brand.typography && (
+                          <div>
+                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">Tipografia</span>
+                            <span className="text-xs text-gray-300">{brand.typography}</span>
+                          </div>
+                        )}
+                        {/* Estilo e Tom */}
+                        {brand.styleAnalysis && (
+                          <div>
+                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">Estilo</span>
+                            <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-3">{brand.styleAnalysis}</p>
+                          </div>
+                        )}
+                        {brand.toneOfVoice && (
+                          <div>
+                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-1">Tom de Voz</span>
+                            <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-2">{brand.toneOfVoice}</p>
+                          </div>
+                        )}
+                        {/* Botões de ação */}
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveBrandProfileId(brand.id);
+                              if (brand.logos && brand.logos.length > 0) setCreativeLogo(brand.logos[0]);
+                              setCreativeColors(brand.colors || []);
+                              setCreativeTypography(brand.typography || 'Modern');
+                            }}
+                            className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeBrandProfileId === brand.id ? 'bg-[#d4af37] text-black' : 'bg-[#1a1a1a] text-gray-400 border border-[#222] hover:border-[#d4af37]/50'}`}
+                          >
+                            {activeBrandProfileId === brand.id ? '✓ Ativo' : 'Ativar'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingBrand(brand)}
+                            className="px-3 py-2 rounded-xl bg-[#1a1a1a] border border-[#222] text-gray-400 hover:border-[#444] transition-all"
+                          >
+                            <Settings size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (confirm('Tem certeza que deseja excluir esta marca?')) {
+                                if (user) {
+                                  await deleteDoc(doc(db, `users/${user.uid}/brands`, brand.id)).catch(console.error);
+                                }
+                              }
+                            }}
+                            className="px-3 py-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                ))}
 
                     <div className="space-y-4">
                       <div>
