@@ -4024,7 +4024,7 @@ const handleBatchDownload = async (ids: string[]) => {
               </div>
             </motion.div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {/* Add New Brand Card */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -4068,7 +4068,7 @@ const handleBatchDownload = async (ids: string[]) => {
                   >
                     {/* Card compacto — formato quadrado */}
                     <div
-                      className="flex flex-col items-center justify-center gap-3 p-5 cursor-pointer aspect-square relative"
+                      className="flex flex-col items-center justify-center gap-2 p-4 cursor-pointer aspect-square relative"
                       onClick={() => setExpandedBrandId(expandedBrandId === brand.id ? null : brand.id)}
                     >
                       {/* Chevron */}
@@ -4081,7 +4081,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         <span className="absolute top-3 left-3 text-[8px] font-black bg-[#d4af37] text-black px-2 py-0.5 rounded-full uppercase">Ativo</span>
                       )}
                       {/* Logo centralizada */}
-                      <div className="w-16 h-16 bg-[#1a1a1a] rounded-2xl border border-[#222] overflow-hidden flex items-center justify-center">
+                      <div className="w-24 h-24 bg-[#1a1a1a] rounded-2xl border border-[#222] overflow-hidden flex items-center justify-center">
                         {brand.logos && brand.logos.length > 0 ? (
                           <img src={`data:${brand.logos[0].mimeType};base64,${brand.logos[0].data}`} alt={brand.name} className="w-full h-full object-contain p-2" />
                         ) : (
