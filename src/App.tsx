@@ -4066,31 +4066,33 @@ const handleBatchDownload = async (ids: string[]) => {
                     transition={{ delay: i * 0.1 }}
                     className={`bg-[#111] rounded-[28px] border transition-all relative ${activeBrandProfileId === brand.id ? 'border-[#d4af37] shadow-lg shadow-[#d4af37]/10' : 'border-[#222] hover:border-[#333]'}`}
                   >
-                    {/* Card compacto — sempre visível */}
+                    {/* Card compacto — formato quadrado */}
                     <div
-                      className="flex items-center gap-4 p-4 cursor-pointer"
+                      className="flex flex-col items-center justify-center gap-3 p-5 cursor-pointer aspect-square relative"
                       onClick={() => setExpandedBrandId(expandedBrandId === brand.id ? null : brand.id)}
                     >
-                      <div className="w-12 h-12 bg-[#1a1a1a] rounded-xl border border-[#222] overflow-hidden flex items-center justify-center shrink-0">
+                      {/* Chevron */}
+                      <ChevronDown
+                        size={13}
+                        className={`absolute top-3 right-3 text-gray-500 transition-transform ${expandedBrandId === brand.id ? 'rotate-180' : ''}`}
+                      />
+                      {/* Badge ativo */}
+                      {activeBrandProfileId === brand.id && (
+                        <span className="absolute top-3 left-3 text-[8px] font-black bg-[#d4af37] text-black px-2 py-0.5 rounded-full uppercase">Ativo</span>
+                      )}
+                      {/* Logo centralizada */}
+                      <div className="w-16 h-16 bg-[#1a1a1a] rounded-2xl border border-[#222] overflow-hidden flex items-center justify-center">
                         {brand.logos && brand.logos.length > 0 ? (
-                          <img src={`data:${brand.logos[0].mimeType};base64,${brand.logos[0].data}`} alt={brand.name} className="w-full h-full object-contain p-1.5" />
+                          <img src={`data:${brand.logos[0].mimeType};base64,${brand.logos[0].data}`} alt={brand.name} className="w-full h-full object-contain p-2" />
                         ) : (
-                          <Palette size={18} className="text-gray-600" />
+                          <Palette size={22} className="text-gray-600" />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-black text-sm text-white truncate">{brand.name}</h3>
-                          {activeBrandProfileId === brand.id && (
-                            <span className="text-[8px] font-black bg-[#d4af37] text-black px-2 py-0.5 rounded-full uppercase shrink-0">Ativo</span>
-                          )}
-                        </div>
-                        {brand.niche && <p className="text-[10px] text-gray-500 truncate">{brand.niche}</p>}
+                      {/* Nome */}
+                      <div className="text-center">
+                        <h3 className="font-black text-sm text-white leading-tight">{brand.name}</h3>
+                        {brand.niche && <p className="text-[9px] text-gray-500 mt-0.5">{brand.niche}</p>}
                       </div>
-                      <ChevronDown
-                        size={14}
-                        className={`text-gray-500 transition-transform shrink-0 ${expandedBrandId === brand.id ? 'rotate-180' : ''}`}
-                      />
                     </div>
 
                     {/* Detalhes expandidos */}
