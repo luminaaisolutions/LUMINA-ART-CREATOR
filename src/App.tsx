@@ -5603,7 +5603,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                 {useLogoInArt ? 'INCLUIR ✓' : 'NÃO INCLUIR'}
                               </button>
                             )}
-                            {!creativeLogo && <span className="text-[9px] text-amber-500 font-bold">Obrigatório</span>}
+                            {!creativeLogo && <span className="text-[9px] text-gray-500 font-bold">Opcional</span>}
                           </div>
                         </div>
                         <div
@@ -6041,7 +6041,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               <div className="space-y-3">
                                 <button
                                   type="button"
-                                  disabled={isProcessing || !creativeLogo}
+                                  disabled={isProcessing}
                                   onClick={(e) => handleCreate(e, false, true)}
                                   className="w-full bg-gradient-to-r from-[#d4af37] to-[#f0c832] text-black font-black py-5 rounded-3xl shadow-xl shadow-[#d4af37]/25 hover:shadow-[#d4af37]/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 text-base disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
