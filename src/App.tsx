@@ -6056,11 +6056,10 @@ const handleBatchDownload = async (ids: string[]) => {
                                       Gerar {creativeQuantity} anúncio{creativeQuantity > 1 ? 's' : ''}
                                     </>
                                   )}
-                                </button>
                                 {!creativeLogo && (
-                                  <div className="flex items-center justify-center gap-2 py-2 px-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
-                                    <AlertCircle size={13} className="text-amber-400 shrink-0" />
-                                    <p className="text-[10px] text-amber-400 font-bold">Adicione a logomarca da sua marca na coluna ao lado para continuar</p>
+                                  <div className="flex items-center justify-center gap-2 py-2 px-4 bg-[#1a1a1a] border border-[#222] rounded-2xl">
+                                    <AlertCircle size={13} className="text-gray-600 shrink-0" />
+                                    <p className="text-[10px] text-gray-500 font-bold">Logo opcional — sem Logo/Marca o criativo será gerado sem identidade visual</p>
                                   </div>
                                 )}
                               </div>
