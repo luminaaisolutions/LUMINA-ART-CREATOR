@@ -1760,11 +1760,12 @@ function AppContent() {
     if (isCreativeActive) currentQuantity = creativeQuantity;
     
     // Split prompts and limit to 20
-    let rawPrompts = isCreativeActive ? [creativePrompt] : prompt.split('\n').filter(p => p.trim() !== '');
+    const activeCreativePrompt = forcePrompt || creativePrompt;
+    let rawPrompts = isCreativeActive ? [activeCreativePrompt] : prompt.split('\n').filter(p => p.trim() !== '');
     
     // If no prompts and not lipsync, return. 
     // If lipsync, we can use an empty string to trigger default prompt logic.
-    if (rawPrompts.length === 0 || (isCreativeActive && currentPrompt.trim() === '')) {
+    if (rawPrompts.length === 0 || (isCreativeActive && activeCreativePrompt.trim() === '')) {
       if (isLipsyncActive) {
         rawPrompts = [""];
       } else if (isCreativeActive) {
