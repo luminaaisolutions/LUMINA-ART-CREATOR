@@ -6057,7 +6057,11 @@ const handleBatchDownload = async (ids: string[]) => {
                                 <button
                                   type="button"
                                   disabled={isProcessing}
-                                  onClick={(e) => handleCreate(e, false, true, wizardGeneratedPrompt || creativePrompt)}
+                                  onClick={(e) => {
+                                    const promptToUse = wizardGeneratedPrompt || creativePrompt;
+                                    console.log(`[BTN-CLICK] wizardGeneratedPrompt="${wizardGeneratedPrompt?.substring(0,40)}" creativePrompt="${creativePrompt?.substring(0,40)}" promptToUse="${promptToUse?.substring(0,40)}"`);
+                                    handleCreate(e, false, true, promptToUse);
+                                  }}
                                   className="w-full bg-gradient-to-r from-[#d4af37] to-[#f0c832] text-black font-black py-5 rounded-3xl shadow-xl shadow-[#d4af37]/25 hover:shadow-[#d4af37]/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 text-base disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                   {isProcessing ? (
