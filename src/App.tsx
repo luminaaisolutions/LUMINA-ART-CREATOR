@@ -1809,13 +1809,11 @@ function AppContent() {
       return;
     }
     
-    // Logo é opcional 
-
+    // Logo é opcional
+    const currentPrompt = forcePrompt || (isCreativeActive ? creativePrompt : prompt);
     setIsProcessing(true);
     // Remove automatic switch to dashboard to stay in the current tab and show results
     // setActiveTab('dashboard');
-    
-    const currentPrompt = forcePrompt || (isCreativeActive ? creativePrompt : prompt);
     const currentType = isCreativeActive ? 'image' : type;
     const currentAspectRatio = isCreativeActive ? (
       creativeFormat.includes('9:16') ? '9:16' : 
