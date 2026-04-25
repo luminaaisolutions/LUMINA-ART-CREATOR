@@ -5790,16 +5790,11 @@ const handleBatchDownload = async (ids: string[]) => {
                                       key={g.id}
                                       type="button"
                                       onClick={() => {
-                                        if (adGoal === g.id) {
-                                          setAdGoal('' as any);
-                                          setModelType('nano');
+                                        setAdGoal(g.id as any);
+                                        if (g.id === 'conversoes' || g.id === 'lead') {
+                                          setModelType('ideogram');
                                         } else {
-                                          setAdGoal(g.id as any);
-                                          if (g.id === 'conversoes' || g.id === 'lead') {
-                                            setModelType('ideogram');
-                                          } else {
-                                            setModelType('nano');
-                                          }
+                                          setModelType('nano');
                                         }
                                       }}
                                       className={`p-4 rounded-2xl border text-left transition-all group ${adGoal === g.id ? 'bg-[#d4af37]/10 border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
@@ -5977,8 +5972,8 @@ const handleBatchDownload = async (ids: string[]) => {
                                     <div key={i} className="flex items-start gap-2 p-2.5 bg-[#141414] rounded-xl">
                                       <span className="text-sm leading-none mt-0.5">{item.icon}</span>
                                       <div>
-                                        <span className="block text-[9px] text-gray-600 uppercase tracking-widest font-bold">{item.label}</span>
-                                        <span className="block text-[11px] text-white font-bold leading-snug mt-0.5">{item.value}</span>
+                                        <span className="block text-[10px] text-gray-600 uppercase tracking-widest font-bold">{item.label}</span>
+                                        <span className="block text-[12px] text-white font-bold leading-snug mt-0.5">{item.value}</span>
                                       </div>
                                     </div>
                                   ))}
@@ -6136,7 +6131,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                   { id: 'engajamento',label: 'Viral' },
                                   { id: 'awareness',  label: 'Marca' },
                                 ].map(g => (
-                                  <button key={g.id} type="button" onClick={() => setAdGoal(adGoal === g.id ? '' as any : g.id as any)}
+                                  <button key={g.id} type="button" onClick={() => setAdGoal(g.id as any)}
                                     className={`py-2 rounded-xl border text-xs font-black transition-all ${adGoal === g.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
                                     {g.label}
                                   </button>
