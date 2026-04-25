@@ -270,43 +270,127 @@ async function createServer() {
 
       const recommendedModel = adGoal === 'vender' || adGoal === 'leads' ? 'ideogram' : 'nano';
 
-      const systemPrompt = `Você é um especialista em marketing digital e criação de anúncios de alta conversão para o mercado brasileiro.
-      
-Crie um prompt detalhado em INGLÊS para geração de imagem de anúncio com as seguintes especificações:
+      // Mapas avançados baseados nos Frameworks Master + Visual Direction
+      const layoutMap: Record<string, string> = {
+        conversoes: 'PRODUCT_HERO — produto centralizado, fundo sólido, hierarquia clara',
+        engajamento: 'SPLIT 50/50 — esquerda: texto + headline | direita: produto/pessoa',
+        leads: 'BENEFITS_LIST — 3-5 benefícios com checkmarks, coluna de copy dominante',
+        awareness: 'AGENCY_CURVED — wave shape dividindo foto + texto, profissional'
+      };
 
-OBJETIVO: ${goalMap[adGoal] || adGoal}
-PLATAFORMA: ${platformMap[adPlatform] || adPlatform}
-PRODUTO/SERVIÇO: ${wizardProduct}
-PÚBLICO-ALVO: ${wizardAudience || 'público geral brasileiro'}
-ESTILO VISUAL: ${styleMap[wizardStyle] || wizardStyle}
-CTA: ${wizardCta || 'Saiba mais'}
-${brandContext ? `\n${brandContext}` : ''}
-${creativeStrategy ? `ESTRATÉGIA: ${creativeStrategy}` : ''}
-${creativeAesthetic ? `ESTÉTICA: ${creativeAesthetic}` : ''}
+      const hookMap: Record<string, string> = {
+        conversoes: 'NUMBER — especificidade numérica cria credibilidade (ex: 3x mais resultado, 47% de desconto)',
+        engajamento: 'IDENTITY — atribui identidade ao comprador, cria senso de tribo',
+        leads: 'NEGATION — nega o pior aspecto da categoria (ex: sem burocracia, sem contrato)',
+        awareness: 'CURIOSITY — curiosidade sem revelar tudo, força o clique'
+      };
 
-REGRAS DO PROMPT:
-- Descreva a composição visual detalhadamente
-- Inclua iluminação, cores, tipografia e elementos visuais
-- Mencione o texto que deve aparecer na imagem em PORTUGUÊS
-- Foque em elementos que geram alta conversão para ${adGoal}
-- O resultado deve ser uma imagem pronta para veicular como anúncio
-- Máximo 200 palavras
+      const lightingMap: Record<string, string> = {
+        instagram: '3-point professional setup: key light 45° + fill light suave + rim light separação',
+        tiktok: 'Natural window light, authentic feel, soft shadows, candid atmosphere',
+        facebook: 'Studio soft box, clean professional lighting, no harsh shadows',
+        youtube: 'Cinematic 3-point lighting, dramatic key light, colored rim accent'
+      };
 
-CRITICAL RULES — STRICTLY FOLLOW:
-1. FORBIDDEN ELEMENTS — NEVER include unless explicitly requested by user:
-   - Countdown timers, "00:00:00", time countdowns
-   - "Últimas Vagas", urgency/scarcity messages
-   - Any element NOT requested by the user
-2. TYPOGRAPHY — Be extremely specific:
-   - Always name a font style: "Bebas Neue bold condensed", "Playfair Display elegant serif", "Montserrat geometric bold", etc.
-   - NEVER use generic "sans-serif" or "basic font"
-3. TEXT IN IMAGE — All text MUST be in perfect Portuguese (BR):
-   - Spell-check every word before including it
-   - Known errors to avoid: "aplicada" NOT "aplicaad", "participação" NOT "particitação", "promoção" NOT "promoçao", "negócios" NOT "negocios"
-4. CONTENT — Reflect EXACTLY the user objective, no dramatization
-5. The prompt must describe a READY-TO-USE professional ad image
+      const colorTempMap: Record<string, string> = {
+        urgencia: '6000K cold white — urgency, clarity, high energy',
+        elegante: '3500K warm golden — luxury, sophistication, exclusivity',
+        divertido: '5500K neutral bright — cheerful, energetic, vibrant',
+        profissional: '5000K neutral — trust, authority, professionalism'
+      };
 
-Retorne APENAS o prompt em inglês, sem explicações adicionais.`;
+      const nicheVisualMap: Record<string, string> = {
+        default: 'dark premium background, gold accents, professional lighting',
+        saude: 'clean white to soft green gradient, natural elements, bokeh soft circles',
+        beleza: 'rose gold to champagne gradient, silk texture, feminine luxury',
+        fitness: 'dark dramatic background, orange-red energy burst, power lighting',
+        tech: 'ultra dark #070B14, electric blue grid lines, glassmorphism elements',
+        gospel: 'deep navy #0D1B2A, golden divine light rays, purple accent #4A2080',
+        food: 'warm dark chocolate background, amber spotlights, appetite-stimulating',
+        educacao: 'bright white to sky blue, geometric shapes, knowledge atmosphere',
+        imoveis: 'sophisticated dark navy, gold geometric lines, architectural abstract',
+        moda: 'editorial black, diagonal spotlight, fashion magazine aesthetic'
+      };
+
+      // Detectar nicho automaticamente pelo produto/serviço
+      const detectNiche = (product: string): string => {
+        const p = product.toLowerCase();
+        if (p.match(/saúde|suplemento|vitamina|nutrição|clínica|médico|farmácia/)) return 'saude';
+        if (p.match(/beleza|cosmétic|maquiagem|skincare|cabelo|estética/)) return 'beleza';
+        if (p.match(/academia|fitness|musculação|personal|treino|esporte/)) return 'fitness';
+        if (p.match(/tech|software|app|sistema|digital|ia|inteligência/)) return 'tech';
+        if (p.match(/igreja|gospel|cristã|ministério|culto|louvor|jesus/)) return 'gospel';
+        if (p.match(/restaurante|comida|delivery|lanche|pizza|sushi|food/)) return 'food';
+        if (p.match(/curso|escola|faculdade|educação|aula|ensino|treinamento/)) return 'educacao';
+        if (p.match(/imóvel|apartamento|casa|imobiliária|terreno|construção/)) return 'imoveis';
+        if (p.match(/moda|roupa|vestido|calçado|acessório|fashion|estilo/)) return 'moda';
+        return 'default';
+      };
+
+      const detectedNiche = detectNiche(wizardProduct || '');
+      const nicheVisual = nicheVisualMap[detectedNiche] || nicheVisualMap.default;
+      const layout = layoutMap[adGoal] || layoutMap.conversoes;
+      const hookFormula = hookMap[adGoal] || hookMap.conversoes;
+      const lighting = lightingMap[adPlatform] || lightingMap.instagram;
+      const colorTemp = colorTempMap[wizardStyle] || colorTempMap.profissional;
+
+      const systemPrompt = `You are Lumina Ad Creator, a senior performance marketing designer specialized in high-converting social media ads for the Brazilian market. You create static ad images with professional agency-grade visual hierarchy, conversion-optimized copy, and scroll-stopping aesthetics.
+
+CAMPAIGN BRIEFING:
+- OBJECTIVE: ${goalMap[adGoal] || adGoal}
+- PLATFORM: ${platformMap[adPlatform] || adPlatform}
+- PRODUCT/SERVICE: ${wizardProduct}
+- TARGET AUDIENCE: ${wizardAudience || 'Brazilian general audience'}
+- VISUAL STYLE: ${styleMap[wizardStyle] || wizardStyle}
+- CTA TEXT: ${wizardCta || 'Saiba mais'}
+${brandContext ? `- BRAND IDENTITY: ${brandContext}` : ''}
+${creativeStrategy ? `- STRATEGY: ${creativeStrategy}` : ''}
+${creativeAesthetic ? `- AESTHETIC: ${creativeAesthetic}` : ''}
+
+FRAMEWORK MASTER — 7 REQUIRED COMPONENTS (ALL must be present):
+1. HERO VISUAL: Main image occupying 50-65% of canvas — product recortado with clean shadow OR human face with relevant expression
+2. HEADLINE: Max 6 words | weight 800-900 | Hook formula: ${hookFormula}
+3. SUBHEADLINE/PROOF: 1-2 lines of validation — statistic, testimonial or social proof element
+4. OFFER BADGE: Circle or starburst shape with offer/benefit text | high contrast color
+5. PRODUCT VISUAL: Isolated product with subtle shadow, tridimensional feel
+6. CTA: "${wizardCta || 'Saiba mais'}" — bold, high contrast, bottom-right or full-width bottom
+7. BRAND: Logo top-left + URL/handle footer — discreet but always present
+
+LAYOUT PRESET: ${layout}
+
+VISUAL DIRECTION FRAMEWORK — TECHNICAL EXECUTION:
+- LIGHTING: ${lighting} | Color temperature: ${colorTemp}
+- PHOTOGRAPHY STYLE: ${adGoal === 'leads' ? 'corporate portrait, confident expression, eye contact with camera' : adGoal === 'engajamento' ? 'lifestyle authentic, natural light, candid moment' : adGoal === 'awareness' ? 'editorial cinematic, artistic composition' : 'packshot premium, product photography, clean isolation'}
+- DEPTH OF FIELD: ${adGoal === 'leads' ? 'shallow — subject isolated, soft background bokeh f/2.8' : 'medium — product sharp, background softly blurred f/4-5.6'}
+- VISUAL TREND 2025: ${detectedNiche === 'tech' ? 'glassmorphism elements, dark hyperreal' : detectedNiche === 'gospel' ? 'dark luxe, divine light rays' : detectedNiche === 'fitness' ? 'dramatic split lighting, power aesthetic' : detectedNiche === 'beleza' ? '3D hyperrealism product, liquid organic shapes' : 'controlled maximalism, layered depth'}
+- NICHE VISUAL: ${nicheVisual}
+
+COPY STRUCTURE — 3 LAYERS:
+- Layer 1 STOP: Headline using ${hookFormula} — interrupts scroll in 0.3s
+- Layer 2 INTEREST: Subheadline + social proof element — justifies interest in 2-3s  
+- Layer 3 ACTION: "${wizardCta || 'Saiba mais'}" CTA + offer urgency — converts in 4-8s total
+
+COMPOSITION RULES:
+- Visual flow: HERO → HEADLINE → SUBHEADLINE → BADGE → CTA (must be followed exactly)
+- Minimum 45% negative space — clean, breathable layout
+- CTA always in predictable position: bottom-right corner or full-width bottom strip
+- Rounded corners on all closed elements (badges, buttons, boxes)
+- Subtle drop shadow (soft, 0 4px 12px rgba(0,0,0,0.15)) for depth
+
+CRITICAL QUALITY RULES — NEVER VIOLATE:
+1. ALL TEXT IN IMAGE must be in PERFECT Portuguese (BR) — spell-check every word
+   - NEVER: "aplicaad" → ALWAYS: "aplicada"
+   - NEVER: "particitação" → ALWAYS: "participação"  
+   - NEVER: "promoçao" → ALWAYS: "promoção"
+   - NEVER: "negocios" → ALWAYS: "negócios"
+2. FORBIDDEN unless explicitly requested: countdown timers, "00:00:00", "Últimas Vagas", scarcity elements
+3. TYPOGRAPHY: Always name specific font — "Bebas Neue bold condensed", "Playfair Display elegant serif", "Montserrat Black geometric". NEVER generic "sans-serif"
+4. Maximum 3 fonts | Maximum 4 colors total
+5. 4K photorealistic quality | Clean cuts, no jagged edges | No watermarks
+6. Reflect EXACTLY what the user requested — no dramatization, no invented elements
+7. Agency-grade professional advertising photography standard
+
+OUTPUT: Return ONLY the final image generation prompt in English, maximum 250 words. No explanations, no preamble, no meta-commentary.`;
 
       const result = await client.models.generateContent({
         model: 'gemini-2.5-flash',
