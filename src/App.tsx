@@ -1765,7 +1765,7 @@ function AppContent() {
     
     // If no prompts and not lipsync, return. 
     // If lipsync, we can use an empty string to trigger default prompt logic.
-    if (rawPrompts.length === 0 || (isCreativeActive && creativePrompt.trim() === '')) {
+    if (rawPrompts.length === 0 || (isCreativeActive && currentPrompt.trim() === '')) {
       if (isLipsyncActive) {
         rawPrompts = [""];
       } else if (isCreativeActive) {
