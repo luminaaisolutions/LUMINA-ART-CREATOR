@@ -1049,6 +1049,7 @@ function AppContent() {
   const [sessionPreviews, setSessionPreviews] = useState<Record<string, string>>({});
   const [activeGenerations, setActiveGenerations] = useState<Set<string>>(new Set());
   const [selectedForDownload, setSelectedForDownload] = useState<Set<string>>(new Set());
+  const [expandedPromptIds, setExpandedPromptIds] = useState<Set<string>>(new Set());
   const [isDownloadingBatch, setIsDownloadingBatch] = useState(false);
   const [diagStatus, setDiagStatus] = useState<{
     firebase: 'pending' | 'ok' | 'error',
@@ -6316,13 +6317,47 @@ const handleBatchDownload = async (ids: string[]) => {
                               {item.status === 'completed' ? 'Finalizado' : item.status === 'failed' ? 'Falhou' : 'Gerando'}
                             </span>
                           </div>
-                          <button 
-                            onClick={() => handleDelete(item.id)}
-                            className="text-gray-600 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {item.prompt && (
+                              <button
+                                onClick={() => setExpandedPromptIds(prev => {
+                                  const next = new Set(prev);
+                                  next.has(item.id) ? next.delete(item.id) : next.add(item.id);
+                                  return next;
+                                })}
+                                className="flex items-center gap-1 text-[9px] font-black text-gray-500 hover:text-[#d4af37] transition-colors uppercase tracking-widest"
+                              >
+                                {expandedPromptIds.has(item.id) ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                                Ver Prompt
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => handleDelete(item.id)}
+                              className="text-gray-600 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
+
+                        {/* Prompt expandível */}
+                        {expandedPromptIds.has(item.id) && item.prompt && (
+                          <div className="px-4 pb-4 bg-[#161616] border-t border-[#222]">
+                            <div className="bg-[#111] rounded-xl p-3 mt-2 relative group/prompt">
+                              <p className="text-[10px] text-gray-400 leading-relaxed font-mono pr-8">{item.prompt}</p>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(item.prompt);
+                                  showNotification('Prompt copiado!', 'success');
+                                }}
+                                className="absolute top-2 right-2 text-gray-600 hover:text-[#d4af37] transition-colors opacity-0 group-hover/prompt:opacity-100"
+                                title="Copiar prompt"
+                              >
+                                <Copy size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </motion.div>
                     );
                   })}
@@ -6520,9 +6555,40 @@ const handleBatchDownload = async (ids: string[]) => {
                         <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter ${item.type === 'video' ? 'bg-blue-500/20 text-blue-400' : item.type === 'lipsync' ? 'bg-pink-500/20 text-pink-400' : 'bg-purple-500/20 text-purple-400'}`}>
                           {item.type}
                         </span>
-                        <span className="text-[10px] text-gray-600 font-mono">#{item.id}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-600 font-mono">#{item.id}</span>
+                          {item.prompt && (
+                            <button
+                              onClick={() => setExpandedPromptIds(prev => {
+                                const next = new Set(prev);
+                                next.has(item.id) ? next.delete(item.id) : next.add(item.id);
+                                return next;
+                              })}
+                              className="flex items-center gap-1 text-[9px] font-black text-gray-500 hover:text-[#d4af37] transition-colors uppercase tracking-widest"
+                            >
+                              {expandedPromptIds.has(item.id) ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                              Ver Prompt
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed italic">"{item.prompt}"</p>
+
+                      {/* Prompt expandível */}
+                      {expandedPromptIds.has(item.id) && item.prompt && (
+                        <div className="bg-[#111] rounded-xl p-3 mt-1 relative group/prompt">
+                          <p className="text-[10px] text-gray-400 leading-relaxed font-mono pr-8">{item.prompt}</p>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(item.prompt);
+                              showNotification('Prompt copiado!', 'success');
+                            }}
+                            className="absolute top-2 right-2 text-gray-600 hover:text-[#d4af37] transition-colors opacity-0 group-hover/prompt:opacity-100"
+                            title="Copiar prompt"
+                          >
+                            <Copy size={12} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 ));
