@@ -3121,7 +3121,6 @@ const handleBatchDownload = async (ids: string[]) => {
     // Toggle — clica de novo para deselecionar
     if (selectedStyle === style) {
       setSelectedStyle('');
-      setStyle('');
       setPrompt('');
       return;
     }
