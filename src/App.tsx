@@ -1928,6 +1928,7 @@ function AppContent() {
         }
         
         // 2. Call Gemini API
+        console.log(`[DEBUG] currentType=${currentType} currentUseLipsync=${currentUseLipsync} isCreativeActive=${isCreativeActive} itemPrompt="${itemPrompt?.substring(0,50)}"`);
         if (currentType === 'image' && !(currentUseLipsync && currentLipsyncAudio)) {
           // 2a. Enhance prompt for better image results
           await updateDoc(doc(db, itemPath), { progress: 20, status: 'processing' });
