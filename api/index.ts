@@ -377,20 +377,37 @@ COMPOSITION RULES:
 - Rounded corners on all closed elements (badges, buttons, boxes)
 - Subtle drop shadow (soft, 0 4px 12px rgba(0,0,0,0.15)) for depth
 
-CRITICAL QUALITY RULES — NEVER VIOLATE:
-1. ALL TEXT IN IMAGE must be in PERFECT Portuguese (BR) — spell-check every word
-   - NEVER: "aplicaad" → ALWAYS: "aplicada"
-   - NEVER: "particitação" → ALWAYS: "participação"  
-   - NEVER: "promoçao" → ALWAYS: "promoção"
-   - NEVER: "negocios" → ALWAYS: "negócios"
-2. FORBIDDEN unless explicitly requested: countdown timers, "00:00:00", "Últimas Vagas", scarcity elements
-3. TYPOGRAPHY: Always name specific font — "Bebas Neue bold condensed", "Playfair Display elegant serif", "Montserrat Black geometric". NEVER generic "sans-serif"
-4. Maximum 3 fonts | Maximum 4 colors total
-5. 4K photorealistic quality | Clean cuts, no jagged edges | No watermarks
-6. Reflect EXACTLY what the user requested — no dramatization, no invented elements
-7. Agency-grade professional advertising photography standard
+TYPOGRAPHY SYSTEM — MANDATORY FONT PAIRS BY STYLE:
+- urgencia/divertido: Headline "Bebas Neue Bold Condensed" + Body "Montserrat SemiBold" + Badge "Impact Heavy"
+- elegante/luxo: Headline "Playfair Display Black Italic" + Body "Cormorant Garamond Regular" + CTA "Didot Bold"
+- profissional/corporativo: Headline "Montserrat Black 900" + Body "Inter SemiBold 600" + Badge "Oswald Bold"
+- minimalista: Headline "Helvetica Neue Ultra Light" + Body "Futura Light" + CTA "Gill Sans Bold"
+You MUST use the exact font names above matching the visual style. NEVER use generic "sans-serif" or "bold font".
 
-OUTPUT: Return ONLY the final image generation prompt in English, maximum 250 words. No explanations, no preamble, no meta-commentary.`;
+PORTUGUESE TEXT ACCURACY — ZERO TOLERANCE:
+- You will include Portuguese (BR) text directly in the prompt as EXACT strings in quotes
+- Format: headline text: "TEXTO EXATO AQUI" — the AI must render these exact characters
+- Every accent mark is mandatory: ã, ç, ê, ó, á, í, ú, â, ô, õ
+- BANNED misspellings: "aplicaad"→"aplicada", "promoçao"→"promoção", "negocios"→"negócios", "particitação"→"participação"
+- The CTA text "${wizardCta || 'Saiba Mais'}" must appear EXACTLY as written — character by character
+- If Ideogram model: wrap each text element in explicit instruction: 'render the text exactly: "[TEXT]"'
+
+VISUAL RICHNESS RULES — MANDATORY ELEMENTS:
+- Hero image must have dramatic lighting with visible light rays or gradients
+- Include at least 2 decorative elements: geometric shapes, particles, bokeh circles, or color overlays
+- Badge/offer element must have drop shadow AND gradient fill
+- Background must have texture OR gradient — never flat solid color
+- CTA button must be 3D-style with highlight and shadow
+- Minimum 3 distinct visual layers: background, midground, foreground
+
+CRITICAL QUALITY RULES:
+1. FORBIDDEN: countdown timers, "00:00:00", "Últimas Vagas" unless explicitly requested
+2. Maximum 3 fonts | Maximum 4 colors total
+3. 4K photorealistic | Clean cuts | No watermarks
+4. Agency-grade professional advertising photography standard
+5. Reflect EXACTLY what the user requested — no invented elements
+
+OUTPUT: Return ONLY the final image generation prompt in English, maximum 300 words. No explanations, no preamble, no meta-commentary.`;
 
       const result = await client.models.generateContent({
         model: 'gemini-2.5-flash',
