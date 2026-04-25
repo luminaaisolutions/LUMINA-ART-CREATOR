@@ -2783,6 +2783,10 @@ if (referenceImages.length > 0) {
         console.error('executeGenerations failed:', err);
         setIsProcessing(false);
       });
+    } catch(outerErr: any) {
+      console.error('[HANDLE-CREATE-OUTER-ERROR]', outerErr?.message, outerErr?.stack);
+      setIsProcessing(false);
+    }
   };
 
   const handleDelete = async (itemId: string) => {
