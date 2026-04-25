@@ -1749,10 +1749,9 @@ function AppContent() {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent, forceLipsync?: boolean, forceCreative?: boolean) => {
+  const handleCreate = async (e: React.FormEvent, forceLipsync?: boolean, forceCreative?: boolean, forcePrompt?: string) => {
     e.preventDefault();
     if (!user || !userData) return;
-
     const isLipsyncActive = forceLipsync !== undefined ? forceLipsync : (activeTab === 'lipsync');
     const isCreativeActive = forceCreative !== undefined ? forceCreative : (activeTab === 'projects');
     
@@ -1815,7 +1814,7 @@ function AppContent() {
     // Remove automatic switch to dashboard to stay in the current tab and show results
     // setActiveTab('dashboard');
     
-    const currentPrompt = isCreativeActive ? creativePrompt : prompt;
+    const currentPrompt = forcePrompt || (isCreativeActive ? creativePrompt : prompt);
     const currentType = isCreativeActive ? 'image' : type;
     const currentAspectRatio = isCreativeActive ? (
       creativeFormat.includes('9:16') ? '9:16' : 
@@ -6062,7 +6061,8 @@ const handleBatchDownload = async (ids: string[]) => {
                                 <button
                                   type="button"
                                   disabled={isProcessing}
-                                  onClick={(e) => handleCreate(e, false, true)}
+                                  onClick={(e) => {
+                                    onClick={(e) => handleCreate(e, false, true, wizardGeneratedPrompt || creativePrompt)}
                                   className="w-full bg-gradient-to-r from-[#d4af37] to-[#f0c832] text-black font-black py-5 rounded-3xl shadow-xl shadow-[#d4af37]/25 hover:shadow-[#d4af37]/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 text-base disabled:opacity-40 disabled:cursor-not-allowed"
                                 >
                                   {isProcessing ? (
