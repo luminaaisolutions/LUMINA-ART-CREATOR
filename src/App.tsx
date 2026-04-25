@@ -6204,7 +6204,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
                           <button
                             type="button"
-                            disabled={isProcessing || !creativeLogo}
+                            disabled={isProcessing}
                             onClick={(e) => handleCreate(e, false, true)}
                             className="w-full bg-gradient-to-r from-[#d4af37] to-[#f0c832] text-black font-black py-5 rounded-3xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-base disabled:opacity-40"
                           >
@@ -6213,9 +6213,9 @@ const handleBatchDownload = async (ids: string[]) => {
                           </button>
 
                           {!creativeLogo && (
-                            <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
-                              <AlertCircle size={13} className="text-amber-400 shrink-0" />
-                              <p className="text-[10px] text-amber-400 font-bold">Adicione a logomarca na coluna ao lado</p>
+                            <div className="flex items-center gap-2 p-3 bg-[#1a1a1a] border border-[#222] rounded-2xl">
+                              <AlertCircle size={13} className="text-gray-600 shrink-0" />
+                              <p className="text-[10px] text-gray-500 font-bold">Logo opcional — criativo gerado sem identidade visual</p>
                             </div>
                           )}
                         </div>
