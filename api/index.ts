@@ -377,12 +377,40 @@ COMPOSITION RULES:
 - Rounded corners on all closed elements (badges, buttons, boxes)
 - Subtle drop shadow (soft, 0 4px 12px rgba(0,0,0,0.15)) for depth
 
-TYPOGRAPHY SYSTEM — MANDATORY FONT PAIRS BY STYLE:
-- urgencia/divertido: Headline "Bebas Neue Bold Condensed" + Body "Montserrat SemiBold" + Badge "Impact Heavy"
-- elegante/luxo: Headline "Playfair Display Black Italic" + Body "Cormorant Garamond Regular" + CTA "Didot Bold"
-- profissional/corporativo: Headline "Montserrat Black 900" + Body "Inter SemiBold 600" + Badge "Oswald Bold"
-- minimalista: Headline "Helvetica Neue Ultra Light" + Body "Futura Light" + CTA "Gill Sans Bold"
-You MUST use the exact font names above matching the visual style. NEVER use generic "sans-serif" or "bold font".
+TYPOGRAPHY SYSTEM — ADVANCED FONT EFFECTS MANDATORY:
+- urgencia: Headline "Bebas Neue Bold Condensed" with 3D extrusion effect, deep drop shadow offset 6px, inner glow orange — Body "Impact Heavy" white with black stroke 3px outline
+- divertido: Headline "Paytone One" with rainbow gradient fill, bouncy 3D effect, thick white outline 4px — Body "Nunito ExtraBold" with colorful shadow
+- elegante: Headline "Playfair Display Black Italic" with gold foil metallic texture, subtle emboss — Body "Cormorant Garamond Light" with elegant thin shadow
+- luxo: Headline "Didot Bold" with chrome mirror effect, platinum gradient fill — Body "Optima Regular" with ultra-thin gold shadow
+- profissional: Headline "Montserrat Black 900" with sharp drop shadow offset 4px dark, clean white fill — Body "Inter SemiBold" with subtle grey shadow
+- minimalista: Headline "Helvetica Neue Thin" with hairline stroke only, no fill — Body "Futura Light" letterspaced +200
+
+ADVANCED TEXT EFFECTS — ALWAYS APPLY ONE OR MORE:
+- 3D extruded text: letters appear to pop out of the canvas with depth and perspective
+- Chrome/metallic text: reflective surface showing environment reflections
+- Gradient fill text: smooth color transition through each letter (gold→white, blue→cyan)
+- Neon glow text: colored outer glow 20-40px, matching accent color
+- Embossed text: pressed into background surface, subtle shadow and highlight
+- Glass morphism text: frosted glass appearance, semi-transparent with blur
+- Fire/energy text: flames or energy particles emanating from letters
+- Outlined stroke text: hollow letters with thick colored outline, transparent fill
+
+VISUAL EFFECTS LIBRARY — MANDATORY 3+ EFFECTS PER AD:
+- Bokeh circles: soft out-of-focus light orbs floating in background, various sizes
+- Light rays: dramatic god rays or sun rays piercing through scene
+- Particle system: floating dust, sparkles, or confetti matching brand colors  
+- Holographic overlay: iridescent rainbow sheen on product or background
+- Glitch effect: subtle digital distortion on text or edges for modern feel
+- Color grading: cinematic LUT — teal-orange, moody blue, warm golden hour
+- Vignette: darkened corners drawing focus to center composition
+- Lens flare: realistic camera lens flare on light sources
+- Motion blur streaks: speed lines suggesting movement and energy
+- Chromatic aberration: slight RGB color fringing on edges for digital aesthetic
+- Frosted glass panels: glassmorphism cards floating over background
+- Geometric overlays: semi-transparent triangles, hexagons, or grid lines
+- Gradient mesh background: complex multi-color gradient with organic flow
+- Film grain: subtle analog noise overlay for premium editorial feel
+- Neon signs: glowing colored tubes spelling words or forming shapes
 
 PORTUGUESE TEXT ACCURACY — ZERO TOLERANCE:
 - You will include Portuguese (BR) text directly in the prompt as EXACT strings in quotes
