@@ -1778,7 +1778,7 @@ function AppContent() {
     
     const finalPrompts = rawPrompts.slice(0, 20);
     const totalCost = costPerItem * currentQuantity * finalPrompts.length;
-    console.log(`[DEBUG-1] rawPrompts=${rawPrompts.length} finalPrompts=${finalPrompts.length} totalCost=${totalCost} credits=${userData?.credits} isCreativeActive=${isCreativeActive} currentPrompt="${(currentPrompt||'').substring(0,40)}"`);
+    console.log(`[DEBUG-1] rawPrompts=${rawPrompts.length} finalPrompts=${finalPrompts.length} totalCost=${totalCost} credits=${userData?.credits} isCreativeActive=${isCreativeActive} activePrompt="${(activeCreativePrompt||'').substring(0,40)}"`);
 
     if (rawPrompts.length > 20) {
       alert("Limite de 20 prompts atingido. Apenas os primeiros 20 serão processados.");
