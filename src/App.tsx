@@ -1778,6 +1778,7 @@ function AppContent() {
     
     const finalPrompts = rawPrompts.slice(0, 20);
     const totalCost = costPerItem * currentQuantity * finalPrompts.length;
+    console.log(`[DEBUG-1] rawPrompts=${rawPrompts.length} finalPrompts=${finalPrompts.length} totalCost=${totalCost} credits=${userData?.credits} isCreativeActive=${isCreativeActive} currentPrompt="${(currentPrompt||'').substring(0,40)}"`);
 
     if (rawPrompts.length > 20) {
       alert("Limite de 20 prompts atingido. Apenas os primeiros 20 serão processados.");
@@ -2772,6 +2773,7 @@ if (referenceImages.length > 0) {
       }
     };
 
+    console.log(`[DEBUG-EXEC] finalPrompts.length=${finalPrompts.length} currentQuantity=${currentQuantity} isCreativeActive=${isCreativeActive} creativePrompt="${(currentPrompt||'').substring(0,50)}"`);
     executeGenerations()
       .then(() => {
         console.log('[Generation] Todas as gerações concluídas!');
