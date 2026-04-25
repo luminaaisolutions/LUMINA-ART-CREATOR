@@ -720,7 +720,7 @@ function AppContent() {
   const [type, setType] = useState<'video' | 'image'>('video');
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [resolution, setResolution] = useState('1080p');
-  const [modelType, setModelType] = useState<'nano' | 'imagen'>('nano');
+  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram'>('nano');
   const [quantity, setQuantity] = useState(1);
   const [videoDuration, setVideoDuration] = useState(4); // Default 4s
   const [lipsyncDuration, setLipsyncDuration] = useState(4); // Default 4s
@@ -1778,6 +1778,7 @@ function AppContent() {
     
     const finalPrompts = rawPrompts.slice(0, 20);
     const totalCost = costPerItem * currentQuantity * finalPrompts.length;
+    console.log(`[DEBUG-1] rawPrompts=${rawPrompts.length} finalPrompts=${finalPrompts.length} totalCost=${totalCost} credits=${userData?.credits} isCreativeActive=${isCreativeActive} activePrompt="${(activeCreativePrompt||'').substring(0,40)}"`);
 
     if (rawPrompts.length > 20) {
       alert("Limite de 20 prompts atingido. Apenas os primeiros 20 serão processados.");
@@ -1928,6 +1929,7 @@ function AppContent() {
         }
         
         // 2. Call Gemini API
+        console.log(`[DEBUG] currentType=${currentType} currentUseLipsync=${currentUseLipsync} isCreativeActive=${isCreativeActive} itemPrompt="${itemPrompt?.substring(0,50)}"`);
         if (currentType === 'image' && !(currentUseLipsync && currentLipsyncAudio)) {
           // 2a. Enhance prompt for better image results
           await updateDoc(doc(db, itemPath), { progress: 20, status: 'processing' });
@@ -2770,6 +2772,8 @@ if (referenceImages.length > 0) {
         );
       }
     };
+
+    console.log(`[DEBUG-EXEC] finalPrompts.length=${finalPrompts.length} currentQuantity=${currentQuantity} isCreativeActive=${isCreativeActive} creativePrompt="${(currentPrompt||'').substring(0,50)}"`);
     executeGenerations()
       .then(() => {
         console.log('[Generation] Todas as gerações concluídas!');
@@ -5807,11 +5811,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                       type="button"
                                       onClick={() => {
                                         setAdGoal(g.id as any);
-                                        if (g.id === 'conversoes' || g.id === 'lead') {
-                                          setModelType('ideogram');
-                                        } else {
-                                          setModelType('nano');
-                                        }
+                                        setModelType('nano'); // Gemini como motor padrão para todos os objetivos
                                       }}
                                       className={`p-4 rounded-2xl border text-left transition-all group ${adGoal === g.id ? 'bg-[#d4af37]/10 border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
                                     >
@@ -5887,12 +5887,6 @@ const handleBatchDownload = async (ids: string[]) => {
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
                                   <p className="text-sm font-bold text-white">Oferta ou CTA <span className="text-gray-600 text-xs font-normal">(opcional)</span></p>
-                                  {(adGoal === 'conversoes' || adGoal === 'lead') && (
-                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-full">
-                                      <Sparkles size={10} />
-                                      Ideogram — texto na imagem ativo
-                                    </span>
-                                  )}
                                 </div>
                                 <input
                                   type="text"
@@ -6121,11 +6115,10 @@ const handleBatchDownload = async (ids: string[]) => {
                           {/* Motor */}
                           <div className="space-y-2">
                             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Motor de geração</label>
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-2 gap-2">
                               {[
-                                { id: 'nano',     label: 'Gemini',   sub: '⚡ Rápido',      badge: 'Padrão' },
-                                { id: 'imagen',   label: 'Imagen 4', sub: '🎨 Alta qualidade', badge: 'Pro' },
-                                { id: 'ideogram', label: 'Ideogram', sub: '✍️ Melhor com texto', badge: 'Copy' },
+                                { id: 'nano',   label: 'Gemini',   sub: '⚡ Rápido',       badge: 'Padrão' },
+                                { id: 'imagen', label: 'Imagen 4', sub: '🎨 Alta qualidade', badge: 'Pro' },
                               ].map(m => (
                                 <button
                                   type="button"
