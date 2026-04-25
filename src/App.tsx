@@ -1811,6 +1811,8 @@ function AppContent() {
     
     // Logo é opcional
     const currentPrompt = forcePrompt || (isCreativeActive ? creativePrompt : prompt);
+    console.log('[HANDLE-CREATE-START] isCreativeActive=', isCreativeActive, 'currentPrompt=', currentPrompt?.substring(0,40));
+    try {
     setIsProcessing(true);
     // Remove automatic switch to dashboard to stay in the current tab and show results
     // setActiveTab('dashboard');
