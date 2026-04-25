@@ -2778,6 +2778,23 @@ if (referenceImages.length > 0) {
       .then(() => {
         console.log('[Generation] Todas as gerações concluídas!');
         setIsProcessing(false);
+        // Reset wizard para novo ciclo
+        if (isCreativeActive) {
+          setWizardStep(1);
+          setWizardProduct('');
+          setWizardAudience('');
+          setWizardStyle('');
+          setWizardCta('');
+          setWizardGeneratedPrompt('');
+          setCreativePrompt('');
+          setCreativeQuantity(1);
+          setAdGoal('conversoes');
+          setAdPlatform('instagram');
+          setCreativeRefAsset(null);
+          setCreativeProductAsset(null);
+          setSelectedTemplate(null);
+          setAdsMode('guided');
+        }
       })
       .catch(err => {
         console.error('executeGenerations failed:', err);
