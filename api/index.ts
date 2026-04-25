@@ -268,7 +268,7 @@ async function createServer() {
         profissional: 'PROFISSIONAL — corporativo, sério, confiável'
       };
 
-      const recommendedModel = adGoal === 'vender' || adGoal === 'leads' ? 'ideogram' : 'nano';
+      const recommendedModel = adGoal === 'conversoes' || adGoal === 'leads' ? 'ideogram' : 'nano';
 
       // Mapas avançados baseados nos Frameworks Master + Visual Direction
       const layoutMap: Record<string, string> = {
