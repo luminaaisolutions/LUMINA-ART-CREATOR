@@ -5521,7 +5521,9 @@ const handleBatchDownload = async (ids: string[]) => {
                         </div>
                       )}
                     </div>
-                      
+
+                    {/* Middle: Assets + Audio Prompt */}
+                    <div className="flex-1 min-w-[300px] space-y-6">
                       <div className="grid grid-cols-3 gap-4">
                         <div 
                           className={`aspect-square bg-[#1a1a1a] rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all relative group ${lipsyncAsset ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#222] hover:border-[#333] cursor-pointer'}`}
@@ -5651,11 +5653,7 @@ const handleBatchDownload = async (ids: string[]) => {
                             </>
                           )}
                         </div>
-                      </div>
-                    </div>
 
-                    {/* Middle: Audio Prompt and Settings */}
-                    <div className="flex-1 min-w-[300px] space-y-6">
                       <div>
                         <label className="block text-sm font-bold text-gray-400 mb-3 uppercase tracking-widest">Texto para Voz / Prompt</label>
                         <textarea 
