@@ -1162,6 +1162,132 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' }
       ];
 
+      // --- uploadToFal — upload de arquivo base64 para fal.ai storage ---
+      if (method === 'uploadToFal') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
+        if (!args.base64) return res.status(400).json({ error: "base64 é obrigatório." });
+
+        const ext = (args.mimeType || 'image/jpeg').split('/')[1]?.split(';')[0] || 'jpg';
+        const uploadRes = await fetch('https://fal.run/files/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Key ${falKey}`,
+            'Content-Type': 'application/octet-stream',
+            'X-Fal-File-Name': `reference.${ext}`
+          },
+          body: Buffer.from(args.base64, 'base64')
+        });
+
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json().catch(() => ({}));
+          return res.status(uploadRes.status).json({ error: err?.detail || 'Upload failed' });
+        }
+
+        const data = await uploadRes.json();
+        const url = data?.url || data?.file_url;
+        console.log(`[uploadToFal] Uploaded: ${url}`);
+        return res.json({ url });
+      }
+
+      // --- generateKling — Kling 3.0 via fal.ai ---
+      if (method === 'generateKling') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
+
+        const tier = args.tier || 'standard'; // 'standard' | 'pro'
+        const mode = args.imageUrl ? 'image-to-video' : 'text-to-video';
+        const endpoint = `https://fal.run/fal-ai/kling-video/v3/${tier}/${mode}`;
+
+        const klingBody: any = {
+          prompt: args.prompt,
+          duration: String(args.duration || 5),
+          aspect_ratio: args.aspectRatio || '9:16',
+          cfg_scale: 0.5,
+          generate_audio: args.generateAudio !== false,
+        };
+
+        if (args.imageUrl) klingBody.image_url = args.imageUrl;
+        if (args.negativePrompt) klingBody.negative_prompt = args.negativePrompt;
+
+        console.log(`[Kling3] endpoint=${endpoint} duration=${klingBody.duration}s ratio=${klingBody.aspect_ratio} audio=${klingBody.generate_audio}`);
+
+        const klingRes = await withRetry(
+          () => fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(klingBody)
+          }),
+          3, 5000, 'generateKling'
+        );
+
+        if (!klingRes.ok) {
+          const err = await klingRes.json().catch(() => ({ error: klingRes.statusText }));
+          console.error("[Kling3] Error:", JSON.stringify(err));
+          return res.status(klingRes.status).json({ error: err?.detail || err?.error || 'Kling generation failed' });
+        }
+
+        const klingData = await klingRes.json();
+        console.log(`[Kling3] Sucesso. Video: ${klingData?.video?.url}`);
+
+        // Kling retorna direto (síncrono no fal.ai)
+        if (klingData?.video?.url) {
+          return res.json({ videoUrl: klingData.video.url, done: true });
+        }
+
+        return res.status(500).json({ error: 'Kling não retornou vídeo válido.' });
+      }
+
+      // --- generateSeedance — Seedance 2.0 via fal.ai ---
+      if (method === 'generateSeedance') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
+
+        const tier = args.tier || 'standard'; // 'standard' | 'fast'
+        const mode = args.imageUrl ? 'image-to-video' : 'text-to-video';
+        const modelId = tier === 'fast'
+          ? `bytedance/seedance-2.0/fast/${mode}`
+          : `bytedance/seedance-2.0/${mode}`;
+        const endpoint = `https://fal.run/${modelId}`;
+
+        const seedanceBody: any = {
+          prompt: args.prompt,
+          duration: String(args.duration || 5),
+          resolution: '720p',
+          aspect_ratio: args.aspectRatio || '9:16',
+          generate_audio: args.generateAudio !== false,
+        };
+
+        if (args.imageUrl) seedanceBody.image_url = args.imageUrl;
+        if (args.endImageUrl) seedanceBody.end_image_url = args.endImageUrl;
+
+        console.log(`[Seedance2] endpoint=${endpoint} duration=${seedanceBody.duration}s ratio=${seedanceBody.aspect_ratio} tier=${tier}`);
+
+        const seedanceRes = await withRetry(
+          () => fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(seedanceBody)
+          }),
+          3, 5000, 'generateSeedance'
+        );
+
+        if (!seedanceRes.ok) {
+          const err = await seedanceRes.json().catch(() => ({ error: seedanceRes.statusText }));
+          console.error("[Seedance2] Error:", JSON.stringify(err));
+          return res.status(seedanceRes.status).json({ error: err?.detail || err?.error || 'Seedance generation failed' });
+        }
+
+        const seedanceData = await seedanceRes.json();
+        console.log(`[Seedance2] Sucesso. Video: ${seedanceData?.video?.url}`);
+
+        if (seedanceData?.video?.url) {
+          return res.json({ videoUrl: seedanceData.video.url, done: true });
+        }
+
+        return res.status(500).json({ error: 'Seedance não retornou vídeo válido.' });
+      }
+
       // --- generateVideos via REST API with OAuth (Service Account) ---
       if (method === 'generateVideos') {
         console.log(`[Gemini Proxy] Calling generateVideos for ${args.model} via REST`);
