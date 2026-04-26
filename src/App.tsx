@@ -721,15 +721,19 @@ function AppContent() {
   const [type, setType] = useState<'video' | 'image'>('video');
   const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance'>('veo');
   const [videoTier, setVideoTier] = useState<'standard' | 'pro' | 'fast'>('standard');
+  const [showCreditFlyer, setShowCreditFlyer] = useState(false);
+  const creditFlyerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ao trocar motor, ajusta duração para o valor padrão do motor
   const handleVideoEngineChange = (engine: 'veo' | 'kling' | 'seedance', tier: 'standard' | 'pro' | 'fast' = 'standard') => {
     setVideoEngine(engine);
     setVideoTier(tier);
-    // Reset duração para o padrão do motor
     setVideoDuration(engine === 'veo' ? 4 : 5);
-    // Limita quantidade a máximo 3 para vídeo
     setQuantity(prev => Math.min(prev, 3));
+    // Dispara flyer de créditos por 3 segundos
+    if (creditFlyerTimerRef.current) clearTimeout(creditFlyerTimerRef.current);
+    setShowCreditFlyer(true);
+    creditFlyerTimerRef.current = setTimeout(() => setShowCreditFlyer(false), 3000);
   };
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [resolution, setResolution] = useState('1080p');
@@ -1042,7 +1046,13 @@ function AppContent() {
     setCreativePrompt(buildPrefixedPrompt(body, !!creativeRefAsset, !!creativeProductAsset));
   }, [creativeRefAsset, creativeProductAsset, buildPrefixedPrompt, stripPrefixes]);
 
-  // --- Auto-tag Prompt based on Assets ---
+  // Dispara flyer ao mudar duração ou quantidade no modo vídeo
+  useEffect(() => {
+    if (type !== 'video') return;
+    if (creditFlyerTimerRef.current) clearTimeout(creditFlyerTimerRef.current);
+    setShowCreditFlyer(true);
+    creditFlyerTimerRef.current = setTimeout(() => setShowCreditFlyer(false), 3000);
+  }, [videoDuration, quantity, videoTier]);
   useEffect(() => {
     setPrompt(prev => buildPrefixedPrompt(stripPrefixes(prev), !!refAsset, !!productAsset));
   }, [refAsset, productAsset]);
@@ -4864,14 +4874,15 @@ const handleBatchDownload = async (ids: string[]) => {
                                   </button>
                                 </div>
 
-                                {/* Info de custo */}
-                                <p className="text-[11px] text-gray-600 leading-relaxed">
-                                  {videoEngine === 'veo' ? '🎬 Veo 3.0 — Google Vertex AI · áudio nativo incluído'
-                                  : videoEngine === 'kling' && videoTier === 'standard' ? '🔥 Kling Standard — $0.112/seg sem áudio · $0.168/seg com áudio'
-                                  : videoEngine === 'kling' && videoTier === 'pro' ? '💎 Kling Pro — $0.168/seg sem áudio · qualidade máxima'
-                                  : videoEngine === 'seedance' && videoTier === 'standard' ? '🌿 Seedance Standard — $0.30/seg · áudio nativo incluído'
-                                  : '⚡ Seedance Fast — $0.24/seg · menor latência'}
-                                </p>
+                                {/* Flyer animado de créditos — aparece 3s ao trocar motor/duração/tier */}
+                                {showCreditFlyer && (
+                                  <div className="flex items-center gap-2 px-3 py-2 bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-xl animate-pulse">
+                                    <Sparkles size={12} className="text-[#d4af37] shrink-0" />
+                                    <span className="text-[12px] font-black text-[#d4af37]">
+                                      {getCostPerItem(false, false) * quantity} créditos por geração
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
