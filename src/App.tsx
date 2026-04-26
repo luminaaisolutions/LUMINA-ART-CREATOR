@@ -139,7 +139,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
               {errorMessage}
             </p>
             {errorDetails && (
-              <pre className="text-[10px] font-mono text-red-400 bg-red-500/5 p-4 rounded-xl mb-6 overflow-auto max-h-40 text-left">
+              <pre className="text-[12px] font-mono text-red-400 bg-red-500/5 p-4 rounded-xl mb-6 overflow-auto max-h-40 text-left">
                 {errorDetails}
               </pre>
             )}
@@ -279,7 +279,7 @@ function Timer({ start, end, status }: { start: any; end?: any; status: string }
   }, [start, end, status]);
 
   return (
-    <span className="flex items-center gap-1 text-[10px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+    <span className="flex items-center gap-1 text-[12px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">
       <Clock size={10} />
       {elapsed}s
     </span>
@@ -338,12 +338,12 @@ function LegalModal({ tab, onClose }: { tab: 'terms' | 'privacy' | 'contact', on
         <div className="flex-1 overflow-y-auto pr-4 space-y-6 text-gray-400 text-sm leading-relaxed custom-scrollbar">
           {active.sections.map((s, i) => (
             <section key={i} className="space-y-3 p-6 bg-white/5 rounded-3xl border border-white/5">
-              <h3 className="text-[#d4af37] font-black uppercase tracking-widest text-xs">{s.h}</h3>
+              <h3 className="text-[#d4af37] font-black uppercase tracking-widest text-sm">{s.h}</h3>
               <p>{s.p}</p>
               {s.h === "E-mail Oficial" && (
                 <a 
                   href={`mailto:${s.p}`} 
-                  className="inline-block mt-4 px-6 py-2 bg-[#d4af37] text-black font-black rounded-full text-[10px] hover:scale-105 transition-all"
+                  className="inline-block mt-4 px-6 py-2 bg-[#d4af37] text-black font-black rounded-full text-[12px] hover:scale-105 transition-all"
                 >
                   ENVIAR E-MAIL AGORA
                 </a>
@@ -354,7 +354,7 @@ function LegalModal({ tab, onClose }: { tab: 'terms' | 'privacy' | 'contact', on
 
         <button 
           onClick={onClose}
-          className="w-full bg-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] transition-all mt-8 uppercase tracking-widest text-xs"
+          className="w-full bg-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] transition-all mt-8 uppercase tracking-widest text-sm"
         >
           Fechar
         </button>
@@ -400,7 +400,7 @@ function RegistrationModal({ data, onChange, onSubmit, onGoogleLogin, isProcessi
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Nome</label>
+              <label className="text-[12px] font-black text-gray-500 uppercase tracking-widest ml-1">Nome</label>
               <input 
                 type="text" 
                 value={data.firstName}
@@ -410,7 +410,7 @@ function RegistrationModal({ data, onChange, onSubmit, onGoogleLogin, isProcessi
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Sobrenome</label>
+              <label className="text-[12px] font-black text-gray-500 uppercase tracking-widest ml-1">Sobrenome</label>
               <input 
                 type="text" 
                 value={data.lastName}
@@ -422,7 +422,7 @@ function RegistrationModal({ data, onChange, onSubmit, onGoogleLogin, isProcessi
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">E-mail</label>
+            <label className="text-[12px] font-black text-gray-500 uppercase tracking-widest ml-1">E-mail</label>
             <input 
               type="email" 
               value={data.email}
@@ -434,7 +434,7 @@ function RegistrationModal({ data, onChange, onSubmit, onGoogleLogin, isProcessi
 
           {onBack && (
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Senha</label>
+              <label className="text-[12px] font-black text-gray-500 uppercase tracking-widest ml-1">Senha</label>
               <div className="relative">
                 <input 
                   type={showPass ? "text" : "password"} 
@@ -455,7 +455,7 @@ function RegistrationModal({ data, onChange, onSubmit, onGoogleLogin, isProcessi
           )}
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Telefone / WhatsApp</label>
+            <label className="text-[12px] font-black text-gray-500 uppercase tracking-widest ml-1">Telefone / WhatsApp</label>
             <input 
               type="tel" 
               value={data.phone}
@@ -478,7 +478,7 @@ function RegistrationModal({ data, onChange, onSubmit, onGoogleLogin, isProcessi
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[#222]"></div>
             </div>
-            <div className="relative flex justify-center text-[8px] uppercase font-black tracking-widest">
+            <div className="relative flex justify-center text-[12px] uppercase font-black tracking-widest">
               <span className="bg-[#111] px-4 text-gray-500">Ou continue com</span>
             </div>
           </div>
@@ -487,7 +487,7 @@ function RegistrationModal({ data, onChange, onSubmit, onGoogleLogin, isProcessi
             type="button"
             onClick={onGoogleLogin}
             disabled={isProcessing}
-            className="w-full bg-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest disabled:opacity-50"
+            className="w-full bg-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest disabled:opacity-50"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -501,13 +501,13 @@ function RegistrationModal({ data, onChange, onSubmit, onGoogleLogin, isProcessi
           {onBack && (
             <button 
               onClick={onBack}
-              className="w-full text-gray-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all"
+              className="w-full text-gray-500 text-[12px] font-bold uppercase tracking-widest hover:text-white transition-all"
             >
               Já tenho uma conta? Entrar
             </button>
           )}
           
-          <p className="text-[10px] text-gray-600 text-center mt-6 uppercase tracking-widest font-bold">
+          <p className="text-[12px] text-gray-600 text-center mt-6 uppercase tracking-widest font-bold">
             Ao se cadastrar, você concorda com nossos <span onClick={onViewTerms} className="text-gray-400 underline cursor-pointer hover:text-[#d4af37] transition-colors">Termos de Uso</span>.
           </p>
         </div>
@@ -548,7 +548,7 @@ function LoginModal({ onLogin, onGoogleLogin, onSwitchToSignUp, onForgotPassword
 
         <div className="space-y-5">
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">E-mail</label>
+            <label className="text-[12px] font-black text-gray-500 uppercase tracking-widest ml-1">E-mail</label>
             <input 
               type="email" 
               value={email}
@@ -560,11 +560,11 @@ function LoginModal({ onLogin, onGoogleLogin, onSwitchToSignUp, onForgotPassword
 
           <div className="space-y-2">
             <div className="flex justify-between items-center px-1">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Senha</label>
+              <label className="text-[12px] font-black text-gray-500 uppercase tracking-widest">Senha</label>
               <button 
                 onClick={() => onForgotPassword(email)}
                 disabled={isResetting}
-                className="text-[10px] font-bold text-[#d4af37] hover:underline uppercase tracking-widest disabled:opacity-50"
+                className="text-[12px] font-bold text-[#d4af37] hover:underline uppercase tracking-widest disabled:opacity-50"
               >
                 {isResetting ? 'Enviando...' : 'Esqueceu a senha?'}
               </button>
@@ -600,7 +600,7 @@ function LoginModal({ onLogin, onGoogleLogin, onSwitchToSignUp, onForgotPassword
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[#222]"></div>
             </div>
-            <div className="relative flex justify-center text-[8px] uppercase font-black tracking-widest">
+            <div className="relative flex justify-center text-[12px] uppercase font-black tracking-widest">
               <span className="bg-[#111] px-4 text-gray-500">Ou continue com</span>
             </div>
           </div>
@@ -609,7 +609,7 @@ function LoginModal({ onLogin, onGoogleLogin, onSwitchToSignUp, onForgotPassword
             type="button"
             onClick={onGoogleLogin}
             disabled={isProcessing}
-            className="w-full bg-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-xs uppercase tracking-widest disabled:opacity-50"
+            className="w-full bg-white text-black font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest disabled:opacity-50"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -622,7 +622,7 @@ function LoginModal({ onLogin, onGoogleLogin, onSwitchToSignUp, onForgotPassword
 
           <button 
             onClick={onSwitchToSignUp}
-            className="w-full text-gray-500 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all"
+            className="w-full text-gray-500 text-[12px] font-bold uppercase tracking-widest hover:text-white transition-all"
           >
             Não tem uma conta? Cadastre-se
           </button>
@@ -3374,7 +3374,7 @@ const handleBatchDownload = async (ids: string[]) => {
             <h1 className="text-4xl font-black tracking-tighter">Verifique seu email</h1>
             <p className="text-gray-400">Digite o código de 6 dígitos enviado para seu email</p>
             <div className="mt-2">
-              <span className="text-[10px] text-[#d4af37] font-bold uppercase tracking-widest bg-[#d4af37]/10 py-1 px-3 rounded-full inline-block border border-[#d4af37]/20">
+              <span className="text-[12px] text-[#d4af37] font-bold uppercase tracking-widest bg-[#d4af37]/10 py-1 px-3 rounded-full inline-block border border-[#d4af37]/20">
                 Ambiente de Teste: Código disponível abaixo
               </span>
             </div>
@@ -3382,7 +3382,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
           <div className="bg-[#111] p-8 rounded-[32px] border border-[#222] space-y-6">
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Código enviado para</p>
+              <p className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">Código enviado para</p>
               <p className="font-bold text-[#d4af37]">{userData?.email || user?.email}</p>
             </div>
 
@@ -3418,7 +3418,7 @@ const handleBatchDownload = async (ids: string[]) => {
             <div className="space-y-4 pt-4">
               {(lastSentCode || userData?.verificationCode) && (
                 <div className="bg-[#d4af37] p-4 rounded-2xl text-center shadow-lg shadow-[#d4af37]/20 animate-pulse">
-                  <p className="text-[10px] font-black text-black uppercase tracking-widest mb-1">CÓDIGO DE ACESSO (TESTE)</p>
+                  <p className="text-[12px] font-black text-black uppercase tracking-widest mb-1">CÓDIGO DE ACESSO (TESTE)</p>
                   <p className="text-3xl font-black text-black tracking-[0.3em]">{lastSentCode || userData?.verificationCode}</p>
                 </div>
               )}
@@ -3434,14 +3434,14 @@ const handleBatchDownload = async (ids: string[]) => {
               <div className="flex flex-col gap-4">
                 <button 
                   onClick={() => sendOTP()}
-                  className="text-xs font-bold text-gray-400 hover:text-[#d4af37] transition-colors flex items-center justify-center gap-2"
+                  className="text-sm font-bold text-gray-400 hover:text-[#d4af37] transition-colors flex items-center justify-center gap-2"
                 >
                   <Clock size={14} />
                   Não recebeu o código? Reenviar código
                 </button>
                 <button 
                   onClick={handleLogout}
-                  className="text-xs font-bold text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-2"
+                  className="text-sm font-bold text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-2"
                 >
                   <ArrowRight size={14} className="rotate-180" />
                   Usar outro email
@@ -3450,7 +3450,7 @@ const handleBatchDownload = async (ids: string[]) => {
             </div>
           </div>
 
-          <div className="bg-[#111] py-3 px-6 rounded-full border border-[#222] inline-flex items-center gap-2 text-[10px] text-gray-500">
+          <div className="bg-[#111] py-3 px-6 rounded-full border border-[#222] inline-flex items-center gap-2 text-[12px] text-gray-500">
             <ShieldCheck size={14} className="text-[#d4af37]" />
             O código expira em 10 minutos. Verifique também sua pasta de spam.
           </div>
@@ -3477,7 +3477,7 @@ const handleBatchDownload = async (ids: string[]) => {
             {notification.type === 'success' ? <CheckCircle2 size={18} /> : 
              notification.type === 'error' ? <AlertCircle size={18} /> : 
              <Sparkles size={18} />}
-            <span className="text-xs font-bold uppercase tracking-widest leading-none">{notification.message}</span>
+            <span className="text-sm font-bold uppercase tracking-widest leading-none">{notification.message}</span>
             <button onClick={() => setNotification({ message: '', type: null })} className="ml-2 hover:text-white transition-colors">
               <X size={14} />
             </button>
@@ -3496,14 +3496,14 @@ const handleBatchDownload = async (ids: string[]) => {
             </div>
             <div className="flex flex-col items-start leading-none">
               <span className="font-black text-sm tracking-tighter text-white uppercase">LUMINA</span>
-              <span className="font-black text-[10px] tracking-widest text-[#d4af37] uppercase">ART CREATOR</span>
+              <span className="font-black text-[12px] tracking-widest text-[#d4af37] uppercase">ART CREATOR</span>
             </div>
           </button>
 
           <nav className="flex items-center gap-2">
             <button 
               onClick={() => setView('landing')}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap font-bold text-xs uppercase tracking-widest hover:bg-[#222] text-gray-400 group"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap font-bold text-sm uppercase tracking-widest hover:bg-[#222] text-gray-400 group"
               title="Voltar para a Landing Page"
             >
               <Home size={16} className="group-hover:text-[#d4af37] transition-colors" />
@@ -3527,7 +3527,7 @@ const handleBatchDownload = async (ids: string[]) => {
                   if (tab.id === 'creative_studio') { setUseCreativeStudio(false); setUseLipsync(false); }
                   if (tab.id === 'lipsync') { setUseCreativeStudio(false); setUseLipsync(true); }
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap font-bold text-xs uppercase tracking-widest ${activeTab === tab.id ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'hover:bg-[#222] text-gray-400'}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap font-bold text-sm uppercase tracking-widest ${activeTab === tab.id ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'hover:bg-[#222] text-gray-400'}`}
               >
                 <tab.icon size={16} />
                 <span className="hidden xl:block">{tab.label}</span>
@@ -3540,12 +3540,12 @@ const handleBatchDownload = async (ids: string[]) => {
           {userData && (
             <div className="hidden md:flex items-center gap-4 px-4 py-2 bg-[#1a1a1a] border border-[#222] rounded-2xl">
               <div className="flex flex-col items-end">
-                <span className="text-[11px] font-black text-[#d4af37] uppercase tracking-widest leading-none mb-1">Créditos</span>
+                <span className="text-[13px] font-black text-[#d4af37] uppercase tracking-widest leading-none mb-1">Créditos</span>
                 <span className="text-base font-black text-white leading-none">{userData.credits || 0}</span>
               </div>
               <div className="w-px h-6 bg-[#222]" />
               <div className="flex flex-col">
-                <span className="text-[11px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">Plano</span>
+                <span className="text-[13px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">Plano</span>
                 <span className="text-sm font-bold text-white leading-none uppercase">{userData.plan}</span>
               </div>
             </div>
@@ -3557,8 +3557,8 @@ const handleBatchDownload = async (ids: string[]) => {
               className="flex items-center gap-3 group"
             >
               <div className="flex flex-col items-end hidden sm:block">
-                <p className="text-xs font-bold text-white leading-none mb-1 group-hover:text-[#d4af37] transition-colors">{user.displayName}</p>
-                <p className="text-[10px] text-gray-500 leading-none">{user.email}</p>
+                <p className="text-sm font-bold text-white leading-none mb-1 group-hover:text-[#d4af37] transition-colors">{user.displayName}</p>
+                <p className="text-[12px] text-gray-500 leading-none">{user.email}</p>
               </div>
               <div className="relative">
                 <img src={user.photoURL || ''} alt="Avatar" className="w-10 h-10 rounded-full bg-gray-800 border border-[#222] group-hover:border-[#d4af37] transition-all" referrerPolicy="no-referrer" />
@@ -3581,9 +3581,9 @@ const handleBatchDownload = async (ids: string[]) => {
                     <div className="p-6 border-b border-[#222] bg-gradient-to-br from-[#1a1a1a] to-[#111]">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-sm font-black text-white uppercase tracking-tighter truncate max-w-[140px]">{user.displayName}</p>
-                        <span className="px-2 py-0.5 bg-[#d4af37]/10 text-[#d4af37] text-[8px] font-black rounded uppercase">BR</span>
+                        <span className="px-2 py-0.5 bg-[#d4af37]/10 text-[#d4af37] text-[12px] font-black rounded uppercase">BR</span>
                       </div>
-                      <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
+                      <p className="text-[12px] text-gray-500 truncate">{user.email}</p>
                     </div>
 
                     <div className="p-2">
@@ -3593,11 +3593,11 @@ const handleBatchDownload = async (ids: string[]) => {
                       >
                         <div className="flex items-center gap-3">
                           <CreditCard size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
-                          <span className="text-xs font-bold text-gray-300">Créditos/Mês</span>
+                          <span className="text-sm font-bold text-gray-300">Créditos/Mês</span>
                         </div>
                         <div className="flex items-center gap-1 bg-[#d4af37]/10 px-2 py-1 rounded-lg">
                           <Sparkles size={10} className="text-[#d4af37]" />
-                          <span className="text-[10px] font-black text-[#d4af37]">{userData?.credits || 0}</span>
+                          <span className="text-[12px] font-black text-[#d4af37]">{userData?.credits || 0}</span>
                         </div>
                       </button>
 
@@ -3606,7 +3606,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         className="w-full flex items-center gap-3 p-4 hover:bg-[#1a1a1a] rounded-2xl transition-all group text-left"
                       >
                         <Settings size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
-                        <span className="text-xs font-bold text-gray-300">Perfil e Conta</span>
+                        <span className="text-sm font-bold text-gray-300">Perfil e Conta</span>
                       </button>
 
                       <button 
@@ -3614,7 +3614,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         className="w-full flex items-center gap-3 p-4 hover:bg-[#1a1a1a] rounded-2xl transition-all group text-left"
                       >
                         <Gift size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
-                        <span className="text-xs font-bold text-gray-300">Indicações</span>
+                        <span className="text-sm font-bold text-gray-300">Indicações</span>
                       </button>
 
                       <button 
@@ -3622,7 +3622,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         className="w-full flex items-center gap-3 p-4 hover:bg-[#1a1a1a] rounded-2xl transition-all group text-left"
                       >
                         <HelpCircle size={18} className="text-gray-500 group-hover:text-[#d4af37]" />
-                        <span className="text-xs font-bold text-gray-300">FAQ e Informações</span>
+                        <span className="text-sm font-bold text-gray-300">FAQ e Informações</span>
                       </button>
 
                       <div className="h-px bg-[#222] my-2 mx-4" />
@@ -3632,7 +3632,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         className="w-full flex items-center gap-3 p-4 hover:bg-red-500/10 rounded-2xl transition-all group text-left"
                       >
                         <LogOut size={18} className="text-gray-500 group-hover:text-red-500" />
-                        <span className="text-xs font-bold text-gray-300 group-hover:text-red-500">Sair</span>
+                        <span className="text-sm font-bold text-gray-300 group-hover:text-red-500">Sair</span>
                       </button>
                     </div>
                   </motion.div>
@@ -3685,7 +3685,7 @@ const handleBatchDownload = async (ids: string[]) => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-full font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-6 py-3 rounded-full font-black text-[12px] uppercase tracking-widest transition-all whitespace-nowrap ${
                   activeTab === tab.id 
                     ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' 
                     : 'bg-[#111] text-gray-500 border border-[#222] hover:border-[#333]'
@@ -3706,7 +3706,7 @@ const handleBatchDownload = async (ids: string[]) => {
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="inline-flex items-center gap-3 px-4 py-2 bg-[#1a1a1a] border border-[#222] rounded-full text-xs font-bold text-gray-400 uppercase tracking-widest"
+                className="inline-flex items-center gap-3 px-4 py-2 bg-[#1a1a1a] border border-[#222] rounded-full text-sm font-bold text-gray-400 uppercase tracking-widest"
               >
                 <Sparkles size={14} className="text-[#d4af37]" />
                 BEM-VINDO AO LUMINA ART CREATOR
@@ -3786,12 +3786,12 @@ const handleBatchDownload = async (ids: string[]) => {
                     </div>
                     
                     <div className="space-y-2">
-                      <span className="text-xs font-black text-[#d4af37] uppercase tracking-[0.2em]">{card.id}</span>
+                      <span className="text-sm font-black text-[#d4af37] uppercase tracking-[0.2em]">{card.id}</span>
                       <h3 className="text-2xl font-bold">{card.title}</h3>
                       <p className="text-gray-500 text-sm leading-relaxed">{card.desc}</p>
                     </div>
 
-                    <button className="w-full py-4 bg-[#1a1a1a] border border-[#222] rounded-2xl text-xs font-bold uppercase tracking-widest group-hover:bg-[#d4af37] group-hover:text-black transition-all">
+                    <button className="w-full py-4 bg-[#1a1a1a] border border-[#222] rounded-2xl text-sm font-bold uppercase tracking-widest group-hover:bg-[#d4af37] group-hover:text-black transition-all">
                       {card.btn}
                     </button>
                   </div>
@@ -3808,7 +3808,7 @@ const handleBatchDownload = async (ids: string[]) => {
             <div className="max-w-6xl mx-auto px-4 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">Atividade Recente</h3>
-                <button onClick={() => setActiveTab('library')} className="text-xs font-bold text-[#d4af37] uppercase tracking-widest hover:underline">Ver Tudo</button>
+                <button onClick={() => setActiveTab('library')} className="text-sm font-bold text-[#d4af37] uppercase tracking-widest hover:underline">Ver Tudo</button>
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -3840,7 +3840,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-[10px] font-bold uppercase tracking-widest">Ver Detalhes</span>
+                      <span className="text-[12px] font-bold uppercase tracking-widest">Ver Detalhes</span>
                     </div>
                   </motion.div>
                 ))}
@@ -3933,36 +3933,36 @@ const handleBatchDownload = async (ids: string[]) => {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${item.type === 'video' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'}`}>
+                          <span className={`px-2 py-1 rounded text-[12px] font-bold uppercase tracking-wider ${item.type === 'video' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'}`}>
                             {item.type}
                           </span>
-                          <span className="text-xs text-gray-500 font-mono">ID: {item.id}</span>
+                          <span className="text-sm text-gray-500 font-mono">ID: {item.id}</span>
                           {item.duration && (
-                            <span className="flex items-center gap-1 text-[10px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                            <span className="flex items-center gap-1 text-[12px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">
                               <Clock size={10} /> {item.duration}s
                             </span>
                           )}
                           <Timer start={item.createdAt} end={item.completedAt} status={item.status} />
                           {item.lowPriority && (
-                            <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                            <span className="px-2 py-1 rounded text-[12px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
                               <Clock size={10} /> Low Priority
                             </span>
                           )}
-                          <span className={`flex items-center gap-1 text-xs font-medium ${item.status === 'completed' ? 'text-green-400' : item.status === 'failed' ? 'text-red-400' : 'text-[#d4af37]'}`}>
+                          <span className={`flex items-center gap-1 text-sm font-medium ${item.status === 'completed' ? 'text-green-400' : item.status === 'failed' ? 'text-red-400' : 'text-[#d4af37]'}`}>
                             {item.status === 'completed' ? <CheckCircle2 size={12} /> : item.status === 'failed' ? <AlertCircle size={12} /> : <Clock size={12} />}
                             {item.status === 'completed' ? 'Concluído' : item.status === 'failed' ? 'Falhou' : item.progress < 50 ? 'Gerando...' : 'Salvando...'}
                           </span>
                         </div>
                         <p className="text-sm text-gray-300 line-clamp-2 mb-3">{item.prompt}</p>
-                        {item.error && <p className="text-[10px] text-red-500/70 mb-2 italic">Erro: {item.error}</p>}
-                        <div className="flex gap-4 text-[11px] text-gray-500 font-medium">
+                        {item.error && <p className="text-[12px] text-red-500/70 mb-2 italic">Erro: {item.error}</p>}
+                        <div className="flex gap-4 text-[13px] text-gray-500 font-medium">
                           <span className="flex items-center gap-1"><Maximize2 size={10} /> {item.aspectRatio}</span>
                           <span className="flex items-center gap-1"><Zap size={10} /> {item.resolution}</span>
                         </div>
                       </div>
 
                       <div className="w-full md:w-48 text-right">
-                        <div className="mb-2 flex justify-between text-xs font-bold">
+                        <div className="mb-2 flex justify-between text-sm font-bold">
                           <span className="text-gray-500">Progresso</span>
                           <span className="text-[#d4af37]">{Math.round(item.progress || 0)}%</span>
                         </div>
@@ -3992,7 +3992,7 @@ const handleBatchDownload = async (ids: string[]) => {
                 <button
                   key={sub.id}
                   onClick={() => setBrandStep(sub.id as any)}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${brandStep === sub.id ? 'bg-[#d4af37] text-black' : 'bg-[#111] text-gray-500 border border-[#222] hover:border-[#333]'}`}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${brandStep === sub.id ? 'bg-[#d4af37] text-black' : 'bg-[#111] text-gray-500 border border-[#222] hover:border-[#333]'}`}
                 >
                   <sub.icon size={16} />
                   {sub.label}
@@ -4020,7 +4020,7 @@ const handleBatchDownload = async (ids: string[]) => {
               
               <div className="flex items-center gap-6">
                 <div className="hidden md:flex flex-col items-end">
-                  <span className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Marcas Ativas</span>
+                  <span className="text-sm font-black text-gray-500 uppercase tracking-widest mb-1">Marcas Ativas</span>
                   <div className="flex items-center gap-4">
                     <div className="flex -space-x-3">
                       {brandProfiles.slice(0, 5).map((brand, i) => (
@@ -4028,7 +4028,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           {brand.logos && brand.logos.length > 0 ? (
                             <img src={`data:${brand.logos[0].mimeType};base64,${brand.logos[0].data}`} className="w-full h-full object-contain p-1.5" />
                           ) : (
-                            <span className="text-xs font-bold text-gray-500">{brand.name.charAt(0)}</span>
+                            <span className="text-sm font-bold text-gray-500">{brand.name.charAt(0)}</span>
                           )}
                         </div>
                       ))}
@@ -4051,7 +4051,7 @@ const handleBatchDownload = async (ids: string[]) => {
                             }
                           }
                         }}
-                        className="bg-[#1a1a1a] border border-[#222] rounded-xl px-4 py-2 text-xs font-bold text-gray-300 focus:outline-none focus:border-[#d4af37] appearance-none pr-8 cursor-pointer"
+                        className="bg-[#1a1a1a] border border-[#222] rounded-xl px-4 py-2 text-sm font-bold text-gray-300 focus:outline-none focus:border-[#d4af37] appearance-none pr-8 cursor-pointer"
                       >
                         <option value="">Seletor Rápido...</option>
                         {brandProfiles.map(brand => (
@@ -4084,7 +4084,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     });
                     setBrandStep('upload');
                   }}
-                  className="px-8 py-4 bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black rounded-2xl text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-xl shadow-[#d4af37]/10"
+                  className="px-8 py-4 bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black rounded-2xl text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 shadow-xl shadow-[#d4af37]/10"
                 >
                   <Plus size={18} />
                   Nova Marca
@@ -4122,7 +4122,7 @@ const handleBatchDownload = async (ids: string[]) => {
                   </div>
                   <div className="text-center">
                     <h3 className="font-bold text-lg text-white">Nova Marca</h3>
-                    <p className="text-gray-500 text-xs">Adicione uma nova marca</p>
+                    <p className="text-gray-500 text-sm">Adicione uma nova marca</p>
                   </div>
                 </motion.div>
 
@@ -4146,7 +4146,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       />
                       {/* Badge ativo */}
                       {activeBrandProfileId === brand.id && (
-                        <span className="absolute top-3 left-3 text-[8px] font-black bg-[#d4af37] text-black px-2 py-0.5 rounded-full uppercase">Ativo</span>
+                        <span className="absolute top-3 left-3 text-[12px] font-black bg-[#d4af37] text-black px-2 py-0.5 rounded-full uppercase">Ativo</span>
                       )}
                       {/* Logo centralizada */}
                       <div className="w-40 h-40 bg-[#1a1a1a] rounded-2xl border border-[#222] overflow-hidden flex items-center justify-center">
@@ -4158,8 +4158,8 @@ const handleBatchDownload = async (ids: string[]) => {
                       </div>
                       {/* Nome */}
                       <div className="text-center">
-                        <h3 className="font-black text-xs text-white leading-tight">{brand.name}</h3>
-                        {brand.niche && <p className="text-[10px] text-gray-500 mt-0.5">{brand.niche}</p>}
+                        <h3 className="font-black text-sm text-white leading-tight">{brand.name}</h3>
+                        {brand.niche && <p className="text-[12px] text-gray-500 mt-0.5">{brand.niche}</p>}
                       </div>
                     </div>
 
@@ -4174,7 +4174,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         {/* Cores */}
                         {brand.colors && brand.colors.length > 0 && (
                           <div>
-                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-2">Paleta de Cores</span>
+                            <span className="text-[13px] font-black text-gray-500 uppercase tracking-widest block mb-2">Paleta de Cores</span>
                             <div className="flex gap-2 flex-wrap">
                               {brand.colors.map((c, ci) => (
                                 <div key={ci} className="w-6 h-6 rounded-full border border-white/10" style={{ backgroundColor: c }} title={c} />
@@ -4185,21 +4185,21 @@ const handleBatchDownload = async (ids: string[]) => {
                         {/* Tipografia */}
                         {brand.typography && (
                           <div>
-                            <span className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">Tipografia</span>
-                            <span className="text-xs text-gray-300">{brand.typography}</span>
+                            <span className="text-sm font-black text-gray-500 uppercase tracking-widest block mb-1">Tipografia</span>
+                            <span className="text-sm text-gray-300">{brand.typography}</span>
                           </div>
                         )}
                         {/* Estilo e Tom */}
                         {brand.styleAnalysis && (
                           <div>
-                            <span className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">Estilo</span>
-                            <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">{brand.styleAnalysis}</p>
+                            <span className="text-sm font-black text-gray-500 uppercase tracking-widest block mb-1">Estilo</span>
+                            <p className="text-sm text-gray-400 leading-relaxed line-clamp-3">{brand.styleAnalysis}</p>
                           </div>
                         )}
                         {brand.toneOfVoice && (
                           <div>
-                            <span className="text-xs font-black text-gray-500 uppercase tracking-widest block mb-1">Tom de Voz</span>
-                            <p className="text-xs text-gray-400 leading-relaxed line-clamp-2">{brand.toneOfVoice}</p>
+                            <span className="text-sm font-black text-gray-500 uppercase tracking-widest block mb-1">Tom de Voz</span>
+                            <p className="text-sm text-gray-400 leading-relaxed line-clamp-2">{brand.toneOfVoice}</p>
                           </div>
                         )}
                         {/* Botões de ação */}
@@ -4212,7 +4212,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               setCreativeColors(brand.colors || []);
                               setCreativeTypography(brand.typography || 'Modern');
                             }}
-                            className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeBrandProfileId === brand.id ? 'bg-[#d4af37] text-black' : 'bg-[#1a1a1a] text-gray-400 border border-[#222] hover:border-[#d4af37]/50'}`}
+                            className={`flex-1 py-2 rounded-xl text-sm font-black uppercase tracking-widest transition-all ${activeBrandProfileId === brand.id ? 'bg-[#d4af37] text-black' : 'bg-[#1a1a1a] text-gray-400 border border-[#222] hover:border-[#d4af37]/50'}`}
                           >
                             {activeBrandProfileId === brand.id ? '✓ Ativo' : 'Ativar'}
                           </button>
@@ -4222,7 +4222,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               setEditingBrand(brand);
                               setBrandStep('upload');
                             }}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a1a1a] border border-[#222] text-gray-400 hover:border-[#d4af37]/50 hover:text-[#d4af37] transition-all text-[10px] font-black uppercase tracking-widest"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a1a1a] border border-[#222] text-gray-400 hover:border-[#d4af37]/50 hover:text-[#d4af37] transition-all text-[12px] font-black uppercase tracking-widest"
                           >
                             <Pencil size={11} />
                             Editar
@@ -4268,7 +4268,7 @@ const handleBatchDownload = async (ids: string[]) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   {/* Logo Upload */}
                   <div className="space-y-4">
-                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Logotipos (Até 2)</label>
+                    <label className="block text-sm font-black text-gray-400 uppercase tracking-widest">Logotipos (Até 2)</label>
                     <div className="grid grid-cols-2 gap-4">
                       {[0, 1].map((idx) => (
                         <div 
@@ -4313,7 +4313,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           ) : (
                             <>
                               <ImagePlus size={24} className="text-gray-600" />
-                              <span className="text-[10px] font-bold text-gray-500 uppercase">Logo {idx + 1}</span>
+                              <span className="text-[12px] font-bold text-gray-500 uppercase">Logo {idx + 1}</span>
                             </>
                           )}
                         </div>
@@ -4323,7 +4323,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
                   {/* Images Upload */}
                   <div className="space-y-4">
-                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Imagens da Empresa (Até 5)</label>
+                    <label className="block text-sm font-black text-gray-400 uppercase tracking-widest">Imagens da Empresa (Até 5)</label>
                     <div className="grid grid-cols-3 gap-3">
                       {[0, 1, 2, 3, 4].map((idx) => (
                         <div 
@@ -4368,7 +4368,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           ) : (
                             <>
                               <ImageIcon size={16} className="text-gray-600" />
-                              <span className="text-[8px] font-bold text-gray-500 uppercase">Img {idx + 1}</span>
+                              <span className="text-[12px] font-bold text-gray-500 uppercase">Img {idx + 1}</span>
                             </>
                           )}
                         </div>
@@ -4390,26 +4390,26 @@ const handleBatchDownload = async (ids: string[]) => {
                       <div className="w-6 h-6 bg-[#d4af37] text-black rounded-lg flex items-center justify-center">
                         <Zap size={14} fill="currentColor" />
                       </div>
-                      <h4 className="text-xs font-black text-white uppercase tracking-tighter">Relatório Estratégico IA</h4>
+                      <h4 className="text-sm font-black text-white uppercase tracking-tighter">Relatório Estratégico IA</h4>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
                       <div className="space-y-2">
-                        <span className="text-xs font-black text-[#d4af37] uppercase tracking-widest block">Estética & Padrões</span>
-                        <p className="text-xs text-gray-300 leading-relaxed font-medium">{editingBrand.styleAnalysis}</p>
+                        <span className="text-sm font-black text-[#d4af37] uppercase tracking-widest block">Estética & Padrões</span>
+                        <p className="text-sm text-gray-300 leading-relaxed font-medium">{editingBrand.styleAnalysis}</p>
                       </div>
                       <div className="space-y-2">
-                        <span className="text-xs font-black text-[#d4af37] uppercase tracking-widest block">Personalidade da Marca</span>
-                        <p className="text-xs text-gray-300 leading-relaxed font-medium">{editingBrand.toneOfVoice}</p>
+                        <span className="text-sm font-black text-[#d4af37] uppercase tracking-widest block">Personalidade da Marca</span>
+                        <p className="text-sm text-gray-300 leading-relaxed font-medium">{editingBrand.toneOfVoice}</p>
                       </div>
                     </div>
                     {editingBrand.colors && editingBrand.colors.length > 0 && (
                       <div className="mt-4 pt-4 border-t border-[#d4af37]/10">
-                        <span className="text-xs font-black text-[#d4af37] uppercase tracking-widest block mb-2">Paleta Identificada</span>
+                        <span className="text-sm font-black text-[#d4af37] uppercase tracking-widest block mb-2">Paleta Identificada</span>
                         <div className="flex gap-2">
                           {editingBrand.colors.map((color, i) => (
                             <div key={i} className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-lg border border-white/5">
                               <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color }} />
-                              <span className="text-[9px] font-mono text-gray-400 uppercase">{color}</span>
+                              <span className="text-[13px] font-mono text-gray-400 uppercase">{color}</span>
                             </div>
                           ))}
                         </div>
@@ -4459,7 +4459,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Informações da Marca</h2>
                     <p className="text-gray-500 text-sm">Preencha os detalhes estratégicos da empresa.</p>
                   </div>
-                  <button onClick={() => setBrandStep('upload')} className="p-2 text-gray-500 hover:text-white flex items-center gap-2 text-xs font-bold uppercase">
+                  <button onClick={() => setBrandStep('upload')} className="p-2 text-gray-500 hover:text-white flex items-center gap-2 text-sm font-bold uppercase">
                     <Clock size={16} className="rotate-180" />
                     Voltar
                   </button>
@@ -4467,7 +4467,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Nome da Empresa</label>
+                    <label className="block text-[12px] font-black text-gray-400 uppercase tracking-widest">Nome da Empresa</label>
                     <input 
                       type="text" 
                       value={editingBrand.name}
@@ -4477,7 +4477,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Nicho / Setor</label>
+                    <label className="block text-[12px] font-black text-gray-400 uppercase tracking-widest">Nicho / Setor</label>
                     <input 
                       type="text" 
                       value={editingBrand.niche}
@@ -4487,7 +4487,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Missão da Empresa</label>
+                    <label className="block text-[12px] font-black text-gray-400 uppercase tracking-widest">Missão da Empresa</label>
                     <textarea 
                       value={editingBrand.mission}
                       onChange={(e) => setEditingBrand({ ...editingBrand, mission: e.target.value })}
@@ -4496,7 +4496,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     />
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Dados Básicos / Descrição</label>
+                    <label className="block text-[12px] font-black text-gray-400 uppercase tracking-widest">Dados Básicos / Descrição</label>
                     <textarea 
                       value={editingBrand.description}
                       onChange={(e) => setEditingBrand({ ...editingBrand, description: e.target.value })}
@@ -4505,7 +4505,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     />
                   </div>
                   <div className="space-y-4 md:col-span-2">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Paleta de Cores Institucional</label>
+                    <label className="block text-[12px] font-black text-gray-400 uppercase tracking-widest">Paleta de Cores Institucional</label>
                     <div className="flex gap-3 flex-wrap">
                       {editingBrand.colors.map((color, idx) => (
                         <div key={idx} className="flex items-center gap-2 bg-[#1a1a1a] border border-[#222] px-3 py-2 rounded-2xl group transition-all hover:border-[#d4af37]/30">
@@ -4518,7 +4518,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               newColors[idx] = e.target.value;
                               setEditingBrand({ ...editingBrand, colors: newColors });
                             }}
-                            className="bg-transparent text-[11px] font-mono text-gray-400 w-20 focus:outline-none uppercase"
+                            className="bg-transparent text-[13px] font-mono text-gray-400 w-20 focus:outline-none uppercase"
                           />
                           <button 
                             onClick={() => {
@@ -4536,13 +4536,13 @@ const handleBatchDownload = async (ids: string[]) => {
                         className="h-10 px-4 rounded-2xl border-2 border-dashed border-[#222] flex items-center justify-center gap-2 text-gray-600 hover:border-[#d4af37] hover:text-[#d4af37] transition-all"
                       >
                         <Plus size={14} />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Nova Cor</span>
+                        <span className="text-[12px] font-bold uppercase tracking-widest">Nova Cor</span>
                       </button>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Contato / Redes Sociais</label>
+                    <label className="block text-[12px] font-black text-gray-400 uppercase tracking-widest">Contato / Redes Sociais</label>
                     <input 
                       type="text" 
                       value={editingBrand.contact}
@@ -4552,7 +4552,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Tipografia Preferida</label>
+                    <label className="block text-sm font-black text-gray-400 uppercase tracking-widest">Tipografia Preferida</label>
                     <select 
                       value={editingBrand.typography}
                       onChange={(e) => setEditingBrand({ ...editingBrand, typography: e.target.value })}
@@ -4574,16 +4574,16 @@ const handleBatchDownload = async (ids: string[]) => {
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <Zap size={16} className="text-[#d4af37]" />
-                        <h4 className="text-xs font-black text-[#d4af37] uppercase tracking-[0.2em]">Padrão Estratégico Detectado (IA)</h4>
+                        <h4 className="text-sm font-black text-[#d4af37] uppercase tracking-[0.2em]">Padrão Estratégico Detectado (IA)</h4>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1">
-                          <span className="text-[10px] font-bold text-gray-500 uppercase">Estilo Dominante</span>
-                          <p className="text-xs text-gray-300 leading-relaxed">{editingBrand.styleAnalysis}</p>
+                          <span className="text-[12px] font-bold text-gray-500 uppercase">Estilo Dominante</span>
+                          <p className="text-sm text-gray-300 leading-relaxed">{editingBrand.styleAnalysis}</p>
                         </div>
                         <div className="space-y-1">
-                          <span className="text-[10px] font-bold text-gray-500 uppercase">Tom de Voz</span>
-                          <p className="text-xs text-gray-300 leading-relaxed">{editingBrand.toneOfVoice}</p>
+                          <span className="text-[12px] font-bold text-gray-500 uppercase">Tom de Voz</span>
+                          <p className="text-sm text-gray-300 leading-relaxed">{editingBrand.toneOfVoice}</p>
                         </div>
                       </div>
                     </motion.div>
@@ -4643,7 +4643,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Modos do Studio</label>
+                            <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Modos do Studio</label>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             {[
@@ -4670,7 +4670,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                 <div className={`p-1 rounded-lg ${studioMode === mode.id ? 'bg-[#d4af37] text-black' : 'bg-[#222] text-gray-400'}`}>
                                   <mode.icon size={12} />
                                 </div>
-                                <span className="text-xs font-bold text-left leading-tight uppercase tracking-wider">{mode.label}</span>
+                                <span className="text-sm font-bold text-left leading-tight uppercase tracking-wider">{mode.label}</span>
                               </button>
                             ))}
                           </div>
@@ -4678,11 +4678,11 @@ const handleBatchDownload = async (ids: string[]) => {
 
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Tipo de Geração</label>
+                            <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Tipo de Geração</label>
                             <button 
                               type="button"
                               onClick={() => setFastMode(!fastMode)}
-                              className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black transition-all border ${fastMode ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] text-gray-500 border-[#222] hover:border-[#333]'}`}
+                              className={`flex items-center gap-2 px-3 py-1 rounded-full text-[12px] font-black transition-all border ${fastMode ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] text-gray-500 border-[#222] hover:border-[#333]'}`}
                             >
                               <Zap size={8} fill={fastMode ? "currentColor" : "none"} />
                               {fastMode ? 'TURBO' : 'QUALIDADE'}
@@ -4695,7 +4695,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'video' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
                             >
                               <Video size={20} />
-                              <span className="text-xs font-black uppercase tracking-widest">Vídeo Veo 3.1</span>
+                              <span className="text-sm font-black uppercase tracking-widest">Vídeo Veo 3.1</span>
                             </button>
                             <button 
                               type="button"
@@ -4703,7 +4703,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'image' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
                             >
                               <ImageIcon size={20} />
-                              <span className="text-xs font-black uppercase tracking-widest">Imagem Pro</span>
+                              <span className="text-sm font-black uppercase tracking-widest">Imagem Pro</span>
                             </button>
                           </div>
                         </div>
@@ -4714,9 +4714,9 @@ const handleBatchDownload = async (ids: string[]) => {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
                             <div className="flex items-center justify-between mb-2">
-                              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Personagem / Referência</label>
+                              <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Personagem / Referência</label>
                               {refAsset && (
-                                <button type="button" onClick={analyzeAssetForPrompt} disabled={isAnalyzing} className="text-[9px] font-black text-[#d4af37] flex items-center gap-1 uppercase">
+                                <button type="button" onClick={analyzeAssetForPrompt} disabled={isAnalyzing} className="text-[13px] font-black text-[#d4af37] flex items-center gap-1 uppercase">
                                   {isAnalyzing ? "..." : <Sparkles size={10} />}
                                 </button>
                               )}
@@ -4740,7 +4740,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               ) : (
                                 <div className="text-center">
                                   <User size={14} className="text-gray-600 mx-auto mb-1" />
-                                  <span className="text-xs font-bold text-gray-500 uppercase">Personagem</span>
+                                  <span className="text-sm font-bold text-gray-500 uppercase">Personagem</span>
                                 </div>
                               )}
                             </div>
@@ -4748,7 +4748,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
                           <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
                             <div className="flex items-center justify-between mb-2">
-                              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Produto</label>
+                              <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Produto</label>
                             </div>
                             <input type="file" onChange={handleProductAssetUpload} className="hidden" ref={productAssetInputRef} accept="image/*" />
                             <div 
@@ -4765,7 +4765,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               ) : (
                                 <div className="text-center">
                                   <ShoppingBag size={14} className="text-gray-600 mx-auto mb-1" />
-                                  <span className="text-xs font-bold text-gray-500 uppercase">Produto</span>
+                                  <span className="text-sm font-bold text-gray-500 uppercase">Produto</span>
                                 </div>
                               )}
                             </div>
@@ -4774,7 +4774,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Prompt Criativo</label>
+                            <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Prompt Criativo</label>
                           </div>
                           <textarea 
                             value={prompt}
@@ -4792,13 +4792,13 @@ const handleBatchDownload = async (ids: string[]) => {
                           <div className="p-3 border-b border-[#222] flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Wand2 size={14} className="text-[#d4af37]" />
-                              <span className="text-xs font-black text-white uppercase tracking-widest">Estilos</span>
+                              <span className="text-sm font-black text-white uppercase tracking-widest">Estilos</span>
                             </div>
                             <button
                               type="button"
                               onClick={enhancePromptWithAI}
                               disabled={isEnhancing || !prompt.trim()}
-                              className="bg-[#d4af37] text-black px-2 py-1 rounded-lg font-black text-[10px] flex items-center gap-1 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                              className="bg-[#d4af37] text-black px-2 py-1 rounded-lg font-black text-[12px] flex items-center gap-1 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                             >
                               {isEnhancing ? <div className="w-2 h-2 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <Zap size={10} fill="currentColor" />}
                               IA
@@ -4822,7 +4822,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                   className={`p-1.5 rounded-lg flex flex-col items-center gap-0.5 transition-all group ${selectedStyle === style.id ? 'bg-[#d4af37]/20 border-[#d4af37]' : 'bg-black/20 border border-white/5 hover:border-[#d4af37]/50'}`}
                                 >
                                   <style.icon size={12} className={selectedStyle === style.id ? 'text-[#d4af37]' : 'text-gray-600 group-hover:text-[#d4af37]'} />
-                                  <span className={`text-xs font-black tracking-tighter uppercase ${selectedStyle === style.id ? 'text-white' : 'text-gray-500 group-hover:text-white'}`}>
+                                  <span className={`text-sm font-black tracking-tighter uppercase ${selectedStyle === style.id ? 'text-white' : 'text-gray-500 group-hover:text-white'}`}>
                                     {style.label}
                                   </span>
                                 </button>
@@ -4832,7 +4832,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         </div>
 
                         <div className="mb-3">
-                  <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Motor de Imagem</label>
+                  <label className="block text-sm font-bold text-gray-400 mb-1 uppercase tracking-widest">Motor de Imagem</label>
                   <div className="grid grid-cols-3 gap-1">
                     {[
                       { id: 'nano',       label: '⚡ Gemini',      desc: 'Rápido' },
@@ -4851,24 +4851,24 @@ const handleBatchDownload = async (ids: string[]) => {
                             : 'border-[#222] bg-[#1a1a1a] text-gray-400 hover:border-[#444]'
                         }`}
                       >
-                        <div className="text-xs font-bold">{m.label}</div>
-                        <div className="text-[9px] opacity-70">{m.desc}</div>
+                        <div className="text-sm font-bold">{m.label}</div>
+                        <div className="text-[13px] opacity-70">{m.desc}</div>
                       </button>
                     ))}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Formato</label>
-                  <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none">
+                  <label className="block text-sm font-bold text-gray-400 mb-1 uppercase tracking-widest">Formato</label>
+                  <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-sm focus:outline-none focus:border-[#d4af37] appearance-none">
                     <option value="9:16">9:16</option>
                     <option value="16:9">16:9</option>
                     <option value="1:1">1:1</option>
                   </select>
                 </div>
                           <div>
-                            <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Qualidade</label>
-                            <select value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none">
+                            <label className="block text-sm font-bold text-gray-400 mb-1 uppercase tracking-widest">Qualidade</label>
+                            <select value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-sm focus:outline-none focus:border-[#d4af37] appearance-none">
                               <option value="720p">720p</option>
                               <option value="1080p">1080p</option>
                               <option value="2K">2K</option>
@@ -4881,7 +4881,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           <button
                             type="button"
                             onClick={() => setLowPriority(!lowPriority)}
-                            className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border text-[11px] font-bold transition-all ${lowPriority ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border text-[13px] font-bold transition-all ${lowPriority ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                           >
                             <Clock size={12} />
                             ECONOMIA
@@ -4889,7 +4889,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           <button
                             type="button"
                             onClick={() => setUseGrounding(!useGrounding)}
-                            className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border text-[11px] font-bold transition-all ${useGrounding ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
+                            className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border text-[13px] font-bold transition-all ${useGrounding ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                           >
                             <Globe size={12} />
                             GROUNDING
@@ -4901,14 +4901,14 @@ const handleBatchDownload = async (ids: string[]) => {
                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
                       <div className="flex items-center gap-4">
                         <div className="flex flex-col">
-                          <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Quantidade</label>
+                          <label className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Quantidade</label>
                           <div className="flex gap-1 mt-1">
                             {[1, 2, 5, 10].map(n => (
                               <button 
                                 key={n} 
                                 type="button" 
                                 onClick={() => setQuantity(n)}
-                                className={`w-8 h-8 rounded-lg border text-xs font-bold transition-all ${quantity === n ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
+                                className={`w-8 h-8 rounded-lg border text-sm font-bold transition-all ${quantity === n ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                               >
                                 {n}
                               </button>
@@ -4917,14 +4917,14 @@ const handleBatchDownload = async (ids: string[]) => {
                         </div>
                         {type === 'video' && (
                           <div className="flex flex-col">
-                            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Duração</label>
+                            <label className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Duração</label>
                             <div className="flex gap-1 mt-1">
                               {[4, 8].map(d => (
                                 <button 
                                   key={d} 
                                   type="button" 
                                   onClick={() => setVideoDuration(d)}
-                                  className={`w-8 h-8 rounded-lg border text-xs font-bold transition-all ${videoDuration === d ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
+                                  className={`w-8 h-8 rounded-lg border text-sm font-bold transition-all ${videoDuration === d ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                                 >
                                   {d}s
                                 </button>
@@ -4953,11 +4953,11 @@ const handleBatchDownload = async (ids: string[]) => {
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <h3 className="text-xl font-bold">Galeria Studio</h3>
-                    <p className="text-gray-500 text-xs">Suas criações recentes aparecem aqui em tempo real.</p>
+                    <p className="text-gray-500 text-sm">Suas criações recentes aparecem aqui em tempo real.</p>
                   </div>
                   <button 
                     onClick={() => setActiveTab('library')}
-                    className="text-[10px] font-bold text-[#d4af37] uppercase tracking-widest hover:underline flex items-center gap-2"
+                    className="text-[12px] font-bold text-[#d4af37] uppercase tracking-widest hover:underline flex items-center gap-2"
                   >
                     Ver Biblioteca Completa <ArrowRight size={12} />
                   </button>
@@ -5000,17 +5000,17 @@ const handleBatchDownload = async (ids: string[]) => {
                           ) : item.status === 'failed' ? (
                             <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center gap-2">
                               <AlertCircle size={24} className="text-red-500/50" />
-                              <p className="text-[10px] text-red-400 font-medium leading-tight line-clamp-3">{item.error}</p>
+                              <p className="text-[12px] text-red-400 font-medium leading-tight line-clamp-3">{item.error}</p>
                             </div>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center gap-2">
                               <div className="relative">
                                 <div className="w-10 h-10 border-3 border-[#d4af37]/20 border-t-[#d4af37] rounded-full animate-spin" />
-                                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-[#d4af37]">
+                                <div className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[#d4af37]">
                                   {item.progress}%
                                 </div>
                               </div>
-                              <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest animate-pulse">Gerando...</span>
+                              <span className="text-[12px] font-black text-gray-500 uppercase tracking-widest animate-pulse">Gerando...</span>
                             </div>
                           )}
                           
@@ -5025,7 +5025,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
                               <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'completed' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-[#d4af37] animate-pulse'}`} />
-                              <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">
+                              <span className="text-[12px] font-black text-gray-400 uppercase tracking-widest">
                                 {item.status === 'completed' ? 'OK' : item.status === 'failed' ? 'ERRO' : '...'}
                               </span>
                             </div>
@@ -5072,7 +5072,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                       reader.readAsDataURL(blob);
                                     });
                                 }}
-                                className="flex-1 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-blue-500/20 transition-all"
+                                className="flex-1 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-lg text-[12px] font-black uppercase tracking-wider hover:bg-blue-500/20 transition-all"
                               >
                                 👤 Person.
                               </button>
@@ -5092,7 +5092,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                       reader.readAsDataURL(blob);
                                     });
                                 }}
-                                className="flex-1 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-lg text-[8px] font-black uppercase tracking-wider hover:bg-purple-500/20 transition-all"
+                                className="flex-1 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-lg text-[12px] font-black uppercase tracking-wider hover:bg-purple-500/20 transition-all"
                               >
                                 📦 Produto
                               </button>
@@ -5110,7 +5110,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     </div>
                     <div className="space-y-1">
                       <h4 className="text-base font-bold text-gray-400">Nenhuma criação ainda</h4>
-                      <p className="text-gray-600 text-xs max-w-xs mx-auto">Use o painel acima para começar a criar artes e vídeos profissionais.</p>
+                      <p className="text-gray-600 text-sm max-w-xs mx-auto">Use o painel acima para começar a criar artes e vídeos profissionais.</p>
                     </div>
                   </div>
                 )}
@@ -5193,7 +5193,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           ) : (
                             <>
                               <User size={24} className="text-gray-600" />
-                              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Personagem</span>
+                              <span className="text-[13px] font-black text-gray-500 uppercase tracking-widest">Personagem</span>
                             </>
                           )}
                         </div>
@@ -5229,7 +5229,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           ) : (
                             <>
                               <ShoppingBag size={24} className="text-gray-600" />
-                              <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Produto</span>
+                              <span className="text-[13px] font-black text-gray-500 uppercase tracking-widest">Produto</span>
                             </>
                           )}
                         </div>
@@ -5258,7 +5258,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                     {isAudioPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
                                   </button>
                                 </div>
-                                <span className="text-[10px] font-bold text-[#d4af37] uppercase">Áudio OK</span>
+                                <span className="text-[12px] font-bold text-[#d4af37] uppercase">Áudio OK</span>
                               </div>
                               <button 
                                 type="button"
@@ -5271,12 +5271,12 @@ const handleBatchDownload = async (ids: string[]) => {
                           ) : lipsyncAudioPrompt.trim() !== '' ? (
                             <div className="flex flex-col items-center gap-2 px-2 text-center">
                               <Mic size={24} className="text-[#d4af37]" />
-                              <span className="text-[10px] font-bold text-[#d4af37] uppercase">Prompt Ativo</span>
+                              <span className="text-[12px] font-bold text-[#d4af37] uppercase">Prompt Ativo</span>
                             </div>
                           ) : (
                             <>
                               <Mic size={24} className="text-gray-600" />
-                              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Áudio</span>
+                              <span className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">Áudio</span>
                             </>
                           )}
                         </div>
@@ -5286,7 +5286,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     {/* Middle: Audio Prompt and Settings */}
                     <div className="flex-1 min-w-[300px] space-y-6">
                       <div>
-                        <label className="block text-xs font-bold text-gray-400 mb-3 uppercase tracking-widest">Texto para Voz / Prompt</label>
+                        <label className="block text-sm font-bold text-gray-400 mb-3 uppercase tracking-widest">Texto para Voz / Prompt</label>
                         <textarea 
                           value={lipsyncAudioPrompt}
                           onChange={(e) => setLipsyncAudioPrompt(e.target.value)}
@@ -5297,14 +5297,14 @@ const handleBatchDownload = async (ids: string[]) => {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Formato</label>
+                          <label className="block text-[12px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Formato</label>
                           <select value={lipsyncAspectRatio} onChange={(e) => setLipsyncAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-sm focus:outline-none focus:border-[#d4af37] appearance-none">
                             <option value="9:16">9:16 (Vertical)</option>
                             <option value="16:9">16:9 (Horizontal)</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Duração</label>
+                          <label className="block text-[12px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Duração</label>
                           <select value={lipsyncDuration} onChange={(e) => setLipsyncDuration(parseInt(e.target.value))} className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-sm focus:outline-none focus:border-[#d4af37] appearance-none">
                             <option value={4}>4 Segundos</option>
                             <option value={8}>8 Segundos</option>
@@ -5318,7 +5318,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       <button
                         type="button"
                         onClick={() => setLipsyncLowPriority(!lipsyncLowPriority)}
-                        className={`w-full flex items-center justify-center gap-3 p-4 rounded-2xl border text-[11px] font-bold transition-all ${lipsyncLowPriority ? 'bg-amber-500/10 border-amber-500 text-amber-400' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
+                        className={`w-full flex items-center justify-center gap-3 p-4 rounded-2xl border text-[13px] font-bold transition-all ${lipsyncLowPriority ? 'bg-amber-500/10 border-amber-500 text-amber-400' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                       >
                         <Clock size={16} />
                         MODO ECONOMIA (FILA LENTA)
@@ -5334,7 +5334,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <Mic size={20} fill="currentColor" />}
                           <span>GERAR LIP SYNC</span>
                         </div>
-                        <span className="text-[10px] opacity-80 font-bold uppercase tracking-tighter">Custo: {getCostPerItem(true, false) * lipsyncQuantity} CRÉDITOS</span>
+                        <span className="text-[12px] opacity-80 font-bold uppercase tracking-tighter">Custo: {getCostPerItem(true, false) * lipsyncQuantity} CRÉDITOS</span>
                       </button>
                     </div>
                   </div>
@@ -5350,7 +5350,7 @@ const handleBatchDownload = async (ids: string[]) => {
                   </div>
                   <button 
                     onClick={() => setActiveTab('library')}
-                    className="text-xs font-bold text-[#d4af37] uppercase tracking-widest hover:underline flex items-center gap-2"
+                    className="text-sm font-bold text-[#d4af37] uppercase tracking-widest hover:underline flex items-center gap-2"
                   >
                     Ver Biblioteca Completa <ArrowRight size={14} />
                   </button>
@@ -5384,17 +5384,17 @@ const handleBatchDownload = async (ids: string[]) => {
                           ) : item.status === 'failed' ? (
                             <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center gap-4">
                               <AlertCircle size={40} className="text-red-500/50" />
-                              <p className="text-[10px] text-red-400 font-medium leading-relaxed">{item.error}</p>
+                              <p className="text-[12px] text-red-400 font-medium leading-relaxed">{item.error}</p>
                             </div>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center gap-4">
                               <div className="relative">
                                 <div className="w-16 h-16 border-4 border-[#d4af37]/20 border-t-[#d4af37] rounded-full animate-spin" />
-                                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-[#d4af37]">
+                                <div className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[#d4af37]">
                                   {item.progress}%
                                 </div>
                               </div>
-                              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest animate-pulse">Processando...</span>
+                              <span className="text-[12px] font-black text-gray-500 uppercase tracking-widest animate-pulse">Processando...</span>
                             </div>
                           )}
                           
@@ -5408,7 +5408,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         <div className="p-4 flex items-center justify-between bg-[#161616]">
                           <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${item.status === 'completed' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-[#d4af37] animate-pulse'}`} />
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                            <span className="text-[13px] font-black text-gray-400 uppercase tracking-widest">
                               {item.status === 'completed' ? 'Finalizado' : item.status === 'failed' ? 'Falhou' : 'Gerando'}
                             </span>
                           </div>
@@ -5476,14 +5476,14 @@ const handleBatchDownload = async (ids: string[]) => {
                       </div>
                       <div>
                         <h3 className="font-bold text-lg leading-tight">Criador de Anúncios</h3>
-                        <p className="text-[10px] text-gray-500 font-medium">Crie criativos profissionais para qualquer plataforma</p>
+                        <p className="text-[12px] text-gray-500 font-medium">Crie criativos profissionais para qualquer plataforma</p>
                       </div>
                     </div>
                     {/* Botão Templates */}
                     <button
                       type="button"
                       onClick={() => { setShowTemplateSelector(true); loadAdTemplates(); }}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#d4af37]/30 bg-[#d4af37]/5 text-[#d4af37] text-xs font-black transition-all hover:bg-[#d4af37]/10"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#d4af37]/30 bg-[#d4af37]/5 text-[#d4af37] text-sm font-black transition-all hover:bg-[#d4af37]/10"
                     >
                       <Layers size={13} />
                       Templates
@@ -5494,7 +5494,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       <button
                         type="button"
                         onClick={() => { setAdsMode('guided'); setWizardStep(1); }}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${adsMode === 'guided' ? 'bg-[#d4af37] text-black shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all ${adsMode === 'guided' ? 'bg-[#d4af37] text-black shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
                       >
                         <Wand2 size={13} />
                         Assistente
@@ -5502,7 +5502,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       <button
                         type="button"
                         onClick={() => setAdsMode('advanced')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${adsMode === 'advanced' ? 'bg-[#222] text-white shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black transition-all ${adsMode === 'advanced' ? 'bg-[#222] text-white shadow-md' : 'text-gray-500 hover:text-gray-300'}`}
                       >
                         <Settings size={13} />
                         Avançado
@@ -5519,7 +5519,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         <div className="flex items-center justify-between p-6 border-b border-[#1c1c1c]">
                           <div>
                             <h3 className="font-black text-lg">Templates de Criativos</h3>
-                            <p className="text-[11px] text-gray-500 mt-0.5">Escolha um template para começar com estilo</p>
+                            <p className="text-[13px] text-gray-500 mt-0.5">Escolha um template para começar com estilo</p>
                           </div>
                           <button
                             type="button"
@@ -5558,9 +5558,9 @@ const handleBatchDownload = async (ids: string[]) => {
                                     style={{ background: getTemplateGradient(template.style) }}
                                   >
                                     <div className="text-center p-2">
-                                      <div className="text-[8px] font-black text-white/80 uppercase tracking-widest mb-1">{template.layers?.find((l: any) => l.type === 'tag')?.placeholder || ''}</div>
-                                      <div className="text-[11px] font-black text-white leading-tight">{template.layers?.find((l: any) => l.type === 'headline')?.placeholder}</div>
-                                      <div className="text-[7px] text-white/60 mt-1">{template.layers?.find((l: any) => l.type === 'subheadline')?.placeholder}</div>
+                                      <div className="text-[12px] font-black text-white/80 uppercase tracking-widest mb-1">{template.layers?.find((l: any) => l.type === 'tag')?.placeholder || ''}</div>
+                                      <div className="text-[13px] font-black text-white leading-tight">{template.layers?.find((l: any) => l.type === 'headline')?.placeholder}</div>
+                                      <div className="text-[13px] text-white/60 mt-1">{template.layers?.find((l: any) => l.type === 'subheadline')?.placeholder}</div>
                                     </div>
                                     {selectedTemplate?.id === template.id && (
                                       <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#d4af37] rounded-full flex items-center justify-center">
@@ -5568,11 +5568,11 @@ const handleBatchDownload = async (ids: string[]) => {
                                       </div>
                                     )}
                                   </div>
-                                  <div className="text-[11px] font-black text-white">{template.name}</div>
-                                  <div className="text-[9px] text-gray-500 mt-0.5">{template.description}</div>
+                                  <div className="text-[13px] font-black text-white">{template.name}</div>
+                                  <div className="text-[13px] text-gray-500 mt-0.5">{template.description}</div>
                                   <div className="flex flex-wrap gap-1 mt-2">
                                     {template.platform?.slice(0, 2).map((p: string) => (
-                                      <span key={p} className="text-[8px] bg-[#222] text-gray-400 px-1.5 py-0.5 rounded-full">{p}</span>
+                                      <span key={p} className="text-[12px] bg-[#222] text-gray-400 px-1.5 py-0.5 rounded-full">{p}</span>
                                     ))}
                                   </div>
                                 </button>
@@ -5586,7 +5586,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           <button
                             type="button"
                             onClick={() => { setSelectedTemplate(null); setShowTemplateSelector(false); }}
-                            className="px-4 py-2 rounded-xl border border-[#222] text-gray-400 text-xs font-black hover:border-[#444] transition-all"
+                            className="px-4 py-2 rounded-xl border border-[#222] text-gray-400 text-sm font-black hover:border-[#444] transition-all"
                           >
                             Sem template
                           </button>
@@ -5604,7 +5604,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       {/* Título da coluna */}
                       <div className="flex items-center gap-2">
                         <Palette size={14} className="text-[#d4af37]" />
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sua Marca</span>
+                        <span className="text-[12px] font-black text-gray-400 uppercase tracking-widest">Sua Marca</span>
                       </div>
 
                       {/* Seletor de marca */}
@@ -5647,10 +5647,10 @@ const handleBatchDownload = async (ids: string[]) => {
                             <div className="w-4 h-4 rounded-md bg-[#d4af37] flex items-center justify-center">
                               <Zap size={9} className="text-black" fill="currentColor" />
                             </div>
-                            <span className="text-[9px] font-black text-[#d4af37] uppercase tracking-widest">Identidade carregada</span>
+                            <span className="text-[13px] font-black text-[#d4af37] uppercase tracking-widest">Identidade carregada</span>
                           </div>
                           {brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis && (
-                            <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-2">
+                            <p className="text-[12px] text-gray-400 leading-relaxed line-clamp-2">
                               {brandProfiles.find(b => b.id === activeBrandProfileId)?.styleAnalysis}
                             </p>
                           )}
@@ -5667,11 +5667,11 @@ const handleBatchDownload = async (ids: string[]) => {
                       {/* Logomarca */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Logomarca</span>
+                          <span className="text-[13px] font-black text-gray-500 uppercase tracking-widest">Logomarca</span>
                           <div className="flex items-center gap-2">
                             {creativeLogo
-                              ? <span className="flex items-center gap-1 text-[9px] font-black text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">✓ Será inserida</span>
-                              : <span className="text-[9px] text-gray-500 font-bold">Opcional</span>
+                              ? <span className="flex items-center gap-1 text-[13px] font-black text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">✓ Será inserida</span>
+                              : <span className="text-[13px] text-gray-500 font-bold">Opcional</span>
                             }
                           </div>
                         </div>
@@ -5694,7 +5694,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           ) : (
                             <>
                               <ImagePlus size={20} className="text-gray-600" />
-                              <span className="text-[8px] font-bold text-gray-600 text-center leading-tight px-2">Clique para<br/>adicionar</span>
+                              <span className="text-[12px] font-bold text-gray-600 text-center leading-tight px-2">Clique para<br/>adicionar</span>
                             </>
                           )}
                         </div>
@@ -5703,7 +5703,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       {/* Posição do logo — sempre visível quando logo inserida */}
                       {creativeLogo && (
                         <div>
-                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-2">Posição do Logo</span>
+                          <span className="text-[13px] font-black text-gray-500 uppercase tracking-widest block mb-2">Posição do Logo</span>
                           <div className="grid grid-cols-2 gap-1">
                             {[
                               { id: 'top-left',     label: '↖ Topo Esq' },
@@ -5715,7 +5715,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                 type="button"
                                 key={pos.id}
                                 onClick={() => setLogoPosition(pos.id as any)}
-                                className={`py-1.5 rounded-lg border text-[9px] font-black transition-all ${logoPosition === pos.id ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]' : 'border-[#222] bg-[#111] text-gray-500 hover:border-[#444]'}`}
+                                className={`py-1.5 rounded-lg border text-[13px] font-black transition-all ${logoPosition === pos.id ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]' : 'border-[#222] bg-[#111] text-gray-500 hover:border-[#444]'}`}
                               >
                                 {pos.label}
                               </button>
@@ -5727,11 +5727,11 @@ const handleBatchDownload = async (ids: string[]) => {
                       {/* Toggles cores e tipografia */}
                       {creativeColors.length > 0 && (
                         <div className="flex items-center justify-between py-2 border-t border-[#1c1c1c]">
-                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Paleta de Cores</span>
+                          <span className="text-[13px] font-black text-gray-500 uppercase tracking-widest">Paleta de Cores</span>
                           <button
                             type="button"
                             onClick={() => setUseBrandColors(v => !v)}
-                            className={`text-[9px] font-black px-2 py-0.5 rounded-full border transition-all ${useBrandColors ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/10 text-gray-500'}`}
+                            className={`text-[13px] font-black px-2 py-0.5 rounded-full border transition-all ${useBrandColors ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/10 text-gray-500'}`}
                           >
                             {useBrandColors ? 'ATIVO ✓' : 'INATIVO'}
                           </button>
@@ -5739,11 +5739,11 @@ const handleBatchDownload = async (ids: string[]) => {
                       )}
                       {creativeTypography && (
                         <div className="flex items-center justify-between py-2 border-t border-[#1c1c1c]">
-                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Tipografia</span>
+                          <span className="text-[13px] font-black text-gray-500 uppercase tracking-widest">Tipografia</span>
                           <button
                             type="button"
                             onClick={() => setUseBrandTypography(v => !v)}
-                            className={`text-[9px] font-black px-2 py-0.5 rounded-full border transition-all ${useBrandTypography ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/10 text-gray-500'}`}
+                            className={`text-[13px] font-black px-2 py-0.5 rounded-full border transition-all ${useBrandTypography ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/10 text-gray-500'}`}
                           >
                             {useBrandTypography ? 'ATIVO ✓' : 'INATIVO'}
                           </button>
@@ -5752,7 +5752,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
                       {/* Referências opcionais */}
                       <div className="space-y-2">
-                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block">Referências opcionais</span>
+                        <span className="text-[13px] font-black text-gray-500 uppercase tracking-widest block">Referências opcionais</span>
                         <input ref={creativeRefAssetInputRef} type="file" className="hidden" accept="image/*" onChange={handleCreativeRefAssetUpload} />
                         <input ref={creativeProductAssetInputRef} type="file" className="hidden" accept="image/*" onChange={handleCreativeProductAssetUpload} />
                         <button
@@ -5764,8 +5764,8 @@ const handleBatchDownload = async (ids: string[]) => {
                             <User size={13} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <span className="block text-[10px] font-black text-white">Foto de pessoa</span>
-                            <span className="block text-[9px] text-gray-500">{creativeRefAsset ? '✓ Adicionada' : 'Para manter o rosto'}</span>
+                            <span className="block text-[12px] font-black text-white">Foto de pessoa</span>
+                            <span className="block text-[13px] text-gray-500">{creativeRefAsset ? '✓ Adicionada' : 'Para manter o rosto'}</span>
                           </div>
                           {creativeRefAsset && (
                             <X size={12} className="text-gray-500 hover:text-red-400 shrink-0" onClick={(e) => { e.stopPropagation(); setCreativeRefAsset(null); }} />
@@ -5780,8 +5780,8 @@ const handleBatchDownload = async (ids: string[]) => {
                             <Package size={13} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <span className="block text-[10px] font-black text-white">Foto do produto</span>
-                            <span className="block text-[9px] text-gray-500">{creativeProductAsset ? '✓ Adicionada' : 'Para mostrar o item'}</span>
+                            <span className="block text-[12px] font-black text-white">Foto do produto</span>
+                            <span className="block text-[13px] text-gray-500">{creativeProductAsset ? '✓ Adicionada' : 'Para mostrar o item'}</span>
                           </div>
                           {creativeProductAsset && (
                             <X size={12} className="text-gray-500 hover:text-red-400 shrink-0" onClick={(e) => { e.stopPropagation(); setCreativeProductAsset(null); }} />
@@ -5810,10 +5810,10 @@ const handleBatchDownload = async (ids: string[]) => {
                                   onClick={() => wizardStep > n && setWizardStep(n)}
                                   className={`flex items-center gap-2 transition-all ${wizardStep === n ? 'opacity-100' : wizardStep > n ? 'opacity-70 hover:opacity-100 cursor-pointer' : 'opacity-25 cursor-default pointer-events-none'}`}
                                 >
-                                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all shrink-0 ${wizardStep === n ? 'bg-[#d4af37] border-[#d4af37] text-black' : wizardStep > n ? 'bg-transparent border-[#d4af37] text-[#d4af37]' : 'bg-transparent border-[#2a2a2a] text-gray-600'}`}>
+                                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-black border-2 transition-all shrink-0 ${wizardStep === n ? 'bg-[#d4af37] border-[#d4af37] text-black' : wizardStep > n ? 'bg-transparent border-[#d4af37] text-[#d4af37]' : 'bg-transparent border-[#2a2a2a] text-gray-600'}`}>
                                     {wizardStep > n ? '✓' : n}
                                   </div>
-                                  <span className={`text-[10px] font-black uppercase tracking-wider hidden sm:block ${wizardStep === n ? 'text-white' : 'text-gray-600'}`}>{label}</span>
+                                  <span className={`text-[12px] font-black uppercase tracking-wider hidden sm:block ${wizardStep === n ? 'text-white' : 'text-gray-600'}`}>{label}</span>
                                 </button>
                                 {i < arr.length - 1 && (
                                   <div className={`flex-1 h-px transition-all ${wizardStep > n ? 'bg-[#d4af37]/40' : 'bg-[#1e1e1e]'}`} />
@@ -5846,7 +5846,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                     >
                                       <div className="text-2xl mb-2 leading-none">{g.icon}</div>
                                       <div className={`text-sm font-black leading-tight mb-0.5 ${adGoal === g.id ? 'text-[#d4af37]' : 'text-white'}`}>{g.label}</div>
-                                      <div className="text-[10px] text-gray-500 leading-snug">{g.sub}</div>
+                                      <div className="text-[12px] text-gray-500 leading-snug">{g.sub}</div>
                                     </button>
                                   ))}
                                 </div>
@@ -5868,8 +5868,8 @@ const handleBatchDownload = async (ids: string[]) => {
                                       className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border text-center transition-all ${adPlatform === p.id ? 'bg-[#1a2a4a] border-blue-500' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
                                     >
                                       <span className="text-xl leading-none">{p.icon}</span>
-                                      <span className={`text-xs font-black ${adPlatform === p.id ? 'text-blue-400' : 'text-gray-300'}`}>{p.label}</span>
-                                      <span className="text-[10px] text-gray-600 leading-tight">{p.sub}</span>
+                                      <span className={`text-sm font-black ${adPlatform === p.id ? 'text-blue-400' : 'text-gray-300'}`}>{p.label}</span>
+                                      <span className="text-[12px] text-gray-600 leading-tight">{p.sub}</span>
                                     </button>
                                   ))}
                                 </div>
@@ -5902,7 +5902,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               </div>
 
                               <div className="space-y-2">
-                                <p className="text-sm font-bold text-white">Para quem é esse anúncio? <span className="text-gray-600 text-xs font-normal">(opcional)</span></p>
+                                <p className="text-sm font-bold text-white">Para quem é esse anúncio? <span className="text-gray-600 text-sm font-normal">(opcional)</span></p>
                                 <input
                                   type="text"
                                   value={wizardAudience}
@@ -5915,7 +5915,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               {/* Campo CTA / Oferta */}
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <p className="text-sm font-bold text-white">Oferta ou CTA <span className="text-gray-600 text-xs font-normal">(opcional)</span></p>
+                                  <p className="text-sm font-bold text-white">Oferta ou CTA <span className="text-gray-600 text-sm font-normal">(opcional)</span></p>
                                 </div>
                                 <input
                                   type="text"
@@ -5929,7 +5929,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                   }
                                   className="w-full bg-[#161616] border border-[#222] rounded-xl px-4 py-3.5 text-sm focus:outline-none focus:border-[#d4af37] transition-colors placeholder-gray-600"
                                 />
-                                <p className="text-[10px] text-gray-600 leading-relaxed">
+                                <p className="text-[12px] text-gray-600 leading-relaxed">
                                   Se deixar em branco, a IA cria automaticamente o melhor CTA para seu objetivo.
                                 </p>
                               </div>
@@ -5952,8 +5952,8 @@ const handleBatchDownload = async (ids: string[]) => {
                                       className={`py-3 px-2 rounded-xl border text-center transition-all ${wizardStyle === s.id ? 'bg-white/10 border-white' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
                                     >
                                       <div className="text-xl mb-1 leading-none">{s.emoji}</div>
-                                      <div className={`text-[10px] font-black leading-tight ${wizardStyle === s.id ? 'text-white' : 'text-gray-400'}`}>{s.label}</div>
-                                      <div className="text-[9px] text-gray-600 mt-0.5 leading-tight hidden sm:block">{s.sub}</div>
+                                      <div className={`text-[12px] font-black leading-tight ${wizardStyle === s.id ? 'text-white' : 'text-gray-400'}`}>{s.label}</div>
+                                      <div className="text-[13px] text-gray-600 mt-0.5 leading-tight hidden sm:block">{s.sub}</div>
                                     </button>
                                   ))}
                                 </div>
@@ -5999,7 +5999,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                   <div className="w-5 h-5 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center">
                                     <CheckCircle2 size={12} className="text-green-400" />
                                   </div>
-                                  <span className="text-xs font-black text-white uppercase tracking-widest">Briefing pronto</span>
+                                  <span className="text-sm font-black text-white uppercase tracking-widest">Briefing pronto</span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                   {[
@@ -6011,7 +6011,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                     <div key={i} className="flex items-start gap-2 p-2.5 bg-[#141414] rounded-xl">
                                       <span className="text-sm leading-none mt-0.5">{item.icon}</span>
                                       <div>
-                                        <span className="block text-[10px] text-gray-600 uppercase tracking-widest font-bold">{item.label}</span>
+                                        <span className="block text-[12px] text-gray-600 uppercase tracking-widest font-bold">{item.label}</span>
                                         <span className="block text-[12px] text-white font-bold leading-snug mt-0.5">{item.value}</span>
                                       </div>
                                     </div>
@@ -6020,7 +6020,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                 <button
                                   type="button"
                                   onClick={() => setWizardStep(2)}
-                                  className="text-[10px] font-bold text-gray-500 hover:text-[#d4af37] transition-colors flex items-center gap-1"
+                                  className="text-[12px] font-bold text-gray-500 hover:text-[#d4af37] transition-colors flex items-center gap-1"
                                 >
                                   <ChevronLeft size={10} /> Ajustar detalhes
                                 </button>
@@ -6043,7 +6043,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                       className={`flex-1 py-3 rounded-xl border text-center transition-all ${creativeQuantity === q ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-400 hover:border-[#2a2a2a]'}`}
                                     >
                                       <div className="text-sm font-black">{label}</div>
-                                      <div className={`text-[9px] font-medium ${creativeQuantity === q ? 'text-black/60' : 'text-gray-600'}`}>{sub}</div>
+                                      <div className={`text-[13px] font-medium ${creativeQuantity === q ? 'text-black/60' : 'text-gray-600'}`}>{sub}</div>
                                     </button>
                                   ))}
                                 </div>
@@ -6067,8 +6067,8 @@ const handleBatchDownload = async (ids: string[]) => {
                                       className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-all ${creativeFormat === f.value ? 'bg-[#d4af37]/10 border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
                                     >
                                       <span className={`text-base leading-none ${creativeFormat === f.value ? 'text-[#d4af37]' : 'text-gray-500'}`}>{f.icon}</span>
-                                      <span className={`text-[10px] font-black ${creativeFormat === f.value ? 'text-[#d4af37]' : 'text-gray-400'}`}>{f.label}</span>
-                                      <span className="text-[8px] text-gray-600">{f.ratio}</span>
+                                      <span className={`text-[12px] font-black ${creativeFormat === f.value ? 'text-[#d4af37]' : 'text-gray-400'}`}>{f.label}</span>
+                                      <span className="text-[12px] text-gray-600">{f.ratio}</span>
                                     </button>
                                   ))}
                                 </div>
@@ -6077,7 +6077,7 @@ const handleBatchDownload = async (ids: string[]) => {
                               {/* Prompt oculto — para quem quiser ver */}
                               {creativePrompt && (
                                 <details className="group">
-                                  <summary className="text-[10px] font-bold text-gray-600 hover:text-gray-400 cursor-pointer select-none flex items-center gap-1.5 transition-colors">
+                                  <summary className="text-[12px] font-bold text-gray-600 hover:text-gray-400 cursor-pointer select-none flex items-center gap-1.5 transition-colors">
                                     <ChevronDown size={11} className="group-open:rotate-180 transition-transform" />
                                     Ver e editar instrução técnica
                                   </summary>
@@ -6085,7 +6085,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                     <textarea
                                       value={creativePrompt}
                                       onChange={handleCreativePromptChange}
-                                      className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4 text-xs focus:outline-none focus:border-[#333] transition-colors resize-none h-28 font-mono text-gray-500 leading-relaxed"
+                                      className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4 text-sm focus:outline-none focus:border-[#333] transition-colors resize-none h-28 font-mono text-gray-500 leading-relaxed"
                                     />
                                   </div>
                                 </details>
@@ -6118,7 +6118,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                 {!creativeLogo && (
                                   <div className="flex items-center justify-center gap-2 py-2 px-4 bg-[#1a1a1a] border border-[#222] rounded-2xl">
                                     <AlertCircle size={13} className="text-gray-600 shrink-0" />
-                                    <p className="text-[10px] text-gray-500 font-bold">Logo opcional — sem Logo/Marca o criativo será gerado sem identidade visual</p>
+                                    <p className="text-[12px] text-gray-500 font-bold">Logo opcional — sem Logo/Marca o criativo será gerado sem identidade visual</p>
                                   </div>
                                 )}
                               </div>
@@ -6132,7 +6132,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         <div className="space-y-5">
 
                           <div className="space-y-2">
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Descreva o criativo</label>
+                            <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Descreva o criativo</label>
                             <textarea
                               value={creativePrompt}
                               onChange={handleCreativePromptChange}
@@ -6143,7 +6143,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
                           {/* Motor */}
                           <div className="space-y-2">
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Motor de geração</label>
+                            <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-widest">Motor de geração</label>
                             <div className="grid grid-cols-2 gap-2">
                               {[
                                 { id: 'nano',       label: 'Gemini',      sub: '⚡ Rápido',        badge: 'Padrão' },
@@ -6158,10 +6158,10 @@ const handleBatchDownload = async (ids: string[]) => {
                                   className={`p-3 rounded-xl border text-center transition-all relative ${modelType === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#1e1e1e] bg-[#161616] hover:border-[#2a2a2a]'}`}
                                 >
                                   {m.badge === 'Novo' && (
-                                    <span className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase">Novo</span>
+                                    <span className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[13px] font-black px-1.5 py-0.5 rounded-full uppercase">Novo</span>
                                   )}
-                                  <div className={`text-xs font-black mb-0.5 ${modelType === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
-                                  <div className="text-[9px] text-gray-500">{m.sub}</div>
+                                  <div className={`text-sm font-black mb-0.5 ${modelType === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                  <div className="text-[13px] text-gray-500">{m.sub}</div>
                                 </button>
                               ))}
                             </div>
@@ -6170,7 +6170,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           {/* Objetivo + Plataforma */}
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Objetivo</label>
+                              <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-widest">Objetivo</label>
                               <div className="grid grid-cols-2 gap-1.5">
                                 {[
                                   { id: 'conversoes', label: 'Vendas' },
@@ -6179,14 +6179,14 @@ const handleBatchDownload = async (ids: string[]) => {
                                   { id: 'awareness',  label: 'Marca' },
                                 ].map(g => (
                                   <button key={g.id} type="button" onClick={() => setAdGoal(g.id as any)}
-                                    className={`py-2 rounded-xl border text-xs font-black transition-all ${adGoal === g.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                    className={`py-2 rounded-xl border text-sm font-black transition-all ${adGoal === g.id ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
                                     {g.label}
                                   </button>
                                 ))}
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Plataforma</label>
+                              <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-widest">Plataforma</label>
                               <div className="grid grid-cols-2 gap-1.5">
                                 {[
                                   { id: 'instagram', label: 'Meta' },
@@ -6195,7 +6195,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                   { id: 'youtube',   label: 'YouTube' },
                                 ].map(p => (
                                   <button key={p.id} type="button" onClick={() => setAdPlatform(adPlatform === p.id ? '' as any : p.id as any)}
-                                    className={`py-2 rounded-xl border text-xs font-black transition-all ${adPlatform === p.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                    className={`py-2 rounded-xl border text-sm font-black transition-all ${adPlatform === p.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
                                     {p.label}
                                   </button>
                                 ))}
@@ -6206,16 +6206,16 @@ const handleBatchDownload = async (ids: string[]) => {
                           {/* Estratégia + Estética */}
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estratégia</label>
+                              <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-widest">Estratégia</label>
                               <select value={creativeStrategy} onChange={e => setCreativeStrategy(e.target.value)}
-                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
+                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-sm font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
                                 {CREATIVE_STRATEGIES.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                               </select>
                             </div>
                             <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estética</label>
+                              <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-widest">Estética</label>
                               <select value={creativeAesthetic} onChange={e => setCreativeAesthetic(e.target.value)}
-                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
+                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-sm font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
                                 {CREATIVE_AESTHETICS.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
                               </select>
                             </div>
@@ -6224,20 +6224,20 @@ const handleBatchDownload = async (ids: string[]) => {
                           {/* Quantidade + Formato */}
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Quantidade</label>
+                              <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-widest">Quantidade</label>
                               <div className="flex gap-1.5">
                                 {[1, 3, 5, 10].map(q => (
                                   <button key={q} type="button" onClick={() => setCreativeQuantity(q)}
-                                    className={`flex-1 py-2.5 rounded-xl border text-xs font-black transition-all ${creativeQuantity === q ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
+                                    className={`flex-1 py-2.5 rounded-xl border text-sm font-black transition-all ${creativeQuantity === q ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
                                     {q}
                                   </button>
                                 ))}
                               </div>
                             </div>
                             <div className="space-y-2">
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Formato</label>
+                              <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-widest">Formato</label>
                               <select value={creativeFormat} onChange={e => setCreativeFormat(e.target.value)}
-                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-xs font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
+                                className="w-full bg-[#161616] border border-[#1e1e1e] text-gray-300 rounded-xl p-3 text-sm font-bold focus:border-[#d4af37] appearance-none cursor-pointer">
                                 <option value="Instagram Post 1:1">Instagram 1:1</option>
                                 <option value="Stories 9:16">Stories 9:16</option>
                                 <option value="TikTok Video 9:16">TikTok 9:16</option>
@@ -6260,7 +6260,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           {!creativeLogo && (
                             <div className="flex items-center gap-2 p-3 bg-[#1a1a1a] border border-[#222] rounded-2xl">
                               <AlertCircle size={13} className="text-gray-600 shrink-0" />
-                              <p className="text-[10px] text-gray-500 font-bold">Logo opcional — criativo gerado sem identidade visual</p>
+                              <p className="text-[12px] text-gray-500 font-bold">Logo opcional — criativo gerado sem identidade visual</p>
                             </div>
                           )}
                         </div>
@@ -6279,7 +6279,7 @@ const handleBatchDownload = async (ids: string[]) => {
                   </div>
                   <button 
                     onClick={() => setActiveTab('library')}
-                    className="text-xs font-bold text-[#d4af37] uppercase tracking-widest hover:underline flex items-center gap-2"
+                    className="text-sm font-bold text-[#d4af37] uppercase tracking-widest hover:underline flex items-center gap-2"
                   >
                     Ver Biblioteca Completa <ArrowRight size={14} />
                   </button>
@@ -6322,17 +6322,17 @@ const handleBatchDownload = async (ids: string[]) => {
                           ) : item.status === 'failed' ? (
                             <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center gap-4">
                               <AlertCircle size={40} className="text-red-500/50" />
-                              <p className="text-[10px] text-red-400 font-medium leading-relaxed">{item.error}</p>
+                              <p className="text-[12px] text-red-400 font-medium leading-relaxed">{item.error}</p>
                             </div>
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center gap-4">
                               <div className="relative">
                                 <div className="w-16 h-16 border-4 border-[#d4af37]/20 border-t-[#d4af37] rounded-full animate-spin" />
-                                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-[#d4af37]">
+                                <div className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[#d4af37]">
                                   {item.progress}%
                                 </div>
                               </div>
-                              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest animate-pulse">Processando...</span>
+                              <span className="text-[12px] font-black text-gray-500 uppercase tracking-widest animate-pulse">Processando...</span>
                             </div>
                           )}
                           
@@ -6346,7 +6346,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         <div className="p-4 flex items-center justify-between bg-[#161616]">
                           <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${item.status === 'completed' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-[#d4af37] animate-pulse'}`} />
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                            <span className="text-[13px] font-black text-gray-400 uppercase tracking-widest">
                               {item.status === 'completed' ? 'Finalizado' : item.status === 'failed' ? 'Falhou' : 'Gerando'}
                             </span>
                           </div>
@@ -6371,7 +6371,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                   next.has(item.id) ? next.delete(item.id) : next.add(item.id);
                                   return next;
                                 })}
-                                className="flex items-center gap-1 text-[9px] font-black text-gray-500 hover:text-[#d4af37] transition-colors uppercase tracking-widest"
+                                className="flex items-center gap-1 text-[13px] font-black text-gray-500 hover:text-[#d4af37] transition-colors uppercase tracking-widest"
                               >
                                 {expandedPromptIds.has(item.id) ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                                 Ver Prompt
@@ -6390,7 +6390,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         {expandedPromptIds.has(item.id) && item.prompt && (
                           <div className="px-4 pb-4 bg-[#161616] border-t border-[#222]">
                             <div className="bg-[#111] rounded-xl p-3 mt-2 relative group/prompt">
-                              <p className="text-[10px] text-gray-400 leading-relaxed font-mono pr-8">{item.prompt}</p>
+                              <p className="text-[12px] text-gray-400 leading-relaxed font-mono pr-8">{item.prompt}</p>
                               <button
                                 onClick={() => {
                                   navigator.clipboard.writeText(item.prompt);
@@ -6440,14 +6440,14 @@ const handleBatchDownload = async (ids: string[]) => {
                   <span className="text-sm font-black text-white">{selectedForDownload.size} selecionado(s)</span>
                   <button
                     onClick={() => setSelectedForDownload(new Set())}
-                    className="text-gray-500 hover:text-white text-xs font-bold uppercase tracking-widest"
+                    className="text-gray-500 hover:text-white text-sm font-bold uppercase tracking-widest"
                   >
                     Limpar
                   </button>
                   <button
                     onClick={() => handleBatchDownload(Array.from(selectedForDownload))}
                     disabled={isDownloadingBatch}
-                    className="flex items-center gap-2 bg-[#d4af37] text-black font-black px-6 py-2 rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-50"
+                    className="flex items-center gap-2 bg-[#d4af37] text-black font-black px-6 py-2 rounded-xl text-sm uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-50"
                   >
                     {isDownloadingBatch ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <Download size={16} />}
                     {isDownloadingBatch ? 'Gerando ZIP...' : 'Baixar ZIP'}
@@ -6467,7 +6467,7 @@ const handleBatchDownload = async (ids: string[]) => {
                   <button
                     key={f.id}
                     onClick={() => setLibraryFilter(f.id as any)}
-                    className={`px-6 py-3 rounded-xl flex items-center gap-2 font-bold text-xs transition-all ${libraryFilter === f.id ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'text-gray-500 hover:text-white hover:bg-[#1a1a1a]'}`}
+                    className={`px-6 py-3 rounded-xl flex items-center gap-2 font-bold text-sm transition-all ${libraryFilter === f.id ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'text-gray-500 hover:text-white hover:bg-[#1a1a1a]'}`}
                   >
                     <f.icon size={16} />
                     {f.label}
@@ -6486,7 +6486,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       setSelectedForDownload(new Set(completedIds));
                     }
                   }}
-                  className="px-4 py-2 bg-[#111] border border-[#222] rounded-xl text-xs font-bold text-gray-400 hover:border-[#d4af37] hover:text-white transition-all uppercase tracking-widest"
+                  className="px-4 py-2 bg-[#111] border border-[#222] rounded-xl text-sm font-bold text-gray-400 hover:border-[#d4af37] hover:text-white transition-all uppercase tracking-widest"
                 >
                   {selectedForDownload.size > 0 ? 'Desmarcar Tudo' : 'Selecionar Tudo'}
                 </button>
@@ -6494,7 +6494,7 @@ const handleBatchDownload = async (ids: string[]) => {
                   <button
                     onClick={() => handleBatchDownload(Array.from(selectedForDownload))}
                     disabled={isDownloadingBatch}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#d4af37] text-black font-black rounded-xl text-xs uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-[#d4af37] text-black font-black rounded-xl text-sm uppercase tracking-widest hover:scale-105 transition-all disabled:opacity-50"
                   >
                     <Download size={14} />
                     Baixar {selectedForDownload.size} ZIP
@@ -6560,13 +6560,13 @@ const handleBatchDownload = async (ids: string[]) => {
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-gray-800 p-6 text-center">
                           <AlertCircle size={48} className="mb-4 opacity-20" />
-                          <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">Mídia não sincronizada</p>
-                          <p className="text-[8px] mt-2 opacity-30">Esta imagem era muito grande para o banco de dados e foi perdida após o recarregamento.</p>
+                          <p className="text-[12px] font-bold uppercase tracking-widest opacity-40">Mídia não sincronizada</p>
+                          <p className="text-[12px] mt-2 opacity-30">Esta imagem era muito grande para o banco de dados e foi perdida após o recarregamento.</p>
                         </div>
                       )}
                       
                       {sessionPreviews[item.id] && !item.previewUrl && (
-                        <div className="absolute top-4 left-4 bg-blue-500 text-white text-[8px] font-black px-2 py-1 rounded-full shadow-lg z-20 flex items-center gap-1">
+                        <div className="absolute top-4 left-4 bg-blue-500 text-white text-[12px] font-black px-2 py-1 rounded-full shadow-lg z-20 flex items-center gap-1">
                           <Clock size={10} />
                           SESSÃO LOCAL
                         </div>
@@ -6598,11 +6598,11 @@ const handleBatchDownload = async (ids: string[]) => {
                     </div>
                     <div className="p-5">
                       <div className="flex items-center justify-between mb-3">
-                        <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter ${item.type === 'video' ? 'bg-blue-500/20 text-blue-400' : item.type === 'lipsync' ? 'bg-pink-500/20 text-pink-400' : 'bg-purple-500/20 text-purple-400'}`}>
+                        <span className={`px-2 py-1 rounded text-[12px] font-black uppercase tracking-tighter ${item.type === 'video' ? 'bg-blue-500/20 text-blue-400' : item.type === 'lipsync' ? 'bg-pink-500/20 text-pink-400' : 'bg-purple-500/20 text-purple-400'}`}>
                           {item.type}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-gray-600 font-mono">#{item.id}</span>
+                          <span className="text-[12px] text-gray-600 font-mono">#{item.id}</span>
                           {item.prompt && (
                             <button
                               onClick={() => setExpandedPromptIds(prev => {
@@ -6610,7 +6610,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                 next.has(item.id) ? next.delete(item.id) : next.add(item.id);
                                 return next;
                               })}
-                              className="flex items-center gap-1 text-[9px] font-black text-gray-500 hover:text-[#d4af37] transition-colors uppercase tracking-widest"
+                              className="flex items-center gap-1 text-[13px] font-black text-gray-500 hover:text-[#d4af37] transition-colors uppercase tracking-widest"
                             >
                               {expandedPromptIds.has(item.id) ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
                               Ver Prompt
@@ -6622,7 +6622,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       {/* Prompt expandível */}
                       {expandedPromptIds.has(item.id) && item.prompt && (
                         <div className="bg-[#111] rounded-xl p-3 mt-1 relative group/prompt">
-                          <p className="text-[10px] text-gray-400 leading-relaxed font-mono pr-8">{item.prompt}</p>
+                          <p className="text-[12px] text-gray-400 leading-relaxed font-mono pr-8">{item.prompt}</p>
                           <button
                             onClick={() => {
                               navigator.clipboard.writeText(item.prompt);
@@ -6681,10 +6681,10 @@ const handleBatchDownload = async (ids: string[]) => {
                     <p className="text-gray-500 font-medium">{user.email}</p>
                   </div>
                   <div className="flex gap-3">
-                    <span className="px-4 py-2 bg-[#d4af37]/10 text-[#d4af37] text-[10px] font-black rounded-xl uppercase tracking-widest border border-[#d4af37]/20">
+                    <span className="px-4 py-2 bg-[#d4af37]/10 text-[#d4af37] text-[12px] font-black rounded-xl uppercase tracking-widest border border-[#d4af37]/20">
                       Plano {userData?.plan || 'Free'}
                     </span>
-                    <span className="px-4 py-2 bg-green-500/10 text-green-500 text-[10px] font-black rounded-xl uppercase tracking-widest border border-green-500/20">
+                    <span className="px-4 py-2 bg-green-500/10 text-green-500 text-[12px] font-black rounded-xl uppercase tracking-widest border border-green-500/20">
                       Conta Verificada
                     </span>
                   </div>
@@ -6700,7 +6700,7 @@ const handleBatchDownload = async (ids: string[]) => {
                 </h4>
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Nome Completo</label>
+                    <label className="text-[12px] font-black text-gray-500 uppercase tracking-widest">Nome Completo</label>
                     <input 
                       type="text" 
                       defaultValue={user.displayName || ''} 
@@ -6708,7 +6708,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">E-mail de Contato</label>
+                    <label className="text-[12px] font-black text-gray-500 uppercase tracking-widest">E-mail de Contato</label>
                     <input 
                       type="email" 
                       defaultValue={user.email || ''} 
@@ -6716,7 +6716,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       className="w-full bg-[#0a0a0a] border border-[#222] rounded-2xl px-5 py-4 text-sm font-bold text-gray-600 outline-none cursor-not-allowed"
                     />
                   </div>
-                  <button className="w-full py-4 bg-[#d4af37] text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all">
+                  <button className="w-full py-4 bg-[#d4af37] text-black font-black text-sm uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all">
                     Salvar Alterações
                   </button>
                 </div>
@@ -6730,29 +6730,29 @@ const handleBatchDownload = async (ids: string[]) => {
                 <div className="space-y-6">
                   <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-2xl flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Seu Plano Atual</p>
+                      <p className="text-[12px] font-black text-gray-500 uppercase tracking-widest mb-1">Seu Plano Atual</p>
                       <p className="text-lg font-black text-white uppercase tracking-tighter">{userData?.plan || 'Free Trial'}</p>
                     </div>
                     <button 
                       onClick={() => setActiveTab('plans')}
-                      className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                      className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-[12px] font-black uppercase tracking-widest rounded-xl transition-all"
                     >
                       Mudar Plano
                     </button>
                   </div>
                   <div className="p-6 bg-[#0a0a0a] border border-[#222] rounded-2xl flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Créditos Disponíveis</p>
+                      <p className="text-[12px] font-black text-gray-500 uppercase tracking-widest mb-1">Créditos Disponíveis</p>
                       <p className="text-lg font-black text-[#d4af37] uppercase tracking-tighter">{userData?.credits || 0} Créditos</p>
                     </div>
                     <button 
                       onClick={() => setActiveTab('plans')}
-                      className="px-4 py-2 bg-[#d4af37]/10 text-[#d4af37] text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                      className="px-4 py-2 bg-[#d4af37]/10 text-[#d4af37] text-[12px] font-black uppercase tracking-widest rounded-xl transition-all"
                     >
                       Recarregar
                     </button>
                   </div>
-                  <button className="w-full py-4 border border-red-500/20 text-red-500 font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-red-500/5 transition-all">
+                  <button className="w-full py-4 border border-red-500/20 text-red-500 font-black text-sm uppercase tracking-widest rounded-2xl hover:bg-red-500/5 transition-all">
                     Excluir Minha Conta
                   </button>
                 </div>
@@ -6778,7 +6778,7 @@ const handleBatchDownload = async (ids: string[]) => {
               <div className="relative z-10 space-y-6 max-w-2xl">
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-black/10 rounded-full border border-black/10">
                   <Gift size={14} className="text-black" />
-                  <span className="text-[10px] font-black text-black uppercase tracking-widest">Programa de Indicações</span>
+                  <span className="text-[12px] font-black text-black uppercase tracking-widest">Programa de Indicações</span>
                 </div>
                 
                 <h2 className="text-4xl md:text-6xl font-black text-black uppercase tracking-tighter leading-none">
@@ -6795,7 +6795,7 @@ const handleBatchDownload = async (ids: string[]) => {
               {/* Link and Stats */}
               <div className="bg-[#111] border border-[#222] rounded-[3rem] p-10 space-y-8">
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Seu Link de Indicação</h3>
+                  <h3 className="text-[12px] font-black text-gray-500 uppercase tracking-widest">Seu Link de Indicação</h3>
                   <div className="flex items-center gap-2 p-2 bg-[#0a0a0a] border border-[#222] rounded-2xl">
                     <input 
                       type="text" 
@@ -6820,12 +6820,12 @@ const handleBatchDownload = async (ids: string[]) => {
                       <CheckCircle2 size={24} className="text-[#d4af37]" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Indicações Ativas</p>
+                      <p className="text-[12px] font-black text-gray-500 uppercase tracking-widest">Indicações Ativas</p>
                       <p className="text-2xl font-black text-white">{userData?.referralCount || 0}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Créditos Ganhos</p>
+                    <p className="text-[12px] font-black text-gray-500 uppercase tracking-widest">Créditos Ganhos</p>
                     <p className="text-2xl font-black text-[#d4af37]">{(userData?.referralCount || 0) * 10}</p>
                   </div>
                 </div>
@@ -6843,7 +6843,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     "Você recebe automaticamente 10 créditos extras em sua conta."
                   ].map((step, i) => (
                     <div key={i} className="flex items-start gap-4 group">
-                      <div className="w-8 h-8 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center shrink-0 text-[#d4af37] text-xs font-black group-hover:bg-[#d4af37] group-hover:text-black transition-all">
+                      <div className="w-8 h-8 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center shrink-0 text-[#d4af37] text-sm font-black group-hover:bg-[#d4af37] group-hover:text-black transition-all">
                         {i + 1}
                       </div>
                       <p className="text-sm text-gray-400 font-medium leading-relaxed pt-1">
@@ -6910,10 +6910,10 @@ const handleBatchDownload = async (ids: string[]) => {
                 <p className="font-bold opacity-70">Nossa equipe de suporte está pronta para te atender.</p>
               </div>
               <div className="flex gap-4">
-                <button className="px-8 py-4 bg-black text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 transition-all">
+                <button className="px-8 py-4 bg-black text-white font-black text-sm uppercase tracking-widest rounded-2xl hover:scale-105 transition-all">
                   Suporte via WhatsApp
                 </button>
-                <button className="px-8 py-4 bg-white/20 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-white/30 transition-all">
+                <button className="px-8 py-4 bg-white/20 text-black font-black text-sm uppercase tracking-widest rounded-2xl hover:bg-white/30 transition-all">
                   Enviar E-mail
                 </button>
               </div>
@@ -6933,7 +6933,7 @@ const handleBatchDownload = async (ids: string[]) => {
               <p className="text-gray-500 text-lg">Potencialize sua criação com créditos ilimitados e recursos exclusivos.</p>
               
               <div className="flex items-center justify-center gap-4 pt-4">
-                <span className={`text-xs font-bold uppercase tracking-widest ${billingCycle === 'monthly' ? 'text-white' : 'text-gray-500'}`}>Mensal</span>
+                <span className={`text-sm font-bold uppercase tracking-widest ${billingCycle === 'monthly' ? 'text-white' : 'text-gray-500'}`}>Mensal</span>
                 <button 
                   onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
                   className="w-14 h-7 bg-[#111] border border-[#222] rounded-full relative p-1 transition-all"
@@ -6944,8 +6944,8 @@ const handleBatchDownload = async (ids: string[]) => {
                   />
                 </button>
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs font-bold uppercase tracking-widest ${billingCycle === 'yearly' ? 'text-white' : 'text-gray-500'}`}>Anual</span>
-                  <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-[8px] font-black rounded uppercase">20% OFF</span>
+                  <span className={`text-sm font-bold uppercase tracking-widest ${billingCycle === 'yearly' ? 'text-white' : 'text-gray-500'}`}>Anual</span>
+                  <span className="px-2 py-0.5 bg-green-500/10 text-green-500 text-[12px] font-black rounded uppercase">20% OFF</span>
                 </div>
               </div>
             </div>
@@ -6980,23 +6980,23 @@ const handleBatchDownload = async (ids: string[]) => {
                   className={`relative p-10 rounded-[48px] border transition-all flex flex-col ${plan.popular ? 'bg-[#111] border-[#d4af37] shadow-2xl shadow-[#d4af37]/10' : 'bg-[#111] border-[#222] hover:border-[#333]'}`}
                 >
                   {plan.popular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#d4af37] text-black text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#d4af37] text-black text-[12px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
                       Mais Popular
                     </div>
                   )}
                   
                   <div className="mb-8">
                     <h4 className="text-xl font-black text-white uppercase tracking-tight mb-2">{plan.name}</h4>
-                    <p className="text-gray-500 text-xs leading-relaxed">{plan.description}</p>
+                    <p className="text-gray-500 text-sm leading-relaxed">{plan.description}</p>
                   </div>
 
                   <div className="mb-8">
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-black text-white">R$ {plan.price}</span>
-                      <span className="text-gray-500 text-xs font-bold uppercase tracking-widest">/mês</span>
+                      <span className="text-gray-500 text-sm font-bold uppercase tracking-widest">/mês</span>
                     </div>
                     {billingCycle === 'yearly' && (
-                      <p className="text-[10px] text-green-500 font-bold mt-1">Cobrado anualmente (R$ {plan.price * 12})</p>
+                      <p className="text-[12px] text-green-500 font-bold mt-1">Cobrado anualmente (R$ {plan.price * 12})</p>
                     )}
                   </div>
 
@@ -7013,7 +7013,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
                   <button 
                     onClick={() => handlePurchase(plan.name, plan.credits, plan.price)}
-                    className={`w-full py-5 rounded-3xl font-black text-xs uppercase tracking-widest transition-all ${plan.popular ? 'bg-[#d4af37] text-black hover:scale-105 shadow-lg shadow-[#d4af37]/20' : 'bg-[#1a1a1a] text-white border border-[#222] hover:bg-[#222]'}`}
+                    className={`w-full py-5 rounded-3xl font-black text-sm uppercase tracking-widest transition-all ${plan.popular ? 'bg-[#d4af37] text-black hover:scale-105 shadow-lg shadow-[#d4af37]/20' : 'bg-[#1a1a1a] text-white border border-[#222] hover:bg-[#222]'}`}
                   >
                     Assinar Agora
                   </button>
@@ -7039,13 +7039,13 @@ const handleBatchDownload = async (ids: string[]) => {
                       <Zap size={24} />
                     </div>
                     <h4 className="text-lg font-black text-white uppercase tracking-tight mb-1">{pack.name}</h4>
-                    <p className="text-2xl font-black text-[#d4af37] mb-4">{pack.credits} <span className="text-xs text-gray-500 font-bold uppercase tracking-widest text-[10px]">Créditos</span></p>
+                    <p className="text-2xl font-black text-[#d4af37] mb-4">{pack.credits} <span className="text-sm text-gray-500 font-bold uppercase tracking-widest text-[12px]">Créditos</span></p>
                     <div className="flex items-baseline gap-1 mb-6">
                       <span className="text-xl font-black text-white">R$ {pack.price}</span>
                     </div>
                     <button 
                       onClick={() => handlePurchase(pack.name, pack.credits, pack.price)}
-                      className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
+                      className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[12px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
                     >
                       Comprar Agora
                     </button>
@@ -7074,14 +7074,14 @@ const handleBatchDownload = async (ids: string[]) => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button 
                       onClick={async () => await (window as any).aistudio?.openSelectKey()}
-                      className="bg-[#1a1a1a] text-white font-bold py-4 px-4 rounded-2xl hover:bg-[#222] transition-all flex items-center justify-center gap-2 border border-[#222] text-[10px] uppercase tracking-widest"
+                      className="bg-[#1a1a1a] text-white font-bold py-4 px-4 rounded-2xl hover:bg-[#222] transition-all flex items-center justify-center gap-2 border border-[#222] text-[12px] uppercase tracking-widest"
                     >
                       <Settings size={16} />
                       Chave de API
                     </button>
                     <button 
                       onClick={runDiagnostics}
-                      className="bg-[#1a1a1a] text-white font-bold py-4 px-4 rounded-2xl hover:bg-[#222] transition-all border border-[#222] text-[10px] uppercase tracking-widest"
+                      className="bg-[#1a1a1a] text-white font-bold py-4 px-4 rounded-2xl hover:bg-[#222] transition-all border border-[#222] text-[12px] uppercase tracking-widest"
                     >
                       Diagnóstico
                     </button>
