@@ -721,6 +721,16 @@ function AppContent() {
   const [type, setType] = useState<'video' | 'image'>('video');
   const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance'>('veo');
   const [videoTier, setVideoTier] = useState<'standard' | 'pro' | 'fast'>('standard');
+
+  // Ao trocar motor, ajusta duração para o valor padrão do motor
+  const handleVideoEngineChange = (engine: 'veo' | 'kling' | 'seedance', tier: 'standard' | 'pro' | 'fast' = 'standard') => {
+    setVideoEngine(engine);
+    setVideoTier(tier);
+    // Reset duração para o padrão do motor
+    setVideoDuration(engine === 'veo' ? 4 : 5);
+    // Limita quantidade a máximo 3 para vídeo
+    setQuantity(prev => Math.min(prev, 3));
+  };
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [resolution, setResolution] = useState('1080p');
   const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage'>('nano');
@@ -4758,7 +4768,7 @@ const handleBatchDownload = async (ids: string[]) => {
                             <div className="grid grid-cols-2 gap-2">
                               <button
                                 type="button"
-                                onClick={() => setType('video')}
+                                onClick={() => { setType('video'); setQuantity(q => Math.min(q, 3)); setVideoDuration(videoEngine === 'veo' ? 4 : 5); }}
                                 className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'video' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
                               >
                                 <Video size={18} />
@@ -4782,14 +4792,14 @@ const handleBatchDownload = async (ids: string[]) => {
                                   {/* Veo 3.0 */}
                                   <button
                                     type="button"
-                                    onClick={() => { setVideoEngine('veo'); setVideoTier('standard'); }}
+                                    onClick={() => handleVideoEngineChange('veo')}
                                     className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${videoEngine === 'veo' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
                                   >
                                     <div className="flex items-center gap-2">
                                       <span className="text-base">🎬</span>
                                       <div>
                                         <div className={`text-sm font-black leading-tight ${videoEngine === 'veo' ? 'text-[#d4af37]' : 'text-white'}`}>Veo 3.0</div>
-                                        <div className="text-[11px] text-gray-500">Google · Áudio nativo</div>
+                                        <div className="text-[11px] text-gray-500">Google DeepMind · Áudio nativo · LipSync</div>
                                       </div>
                                     </div>
                                     {videoEngine === 'veo' && <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-full">ATIVO</span>}
@@ -4798,7 +4808,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                   {/* Kling 3.0 */}
                                   <button
                                     type="button"
-                                    onClick={() => { setVideoEngine('kling'); setVideoTier('standard'); }}
+                                    onClick={() => handleVideoEngineChange('kling')}
                                     className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'kling' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
                                   >
                                     <div className="flex items-center justify-between">
@@ -4806,7 +4816,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                         <span className="text-base">🔥</span>
                                         <div>
                                           <div className={`text-sm font-black leading-tight ${videoEngine === 'kling' ? 'text-[#d4af37]' : 'text-white'}`}>Kling 3.0</div>
-                                          <div className="text-[11px] text-gray-500">fal.ai · Multi-shot · Cinema</div>
+                                          <div className="text-[11px] text-gray-500">Cinemático · Multi-cenas · até 15s</div>
                                         </div>
                                       </div>
                                       <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">NOVO</span>
@@ -4827,7 +4837,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                   {/* Seedance 2.0 */}
                                   <button
                                     type="button"
-                                    onClick={() => { setVideoEngine('seedance'); setVideoTier('standard'); }}
+                                    onClick={() => handleVideoEngineChange('seedance')}
                                     className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'seedance' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
                                   >
                                     <div className="flex items-center justify-between">
@@ -4835,7 +4845,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                         <span className="text-base">🌱</span>
                                         <div>
                                           <div className={`text-sm font-black leading-tight ${videoEngine === 'seedance' ? 'text-[#d4af37]' : 'text-white'}`}>Seedance 2.0</div>
-                                          <div className="text-[11px] text-gray-500">ByteDance · Física realista</div>
+                                          <div className="text-[11px] text-gray-500">Movimento fluido · Física real · Áudio nativo</div>
                                         </div>
                                       </div>
                                       <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">NOVO</span>
@@ -5059,13 +5069,17 @@ const handleBatchDownload = async (ids: string[]) => {
 
                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
                       <div className="flex items-center gap-4">
+                        {/* Quantidade — 1·3·5·10 para imagem, 1·2·3 para vídeo */}
                         <div className="flex flex-col">
                           <label className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Quantidade</label>
                           <div className="flex gap-1 mt-1">
-                            {[1, 2, 5, 10].map(n => (
-                              <button 
-                                key={n} 
-                                type="button" 
+                            {(type === 'video'
+                              ? [1, 2, 3]
+                              : [1, 3, 5, 10]
+                            ).map(n => (
+                              <button
+                                key={n}
+                                type="button"
                                 onClick={() => setQuantity(n)}
                                 className={`w-8 h-8 rounded-lg border text-sm font-bold transition-all ${quantity === n ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                               >
@@ -5074,16 +5088,21 @@ const handleBatchDownload = async (ids: string[]) => {
                             ))}
                           </div>
                         </div>
+
+                        {/* Duração — dinâmica por motor */}
                         {type === 'video' && (
                           <div className="flex flex-col">
                             <label className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Duração</label>
                             <div className="flex gap-1 mt-1">
-                              {[4, 8].map(d => (
-                                <button 
-                                  key={d} 
-                                  type="button" 
+                              {(videoEngine === 'veo'
+                                ? [4, 8]
+                                : [5, 8, 10, 15]
+                              ).map(d => (
+                                <button
+                                  key={d}
+                                  type="button"
                                   onClick={() => setVideoDuration(d)}
-                                  className={`w-8 h-8 rounded-lg border text-sm font-bold transition-all ${videoDuration === d ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
+                                  className={`w-9 h-8 rounded-lg border text-sm font-bold transition-all ${videoDuration === d ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
                                 >
                                   {d}s
                                 </button>
