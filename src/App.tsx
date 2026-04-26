@@ -54,7 +54,8 @@ import {
   KeyRound,
   Home,
   Target,
-  TrendingUp
+  TrendingUp,
+  Pencil
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
@@ -1845,7 +1846,7 @@ function AppContent() {
     // Creative Studio Capture
     const currentUseCreativeStudio = isCreativeActive;
     const currentCreativeLogo = creativeLogo;
-              const currentUseLogoInArt = useLogoInArt;
+              const currentUseLogoInArt = !!creativeLogo; // Logo sempre inserida quando presente
               const currentLogoPosition = logoPosition;
               const currentUseBrandColors = useBrandColors;
               const currentUseBrandTypography = useBrandTypography;
@@ -4211,10 +4212,14 @@ const handleBatchDownload = async (ids: string[]) => {
                           </button>
                           <button
                             type="button"
-                            onClick={() => setEditingBrand(brand)}
-                            className="px-3 py-2 rounded-xl bg-[#1a1a1a] border border-[#222] text-gray-400 hover:border-[#444] transition-all"
+                            onClick={() => {
+                              setEditingBrand(brand);
+                              setBrandStep('upload');
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a1a1a] border border-[#222] text-gray-400 hover:border-[#d4af37]/50 hover:text-[#d4af37] transition-all text-[10px] font-black uppercase tracking-widest"
                           >
-                            <Settings size={13} />
+                            <Pencil size={11} />
+                            Editar
                           </button>
                           <button
                             type="button"
@@ -5658,16 +5663,10 @@ const handleBatchDownload = async (ids: string[]) => {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Logomarca</span>
                           <div className="flex items-center gap-2">
-                            {creativeLogo && (
-                              <button
-                                type="button"
-                                onClick={() => setUseLogoInArt(v => !v)}
-                                className={`text-[9px] font-black px-2 py-0.5 rounded-full border transition-all ${useLogoInArt ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37]' : 'bg-black/40 border-white/10 text-gray-500'}`}
-                              >
-                                {useLogoInArt ? 'INCLUIR ✓' : 'NÃO INCLUIR'}
-                              </button>
-                            )}
-                            {!creativeLogo && <span className="text-[9px] text-gray-500 font-bold">Opcional</span>}
+                            {creativeLogo
+                              ? <span className="flex items-center gap-1 text-[9px] font-black text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">✓ Será inserida</span>
+                              : <span className="text-[9px] text-gray-500 font-bold">Opcional</span>
+                            }
                           </div>
                         </div>
                         <div
@@ -5695,15 +5694,15 @@ const handleBatchDownload = async (ids: string[]) => {
                         </div>
                       </div>
 
-                      {/* Posição do logo */}
-                      {creativeLogo && useLogoInArt && (
+                      {/* Posição do logo — sempre visível quando logo inserida */}
+                      {creativeLogo && (
                         <div>
                           <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-2">Posição do Logo</span>
                           <div className="grid grid-cols-2 gap-1">
                             {[
-                              { id: 'top-left', label: '↖ Topo Esq' },
-                              { id: 'top-right', label: '↗ Topo Dir' },
-                              { id: 'bottom-left', label: '↙ Base Esq' },
+                              { id: 'top-left',     label: '↖ Topo Esq' },
+                              { id: 'top-right',    label: '↗ Topo Dir' },
+                              { id: 'bottom-left',  label: '↙ Base Esq' },
                               { id: 'bottom-right', label: '↘ Base Dir' },
                             ].map(pos => (
                               <button
@@ -6346,6 +6345,19 @@ const handleBatchDownload = async (ids: string[]) => {
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
+                            {/* Botão Download */}
+                            {item.status === 'completed' && (sessionPreviews[item.id] || item.previewUrl) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id);
+                                }}
+                                className="p-1.5 bg-[#d4af37]/10 text-[#d4af37] rounded-lg hover:bg-[#d4af37] hover:text-black transition-all"
+                                title="Baixar imagem"
+                              >
+                                <Download size={13} />
+                              </button>
+                            )}
                             {item.prompt && (
                               <button
                                 onClick={() => setExpandedPromptIds(prev => {
@@ -6359,7 +6371,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                 Ver Prompt
                               </button>
                             )}
-                            <button 
+                            <button
                               onClick={() => handleDelete(item.id)}
                               className="text-gray-600 hover:text-red-500 transition-colors"
                             >
