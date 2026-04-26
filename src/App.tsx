@@ -4835,11 +4835,11 @@ const handleBatchDownload = async (ids: string[]) => {
                   <label className="block text-sm font-bold text-gray-400 mb-1 uppercase tracking-widest">Motor de Imagem</label>
                   <div className="grid grid-cols-3 gap-1">
                     {[
-                      { id: 'nano',       label: '⚡ Gemini',      desc: 'Rápido' },
-                      { id: 'nanoBanana', label: '🍌 Nano Banana', desc: 'ADS' },
-                      { id: 'gptImage',   label: '🤖 GPT Image 2', desc: 'Texto PT-BR' },
-                      { id: 'imagen',     label: '🎨 Imagen 4',    desc: 'Qualidade' },
-                      { id: 'ideogram',   label: '✍️ Ideogram',   desc: 'Design' }
+                      { id: 'nano',       label: '⚡ Gemini',       desc: 'Rápido e versátil' },
+                      { id: 'nanoBanana', label: '🍌 Nano Banana 2', desc: 'Alta fidelidade' },
+                      { id: 'gptImage',   label: '🤖 GPT Image 2',  desc: 'Máxima qualidade' },
+                      { id: 'imagen',     label: '🎨 Imagen 4',     desc: 'Fotorrealismo' },
+                      { id: 'ideogram',   label: '✍️ Ideogram',     desc: 'Texto e tipografia' }
                     ].map(m => (
                       <button
                         type="button"
@@ -6151,10 +6151,10 @@ const handleBatchDownload = async (ids: string[]) => {
                             <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-widest">Motor de geração</label>
                             <div className="grid grid-cols-2 gap-2">
                               {[
-                                { id: 'nano',       label: 'Gemini',      sub: '⚡ Rápido',        badge: 'Padrão' },
-                                { id: 'nanoBanana', label: 'Nano Banana', sub: '🍌 Melhor PT-BR',   badge: 'Novo' },
-                                { id: 'gptImage',   label: 'GPT Image 2', sub: '🤖 Texto perfeito', badge: 'Pro' },
-                                { id: 'imagen',     label: 'Imagen 4',    sub: '🎨 Alta qualidade', badge: 'Pro' },
+                                { id: 'nano',       label: 'Gemini',        sub: '⚡ Rápido e versátil', badge: 'Padrão' },
+                                { id: 'nanoBanana', label: 'Nano Banana 2', sub: '🍌 Alta fidelidade',   badge: 'Novo' },
+                                { id: 'gptImage',   label: 'GPT Image 2',   sub: '🤖 Máxima qualidade', badge: 'Pro' },
+                                { id: 'imagen',     label: 'Imagen 4',      sub: '🎨 Fotorrealismo',     badge: 'Pro' },
                               ].map(m => (
                                 <button
                                   type="button"
