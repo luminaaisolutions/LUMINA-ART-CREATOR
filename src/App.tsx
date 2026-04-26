@@ -991,46 +991,52 @@ function AppContent() {
   const [isDomainAuthorized, setIsDomainAuthorized] = useState(true);
   const [userData, setUserData] = useState<UserProfile | null>(null);
   
+  // --- Helpers para prefixo fixo de referência ---
+  const buildPrefixedPrompt = useCallback((body: string, hasRef: boolean, hasProd: boolean) => {
+    const actorTag = '[Personagem/Referência]';
+    const productTag = '[Produto]';
+    // Remove tags existentes para evitar duplicatas
+    let clean = body
+      .replace(actorTag, '')
+      .replace(productTag, '')
+      .replace(/^,\s*/, '')
+      .trim();
+    const prefix = [
+      hasRef  ? actorTag  : '',
+      hasProd ? productTag : '',
+    ].filter(Boolean).join('');
+    if (!prefix) return clean;
+    return clean ? `${prefix}, ${clean}` : prefix;
+  }, []);
+
+  // Extrai apenas o "corpo" do prompt sem os prefixos de referência
+  const stripPrefixes = useCallback((value: string) => {
+    return value
+      .replace('[Personagem/Referência]', '')
+      .replace('[Produto]', '')
+      .replace(/^,\s*/, '')
+      .trim();
+  }, []);
+
+  // Estúdio Lumina — mantém prefixo fixo quando imagens estão presentes
+  const handlePromptChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const body = stripPrefixes(e.target.value);
+    setPrompt(buildPrefixedPrompt(body, !!refAsset, !!productAsset));
+  }, [refAsset, productAsset, buildPrefixedPrompt, stripPrefixes]);
+
+  // Aba ADS — mantém prefixo fixo quando imagens estão presentes
+  const handleCreativePromptChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const body = stripPrefixes(e.target.value);
+    setCreativePrompt(buildPrefixedPrompt(body, !!creativeRefAsset, !!creativeProductAsset));
+  }, [creativeRefAsset, creativeProductAsset, buildPrefixedPrompt, stripPrefixes]);
+
   // --- Auto-tag Prompt based on Assets ---
   useEffect(() => {
-    setPrompt(prev => {
-      let result = prev;
-      const actorTag = '[Personagem/Referência]';
-      const productTag = '[Produto]';
-
-      // Clean existing tags to avoid duplicates or messy formatting
-      result = result.replace(actorTag, '').replace(productTag, '').trim();
-      if (result.startsWith(',')) result = result.substring(1).trim();
-
-      let prefix = '';
-      if (refAsset) prefix += actorTag;
-      if (productAsset) prefix += productTag;
-      
-      if (prefix) {
-        return result ? `${prefix}, ${result}` : prefix;
-      }
-      return result;
-    });
+    setPrompt(prev => buildPrefixedPrompt(stripPrefixes(prev), !!refAsset, !!productAsset));
   }, [refAsset, productAsset]);
 
   useEffect(() => {
-    setCreativePrompt(prev => {
-      let result = prev;
-      const actorTag = '[Personagem/Referência]';
-      const productTag = '[Produto]';
-
-      result = result.replace(actorTag, '').replace(productTag, '').trim();
-      if (result.startsWith(',')) result = result.substring(1).trim();
-
-      let prefix = '';
-      if (creativeRefAsset) prefix += actorTag;
-      if (creativeProductAsset) prefix += productTag;
-      
-      if (prefix) {
-        return result ? `${prefix}, ${result}` : prefix;
-      }
-      return result;
-    });
+    setCreativePrompt(prev => buildPrefixedPrompt(stripPrefixes(prev), !!creativeRefAsset, !!creativeProductAsset));
   }, [creativeRefAsset, creativeProductAsset]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -3167,7 +3173,7 @@ const handleBatchDownload = async (ids: string[]) => {
     // Toggle — clica de novo para deselecionar
     if (selectedStyle === style) {
       setSelectedStyle('');
-      setPrompt('');
+      setPrompt(buildPrefixedPrompt('', !!refAsset, !!productAsset));
       return;
     }
     const isCreative = activeTab === 'projects';
@@ -4652,10 +4658,10 @@ const handleBatchDownload = async (ids: string[]) => {
                                 onClick={() => {
                                   if (studioMode === mode.id) {
                                     setStudioMode('');
-                                    setPrompt('');
+                                    setPrompt(buildPrefixedPrompt('', !!refAsset, !!productAsset));
                                   } else {
                                     setStudioMode(mode.id);
-                                    setPrompt(mode.prompt);
+                                    setPrompt(buildPrefixedPrompt(mode.prompt, !!refAsset, !!productAsset));
                                     setType('image');
                                   }
                                 }}
@@ -4772,7 +4778,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           </div>
                           <textarea 
                             value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
+                            onChange={handlePromptChange}
                             placeholder="Descreva sua visão..."
                             className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-4 focus:outline-none focus:border-[#d4af37] transition-colors resize-none text-sm h-24"
                             required
@@ -6078,7 +6084,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                   <div className="mt-3 relative">
                                     <textarea
                                       value={creativePrompt}
-                                      onChange={e => setCreativePrompt(e.target.value)}
+                                      onChange={handleCreativePromptChange}
                                       className="w-full bg-[#0a0a0a] border border-[#1e1e1e] rounded-xl p-4 text-xs focus:outline-none focus:border-[#333] transition-colors resize-none h-28 font-mono text-gray-500 leading-relaxed"
                                     />
                                   </div>
@@ -6129,7 +6135,7 @@ const handleBatchDownload = async (ids: string[]) => {
                             <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Descreva o criativo</label>
                             <textarea
                               value={creativePrompt}
-                              onChange={e => setCreativePrompt(e.target.value)}
+                              onChange={handleCreativePromptChange}
                               placeholder="Descreva o visual, cenário, produto em destaque, clima do anúncio..."
                               className="w-full bg-[#161616] border border-[#1e1e1e] rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#d4af37] transition-colors resize-none h-28 placeholder-gray-600"
                             />
