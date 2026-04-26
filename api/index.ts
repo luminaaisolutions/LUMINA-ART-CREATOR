@@ -268,10 +268,7 @@ async function createServer() {
         profissional: 'PROFISSIONAL — corporativo, sério, confiável'
       };
 
-      const recommendedModel = 
-  wizardStyle === 'minimalista' ? 'ideogram' :
-  wizardStyle === 'elegante' ? 'ideogram' :
-  'nano'; // Gemini para todos os outros — melhor PT-BR
+      const recommendedModel = 'nano'; // Gemini como motor padrão para ADS — melhor PT-BR
 
       // Mapas avançados baseados nos Frameworks Master + Visual Direction
       const layoutMap: Record<string, string> = {
@@ -662,6 +659,153 @@ OUTPUT: Generate ONE complete, detailed image prompt in English (maximum 400 wor
     try {
       const { method, args, apiKey: clientApiKey } = req.body;
 
+      // --- generateNanoBanana — tratado ANTES da validação de GEMINI_API_KEY ---
+      if (method === 'generateNanoBanana') {
+        console.log(`[NanoBanana] Calling Nano Banana 2 via fal.ai`);
+
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) {
+          console.error("[NanoBanana] FAL_API_KEY not configured");
+          return res.status(503).json({ error: "Serviço Nano Banana indisponível. Configure FAL_API_KEY." });
+        }
+
+        const aspectRatioMap: Record<string, string> = {
+          '1:1':    '1:1',
+          '9:16':   '9:16',
+          '16:9':   '16:9',
+          '4:5':    '4:5',
+          '1.91:1': '16:9'
+        };
+
+        // Decide endpoint: edit (com referências) ou text-to-image (puro)
+        const hasReferences = !!(args.referenceImageBase64 || args.logoBase64);
+        const endpoint = hasReferences
+          ? 'https://fal.run/fal-ai/nano-banana-2/edit'
+          : 'https://fal.run/fal-ai/nano-banana-2';
+
+        const nanoBananaBody: any = {
+          prompt: args.prompt,
+          aspect_ratio: aspectRatioMap[args.aspectRatio || '1:1'] || '1:1',
+          num_images: 1,
+          output_format: 'png',
+          safety_tolerance: '4',
+        };
+
+        // Faz upload das referências para fal.ai e passa as URLs
+        const imageUrls: string[] = [];
+
+        if (args.referenceImageBase64) {
+          try {
+            const uploadRes = await fetch('https://fal.run/files/upload', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Key ${falKey}`,
+                'Content-Type': 'application/octet-stream',
+                'X-Fal-File-Name': 'reference.jpg'
+              },
+              body: Buffer.from(args.referenceImageBase64, 'base64')
+            });
+            if (uploadRes.ok) {
+              const uploadData = await uploadRes.json();
+              const refUrl = uploadData?.url || uploadData?.file_url;
+              if (refUrl) {
+                imageUrls.push(refUrl);
+                console.log(`[NanoBanana] Referência uploaded: ${refUrl}`);
+              }
+            }
+          } catch (uploadErr) {
+            console.warn('[NanoBanana] Upload de referência falhou:', uploadErr);
+          }
+        }
+
+        if (args.logoBase64) {
+          try {
+            const logoUploadRes = await fetch('https://fal.run/files/upload', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Key ${falKey}`,
+                'Content-Type': 'application/octet-stream',
+                'X-Fal-File-Name': 'logo.png'
+              },
+              body: Buffer.from(args.logoBase64, 'base64')
+            });
+            if (logoUploadRes.ok) {
+              const logoData = await logoUploadRes.json();
+              const logoUrl = logoData?.url || logoData?.file_url;
+              if (logoUrl) {
+                imageUrls.push(logoUrl);
+                console.log(`[NanoBanana] Logo uploaded: ${logoUrl}`);
+              }
+            }
+          } catch (logoErr) {
+            console.warn('[NanoBanana] Upload de logo falhou:', logoErr);
+          }
+        }
+
+        if (imageUrls.length > 0) {
+          nanoBananaBody.image_urls = imageUrls;
+        }
+
+        console.log(`[NanoBanana] endpoint=${hasReferences ? 'edit' : 't2i'} prompt="${(args.prompt || '').substring(0, 80)}..." ratio=${nanoBananaBody.aspect_ratio}`);
+
+        const nanoBananaResponse = await withRetry(
+          () => fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Key ${falKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(nanoBananaBody)
+          }),
+          3, 3000, 'generateNanoBanana'
+        );
+
+        if (!nanoBananaResponse.ok) {
+          const errData = await nanoBananaResponse.json().catch(() => ({ error: nanoBananaResponse.statusText }));
+          console.error("[NanoBanana] API error:", JSON.stringify(errData));
+          return res.status(nanoBananaResponse.status).json({ error: errData?.detail || errData?.error || 'Nano Banana generation failed' });
+        }
+
+        const nanoBananaData = await nanoBananaResponse.json();
+        console.log(`[NanoBanana] Sucesso. Images: ${nanoBananaData?.images?.length || 0}`);
+
+        if (nanoBananaData?.images?.[0]?.url) {
+          const imgResponse = await fetch(nanoBananaData.images[0].url);
+          const imgBuffer = await imgResponse.arrayBuffer();
+          let base64 = Buffer.from(imgBuffer).toString('base64');
+          const mimeType = imgResponse.headers.get('content-type') || 'image/png';
+
+          // Sobrepõe logo real da marca se disponível
+          if (args.logoBase64 && args.logoPosition && !args.templateLayers) {
+            console.log(`[Sharp/NanoBanana] Sobrepondo logo na posição: ${args.logoPosition}`);
+            base64 = await overlayLogoOnImage(base64, args.logoBase64, args.logoPosition);
+          }
+
+          // ENGINE DE COMPOSIÇÃO — Template com camadas
+          if (args.templateLayers && args.templateTexts) {
+            console.log(`[Sharp/NanoBanana] Composição de template com ${args.templateLayers.length} camadas`);
+            base64 = await composeTemplateImage(
+              base64,
+              args.templateLayers,
+              args.templateTexts,
+              args.logoBase64ForTemplate,
+              args.logoPositionForTemplate || 'bottom-right'
+            );
+          }
+
+          return res.json({
+            generatedImages: [{
+              image: {
+                imageBytes: base64,
+                mimeType: 'image/png'
+              }
+            }]
+          });
+        }
+
+        return res.status(500).json({ error: 'Nano Banana não retornou imagem válida.' });
+      }
+
       // --- generateIdeogram — tratado ANTES da validação de GEMINI_API_KEY ---
       if (method === 'generateIdeogram') {
         console.log(`[Gemini Proxy] Calling Ideogram V3 via fal.ai`);
@@ -1007,8 +1151,8 @@ OUTPUT: Generate ONE complete, detailed image prompt in English (maximum 400 wor
       }
 
       // ── Motor recomendado por objetivo ──
-      const needsTextInImage = adGoal === 'conversoes' || adGoal === 'lead';
-      const recommendedModel = needsTextInImage ? 'ideogram' : (modelType || 'nano');
+      const needsTextInImage = false; // Gemini é o motor padrão para ADS
+      const recommendedModel = 'nano'; // Gemini — melhor qualidade PT-BR
 
       // ── CTA automático por objetivo se não foi preenchido ──
       const ctaMap: Record<string, string> = {
@@ -1119,24 +1263,17 @@ Return ONLY the prompt, no explanations.`;
       console.error("[WizardPrompt] Error:", error.message);
 
       const { wizardProduct = 'product', wizardAudience = '', adPlatform = 'instagram', wizardStyle = '', adGoal = 'conversoes', wizardCta = '' } = req.body;
-      const needsText = adGoal === 'conversoes' || adGoal === 'lead';
-      const ctaFallback = wizardCta || (adGoal === 'conversoes' ? 'Shop Now — Limited Offer' : adGoal === 'lead' ? 'Sign Up Free Today' : 'Learn More');
-      const recModel = needsText ? 'ideogram' : 'nano';
+      const recModel = 'nano'; // Gemini sempre
+      const ctaFallback = wizardCta || (adGoal === 'conversoes' ? 'Compre Agora — Oferta Limitada' : adGoal === 'lead' ? 'Cadastre-se Grátis' : 'Saiba Mais');
 
-      const fallback = needsText
-        ? `${wizardProduct} product hero shot centered in frame, bold headline text "${wizardProduct}" in large white font at top, CTA button "${ctaFallback}" prominent at bottom, ${
-            wizardStyle === 'urgencia' ? 'urgent warm red-orange palette, extreme contrast, kinetic energy.' :
-            wizardStyle === 'luxo'     ? 'luxury dark background, gold accents, dramatic studio lighting.' :
-                                         'clean professional background, balanced studio lighting.'
-          } Sharp product focus, 8K detail, Ideogram text rendering style.`
-        : `${wizardProduct} as the central visual hero, dramatically lit, sharply focused, ${
-            wizardStyle === 'elegante'    ? 'soft diffused light, neutral premium palette, sophisticated minimalist composition.' :
-            wizardStyle === 'urgencia'    ? 'warm saturated colors, bold contrast, kinetic urgency, strong visual hierarchy.' :
-            wizardStyle === 'luxo'        ? 'deep blacks, golden accents, dramatic directional light, ultra-premium feel.' :
-            wizardStyle === 'divertido'   ? 'vibrant colors, playful composition, dynamic energy, lifestyle aesthetic.' :
-            wizardStyle === 'profissional'? 'cool blue-grey tones, studio lighting, confident professional mood.' :
-                                            'clean composition, balanced lighting, sharp focus, modern aesthetic.'
-          } Cinematic depth of field, 8K detail, no text or logos.`;
+      const fallback = `${wizardProduct} as the central visual hero, dramatically lit, sharply focused, ${
+          wizardStyle === 'elegante'    ? 'soft diffused light, neutral premium palette, sophisticated minimalist composition.' :
+          wizardStyle === 'urgencia'    ? 'warm saturated colors, bold contrast, kinetic urgency, strong visual hierarchy.' :
+          wizardStyle === 'luxo'        ? 'deep blacks, golden accents, dramatic directional light, ultra-premium feel.' :
+          wizardStyle === 'divertido'   ? 'vibrant colors, playful composition, dynamic energy, lifestyle aesthetic.' :
+          wizardStyle === 'profissional'? 'cool blue-grey tones, studio lighting, confident professional mood.' :
+                                          'clean composition, balanced lighting, sharp focus, modern aesthetic.'
+        } Cinematic depth of field, 8K detail, no text or logos.`;
 
       return res.json({ prompt: fallback, recommendedModel: recModel });
     }
