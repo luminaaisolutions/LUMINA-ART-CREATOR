@@ -740,7 +740,18 @@ function AppContent() {
   const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage'>('nano');
   const [quantity, setQuantity] = useState(1);
   const [videoDuration, setVideoDuration] = useState(4); // Default 4s
-  const [lipsyncDuration, setLipsyncDuration] = useState(4); // Default 4s
+  const [lipsyncDuration, setLipsyncDuration] = useState(4);
+  const [lipsyncEngine, setLipsyncEngine] = useState<'veo' | 'omnihuman' | 'aurora' | 'sync' | 'syncpro'>('veo');
+  const [syncMode, setSyncMode] = useState<'cut_off' | 'loop' | 'bounce' | 'remap'>('cut_off');
+  const [showLipsyncCreditFlyer, setShowLipsyncCreditFlyer] = useState(false);
+  const lipsyncFlyerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleLipsyncEngineChange = (engine: typeof lipsyncEngine) => {
+    setLipsyncEngine(engine);
+    if (lipsyncFlyerTimerRef.current) clearTimeout(lipsyncFlyerTimerRef.current);
+    setShowLipsyncCreditFlyer(true);
+    lipsyncFlyerTimerRef.current = setTimeout(() => setShowLipsyncCreditFlyer(false), 3000);
+  };
   const [lipsyncAspectRatio, setLipsyncAspectRatio] = useState('9:16');
   const [lipsyncResolution, setLipsyncResolution] = useState('1080p');
   const [lipsyncQuantity, setLipsyncQuantity] = useState(1);
@@ -2504,7 +2515,106 @@ function AppContent() {
           const isLipsyncJob = currentUseLipsync;
           const currentVideoEngine = videoEngine;
           const currentVideoTier = videoTier;
+          const currentLipsyncEngine = lipsyncEngine;
           const modelToUse = isLipsyncJob ? 'veo-3.0-generate-001' : 'veo-3.0-generate-001';
+
+          // Motores fal.ai para LipSync — roteamento direto
+          if (isLipsyncJob && currentLipsyncEngine !== 'veo') {
+            await updateDoc(doc(db, itemPath), { progress: 20, status: 'processing' });
+
+            // Upload vídeo/imagem para fal.ai
+            let mediaUrl: string | undefined;
+            if (activeAsset?.data) {
+              const uploadRes = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  method: 'uploadToFal',
+                  args: { base64: activeAsset.data, mimeType: activeAsset.mimeType }
+                })
+              });
+              if (uploadRes.ok) {
+                const upData = await uploadRes.json();
+                mediaUrl = upData?.url;
+              }
+            }
+
+            // Upload áudio para fal.ai
+            let audioUrl: string | undefined;
+            if (currentLipsyncAudio?.data) {
+              const audioUpRes = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  method: 'uploadToFal',
+                  args: { base64: currentLipsyncAudio.data, mimeType: currentLipsyncAudio.mimeType }
+                })
+              });
+              if (audioUpRes.ok) {
+                const auData = await audioUpRes.json();
+                audioUrl = auData?.url;
+              }
+            }
+
+            if (!mediaUrl) throw new Error('Falha no upload da referência para o motor selecionado.');
+            if (!audioUrl && !currentLipsyncAudioPrompt.trim()) throw new Error('Áudio ou prompt de texto necessário.');
+
+            await updateDoc(doc(db, itemPath), { progress: 40, status: 'processing' });
+
+            let falMethod = '';
+            let falArgs: any = {};
+
+            if (currentLipsyncEngine === 'sync' || currentLipsyncEngine === 'syncpro') {
+              falMethod = 'generateSyncLipsync';
+              falArgs = {
+                videoUrl: mediaUrl,
+                audioUrl,
+                tier: currentLipsyncEngine === 'syncpro' ? 'pro' : 'standard',
+                syncMode,
+                occlusionDetection: true
+              };
+            } else if (currentLipsyncEngine === 'omnihuman') {
+              falMethod = 'generateOmniHuman';
+              falArgs = {
+                imageUrl: mediaUrl,
+                audioUrl,
+                resolution: currentResolution === '1080p' ? '720p' : '480p',
+                prompt: itemPrompt || undefined
+              };
+            } else if (currentLipsyncEngine === 'aurora') {
+              falMethod = 'generateAurora';
+              falArgs = {
+                imageUrl: mediaUrl,
+                audioUrl,
+                resolution: currentResolution === '1080p' ? '720p' : '480p',
+                prompt: itemPrompt || undefined
+              };
+            }
+
+            const falRes = await fetch('/api/gemini', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ method: falMethod, args: falArgs })
+            });
+
+            if (!falRes.ok) {
+              const errData = await falRes.json().catch(() => ({}));
+              throw new Error(errData.error || `Erro no motor de LipSync`);
+            }
+
+            const falData = await falRes.json();
+            if (falData?.videoUrl) {
+              await updateDoc(doc(db, itemPath), {
+                status: 'completed',
+                progress: 100,
+                videoUrl: falData.videoUrl,
+                previewUrl: falData.videoUrl
+              });
+              setSessionPreviews(prev => ({ ...prev, [item.id]: falData.videoUrl }));
+              return;
+            }
+            throw new Error('Motor de LipSync não retornou vídeo.');
+          }
           
           const activeKey = await getActiveKey();
 
@@ -5320,27 +5430,97 @@ const handleBatchDownload = async (ids: string[]) => {
                   className={`bg-[#111] p-8 md:p-10 rounded-[40px] border transition-all ${useLipsync && lipsyncAudio ? 'border-[#d4af37] shadow-lg shadow-[#d4af37]/10' : 'border-[#222]'}`}
                 >
                   <div className="flex flex-wrap items-start gap-10">
-                    {/* Left: Title and Toggle */}
-                    <div className="w-full lg:w-auto lg:min-w-[280px] space-y-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Mic size={24} className={useLipsync && lipsyncAudio ? 'text-[#d4af37]' : 'text-gray-500'} />
-                          <h3 className="font-bold text-xl">Lip Sync Studio</h3>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const nextValue = !useLipsync;
-                            setUseLipsync(nextValue);
-                            if (nextValue && !lipsyncAsset && refAsset) {
-                              setLipsyncAsset(refAsset);
-                            }
-                          }}
-                          className={`w-12 h-6 rounded-full transition-colors relative ${useLipsync ? 'bg-[#d4af37]' : 'bg-gray-700'}`}
-                        >
-                          <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${useLipsync ? 'translate-x-6' : ''}`} />
-                        </button>
+                    {/* Left: Title + Motor Selector */}
+                    <div className="w-full lg:w-auto lg:min-w-[300px] space-y-5">
+                      <div className="flex items-center gap-3">
+                        <Mic size={22} className="text-[#d4af37]" />
+                        <h3 className="font-bold text-xl">LipSync Studio</h3>
                       </div>
+
+                      {/* Categoria 1: Avatar falante */}
+                      <div className="space-y-2">
+                        <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">🎭 Criar avatar falante</span>
+                        <div className="space-y-1.5">
+                          {[
+                            { id: 'veo',       icon: '🎬', label: 'Veo 3.0',        sub: 'Google DeepMind · LipSync nativo',    input: 'Imagem' },
+                            { id: 'omnihuman', icon: '🧠', label: 'OmniHuman v1.5', sub: 'ByteDance · Melhor emoção e expressão', input: 'Imagem' },
+                            { id: 'aurora',    icon: '✨', label: 'Aurora',          sub: 'Creatify · Máxima qualidade de avatar', input: 'Imagem' },
+                          ].map(m => (
+                            <button key={m.id} type="button"
+                              onClick={() => handleLipsyncEngineChange(m.id as any)}
+                              className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <span className="text-base">{m.icon}</span>
+                                <div>
+                                  <div className={`text-sm font-black leading-tight ${lipsyncEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                  <div className="text-[11px] text-gray-500">{m.sub}</div>
+                                </div>
+                              </div>
+                              {lipsyncEngine === m.id && <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-full shrink-0">ATIVO</span>}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Categoria 2: Sincronizar vídeo existente */}
+                      <div className="space-y-2">
+                        <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">👄 Sincronizar vídeo existente</span>
+                        <div className="space-y-1.5">
+                          {[
+                            { id: 'sync',    icon: '🔄', label: 'Sync.so v2',     sub: 'Dubbing geral · $3/min',         badge: '' },
+                            { id: 'syncpro', icon: '💎', label: 'Sync.so Pro',    sub: 'Close-up premium · $5/min',      badge: 'PRO' },
+                          ].map(m => (
+                            <button key={m.id} type="button"
+                              onClick={() => handleLipsyncEngineChange(m.id as any)}
+                              className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
+                            >
+                              <div className="flex items-center gap-2.5">
+                                <span className="text-base">{m.icon}</span>
+                                <div>
+                                  <div className={`text-sm font-black leading-tight ${lipsyncEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                  <div className="text-[11px] text-gray-500">{m.sub}</div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {m.badge && <span className="text-[10px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded-full">{m.badge}</span>}
+                                {lipsyncEngine === m.id && <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-full">ATIVO</span>}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Sync mode — só aparece para Sync.so */}
+                        {(lipsyncEngine === 'sync' || lipsyncEngine === 'syncpro') && (
+                          <div className="space-y-1.5 pt-1">
+                            <span className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Modo de sync</span>
+                            <div className="grid grid-cols-2 gap-1">
+                              {[
+                                { id: 'cut_off', label: '✂️ Cortar excesso' },
+                                { id: 'loop',    label: '🔁 Repetir vídeo' },
+                                { id: 'bounce',  label: '🏀 Palindromo' },
+                                { id: 'remap',   label: '🔀 Esticar tempo' },
+                              ].map(s => (
+                                <button key={s.id} type="button"
+                                  onClick={() => setSyncMode(s.id as any)}
+                                  className={`py-1.5 px-2 rounded-lg border text-[10px] font-black transition-all text-left ${syncMode === s.id ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]' : 'border-[#222] bg-[#111] text-gray-500 hover:border-[#333]'}`}
+                                >{s.label}</button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Flyer de créditos */}
+                      {showLipsyncCreditFlyer && (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-xl animate-pulse">
+                          <Sparkles size={12} className="text-[#d4af37] shrink-0" />
+                          <span className="text-[12px] font-black text-[#d4af37]">
+                            {getCostPerItem(true, false) * lipsyncQuantity} créditos por geração
+                          </span>
+                        </div>
+                      )}
+                    </div>
                       
                       <div className="grid grid-cols-3 gap-4">
                         <div 
@@ -5351,8 +5531,8 @@ const handleBatchDownload = async (ids: string[]) => {
                             ref={lipsyncAssetInputRef}
                             type="file" 
                             className="hidden" 
-                            accept="image/*,video/*" 
-                            onChange={handleLipsyncAssetUpload} 
+                            accept={(lipsyncEngine === 'sync' || lipsyncEngine === 'syncpro') ? "video/*" : "image/*,video/*"}
+                            onChange={handleLipsyncAssetUpload}
                             onClick={(e) => e.stopPropagation()}
                           />
                           {lipsyncAsset ? (
@@ -5382,7 +5562,9 @@ const handleBatchDownload = async (ids: string[]) => {
                           ) : (
                             <>
                               <User size={24} className="text-gray-600" />
-                              <span className="text-[13px] font-black text-gray-500 uppercase tracking-widest">Personagem</span>
+                              <span className="text-[13px] font-black text-gray-500 uppercase tracking-widest">
+                                {(lipsyncEngine === 'sync' || lipsyncEngine === 'syncpro') ? 'Vídeo' : 'Personagem'}
+                              </span>
                             </>
                           )}
                         </div>
@@ -5484,6 +5666,8 @@ const handleBatchDownload = async (ids: string[]) => {
                         />
                       </div>
 
+                      {/* Formato e Duração — só para Veo */}
+                      {lipsyncEngine === 'veo' && (
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-[12px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Formato</label>
@@ -5500,6 +5684,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           </select>
                         </div>
                       </div>
+                      )}
                     </div>
 
                     {/* Right: Actions */}
