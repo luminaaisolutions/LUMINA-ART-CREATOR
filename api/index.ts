@@ -347,102 +347,108 @@ ${brandContext ? `- BRAND IDENTITY: ${brandContext}` : ''}
 ${creativeStrategy ? `- STRATEGY: ${creativeStrategy}` : ''}
 ${creativeAesthetic ? `- AESTHETIC: ${creativeAesthetic}` : ''}
 
-FRAMEWORK MASTER — 7 REQUIRED COMPONENTS (ALL must be present):
-1. HERO VISUAL: Occupies 55-65% of canvas — cinematic product shot OR dramatic human portrait with emotion
-2. HEADLINE: Max 6 words | Ultra-bold weight 900 | Hook formula: ${hookFormula} | Must be INSTANTLY readable at thumbnail size
-3. SUBHEADLINE/PROOF: 1-2 lines — concrete statistic, social proof number, or powerful benefit statement
-4. OFFER BADGE: Choose the MOST CONVERSION-OPTIMIZED badge type for this campaign from the list below. Render it with maximum visual impact — 3D depth, strong shadows, high contrast, readable at small sizes.
+⚠️ CRITICAL RULES — NEVER VIOLATE:
+1. NEVER use real names of people in the prompt. If the product/service is associated with a person, describe them ONLY by physical/emotional traits (e.g., "a charismatic Brazilian female singer with long blonde hair, expressive green eyes, confident smile"). NEVER mention proper names — this avoids copyright and AI generation issues.
+2. NEVER include any logo, brand mark, or watermark in the image prompt. The client logo is applied separately as a post-processing overlay — do NOT describe or request any logo in the image.
+3. The BRAND STRIP section must describe ONLY a subtle footer URL text or thin bottom bar — never a logo.
+4. DO NOT include offer badges unless they genuinely serve the campaign objective (see badge rules below).
 
-BADGE TYPE SELECTION (pick the best fit for objective "${adGoal}" and style "${wizardStyle}"):
-${adGoal === 'conversoes' || adGoal === 'lead' ? `
-PRIORITY BADGES FOR CONVERSION:
-- STARBURST EXPLOSION: 12-pointed yellow/orange starburst with inner glow, drop shadow 8px, bold text center — use for: PROMOÇÃO, OFERTA, DESCONTO
-- URGENCY COUNTDOWN: Red pill badge with clock icon + "ÚLTIMAS HORAS" or "ENCERRA HOJE" — creates FOMO
-- PRICE SLASH: Old price with red strikethrough + new price in large green — "DE R$197 POR R$97"
-- GUARANTEE SHIELD: Green shield icon + "GARANTIA 30 DIAS" — removes purchase risk
-- SCARCITY PILL: Orange rounded pill "RESTAM APENAS [X] VAGAS" or "ÚLTIMAS [X] UNIDADES"
-- BESTSELLER RIBBON: Gold diagonal corner ribbon "MAIS VENDIDO" or "Nº1 EM VENDAS"
-- FREE BONUS TAG: Bright green tag shape "GRÁTIS + BRINDE" or "FRETE GRÁTIS"
-- SOCIAL PROOF BURST: Purple starburst "+[X] MIL CLIENTES SATISFEITOS" or "[X]★ AVALIAÇÕES"
-- LIMITED EDITION STAMP: Wax seal style "EDIÇÃO LIMITADA" in luxury gold
-- FIRST ACCESS FLAG: Angled banner "SEJA O PRIMEIRO" or "LANÇAMENTO EXCLUSIVO"` : adGoal === 'engajamento' ? `
-PRIORITY BADGES FOR ENGAGEMENT:
-- VIRAL TAG: Flame emoji + "TREND DO MOMENTO" in bright gradient
-- COMMUNITY BURST: Heart burst "#COMUNIDADE" or "JUNTE-SE A NÓS"
-- CHALLENGE PILL: Electric blue "DESAFIO" or "COMPARTILHE"
-- EMOTION STAMP: Bold "VOCÊ PRECISA VER ISSO" in attention-grabbing contrast` : `
-PRIORITY BADGES FOR AWARENESS:
-- AWARD SEAL: Gold circular seal "PREMIADO" or "RECONHECIDO"
-- CERTIFIED BADGE: Blue checkmark "CERTIFICADO" or "OFICIAL"
-- HERITAGE STAMP: Classic "DESDE [ANO]" in authoritative serif
-- TRUST SHIELD: Green "CONFIANÇA GARANTIDA" with padlock icon`}
-
-BADGE STYLING RULES:
-- Size: occupies 18-25% of canvas width — big enough to read instantly
-- Position: strategic corner or overlapping the product/hero image for maximum attention
-- Typography: ultra-bold, condensed, 0 letter-spacing — readable at thumbnail
-- Effect: drop shadow 10px offset, inner highlight glow, slight rotation -8° to +8° for dynamism
-- Color: maximum contrast with background — never blend in
-5. PRODUCT VISUAL: Hero product with photorealistic 3D feel, studio lighting, tridimensional shadow
-6. CTA BUTTON: "${wizardCta || 'Saiba Mais'}" — 3D pill button, gradient fill, inner highlight, deep shadow
-7. BRAND STRIP: Logo top-left discreet + URL footer — always present
+FRAMEWORK MASTER — 7 COMPONENTS:
+1. HERO VISUAL: Occupies 55-65% of canvas — ${adGoal === 'conversoes' ? 'cinematic product hero shot, 3D photorealistic, studio lighting' : adGoal === 'lead' ? 'confident person portrait, direct eye contact, professional backdrop' : adGoal === 'engajamento' ? 'emotionally powerful lifestyle scene, authentic energy, candid moment' : 'aspirational brand scene, editorial quality, mood-first composition'}
+2. HEADLINE: Max 6 words | Ultra-bold weight 900 | Hook formula: ${hookFormula} | INSTANTLY readable at thumbnail size | Must be RELEVANT to: ${wizardProduct}
+3. SUBHEADLINE: 1 short sentence — must directly reinforce the headline with a SPECIFIC benefit, number, or proof point. NOT generic. Examples: "Mais de 10.000 clientes satisfeitos" / "Resultado garantido em 7 dias" / "A música que vai marcar sua história"
+4. ${adGoal === 'conversoes' || adGoal === 'lead' ? `OFFER BADGE (REQUIRED for conversion): Choose ONE type based on the product context:
+   - If there's a discount/price: PRICE SLASH badge — old price strikethrough + new price bold green
+   - If there's scarcity: SCARCITY PILL — orange pill "ÚLTIMAS VAGAS" or "ENCERRA HOJE"  
+   - If there's a guarantee: SHIELD badge — green "GARANTIA [X] DIAS"
+   - If there's social proof: BURST badge — "+" + number + "CLIENTES" or "★★★★★"
+   - If free offer: GREEN TAG — "GRÁTIS" or "FRETE GRÁTIS"
+   Render with: 18-22% canvas width, drop shadow 10px, inner glow, rotation ±6°, ultra-bold condensed font` 
+   : adGoal === 'engajamento' ? `ENGAGEMENT TRIGGER (optional — only if it adds value):
+   - If viral/challenge content: flame tag "TREND DO MOMENTO"
+   - If community-building: heart burst "#COMUNIDADE"
+   - If shareable tip: "COMPARTILHE COM ALGUÉM QUE PRECISA"
+   - If NONE fits naturally: OMIT the badge entirely — do not force it` 
+   : `TRUST SIGNAL (optional — only if relevant to the brand):
+   - If established brand: subtle "DESDE [ANO]" heritage stamp
+   - If certified: blue checkmark "CERTIFICADO" or "OFICIAL"
+   - If award-winning: gold seal "PREMIADO"
+   - If NONE fits naturally: OMIT entirely — do not invent a badge that doesn't match`}
+5. PRODUCT/HERO VISUAL: ${adGoal === 'conversoes' ? 'Product as hero — photorealistic 3D, studio lighting, mirror reflection' : 'Person described by physical traits ONLY — no names — with genuine emotion matching the campaign mood'}. If a reference person/product is provided, preserve 100% of their visual identity: facial features, skin tone, hair, expression, posture. Only change clothing/setting if needed for composition.
+6. CTA BUTTON: Render EXACTLY "${wizardCta || 'Saiba Mais'}" as short pill button text — do not paraphrase or extend the CTA text. 3D pill shape, gradient fill, specular highlight, deep shadow, ultra-bold font.
+7. FOOTER: Subtle URL text at bottom — small, elegant, not prominent. NO logo — logo is overlaid separately.
 
 LAYOUT PRESET: ${layout}
 
+PERSONA/PRODUCT FIDELITY — CRITICAL:
+- If a human reference is provided: describe ONLY physical appearance traits (hair color/length/texture, eye color, skin tone, facial structure, expression, body type). NEVER use their name.
+- Preserve identity 100%: same face structure, same hair, same expression quality. Only change: outfit, setting, lighting, background — to serve the ad composition.
+- If a product reference is provided: preserve exact colors, shape, packaging, proportions. Only change: lighting angle, background, environment.
+
 CINEMATIC LIGHTING & PHOTOGRAPHY:
 - Lighting: ${lighting} | Color temperature: ${colorTemp}
-- Add dramatic rim lighting separating subject from background
-- ${adGoal === 'leads' ? 'Corporate portrait: confident expression, direct eye contact, shallow DOF f/2.0, creamy bokeh background' : adGoal === 'engajamento' ? 'Lifestyle: golden hour natural light, authentic candid energy, warm tones' : adGoal === 'awareness' ? 'Editorial cinematic: anamorphic lens flare, film grain, moody color grade' : 'Premium packshot: 3-point studio lighting, product hero, mirror reflection underneath'}
+- Dramatic rim lighting separating subject from background
+- ${adGoal === 'lead' ? 'Corporate portrait: confident expression, direct eye contact, shallow DOF f/2.0, creamy bokeh background' : adGoal === 'engajamento' ? 'Lifestyle: golden hour natural light, authentic candid energy, warm tones' : adGoal === 'awareness' ? 'Editorial cinematic: anamorphic lens flare, film grain, moody color grade' : 'Premium packshot: 3-point studio lighting, product hero, mirror reflection underneath'}
 - VISUAL TREND 2025: ${detectedNiche === 'tech' ? 'Dark glassmorphism — frosted panels, electric blue grid lines, holographic overlays' : detectedNiche === 'gospel' ? 'Divine dark luxe — deep navy, golden god rays, purple mystical particles' : detectedNiche === 'fitness' ? 'Power dramatic — split lighting, orange-red energy burst, dark concrete' : detectedNiche === 'beleza' ? '3D hyperreal — liquid organic shapes, rose gold surfaces, silk textures' : detectedNiche === 'food' ? 'Appetite cinematic — warm amber, steam rising, macro textures, dark moody' : 'Controlled maximalism — rich layered depth, bold contrasts, premium feel'}
 - NICHE VISUAL BASE: ${nicheVisual}
 
-ADVANCED TYPOGRAPHY — MANDATORY STYLE-MATCHED FONTS:
+ADVANCED TYPOGRAPHY — STYLE-MATCHED FONTS:
 ${wizardStyle === 'urgencia' ? `
-- HEADLINE: "Bebas Neue Bold Condensed" — 3D extruded effect, deep perspective shadow offset 8px downward, bright orange inner glow, white fill with thick black stroke 3px
-- SUBHEADLINE: "Impact Heavy" — white text, hard black drop shadow offset 3px, slightly condensed
-- CTA: "Oswald ExtraBold" — all caps, white on deep red gradient button, embossed effect
-- BADGE TEXT: "Anton Regular" — yellow fill, black outline stroke 2px, slight rotation -5deg` 
+- HEADLINE: "Bebas Neue Bold Condensed" — 3D extruded, deep shadow offset 8px, orange inner glow, white + black stroke 3px
+- SUBHEADLINE: "Impact Heavy" — white, hard black drop shadow 3px
+- CTA: "Oswald ExtraBold" — all caps, white on deep red gradient, embossed
+- BADGE TEXT: "Anton Regular" — yellow fill, black outline 2px, rotation -5deg`
 : wizardStyle === 'elegante' ? `
-- HEADLINE: "Playfair Display Black Italic" — gold foil metallic texture, subtle letter emboss, elegant tracking +50
-- SUBHEADLINE: "Cormorant Garamond Light Italic" — champagne color, ultra-thin, letterspaced +100
-- CTA: "Didot Bold" — platinum chrome fill, mirror reflection effect, sophisticated
+- HEADLINE: "Playfair Display Black Italic" — gold foil metallic, letter emboss, tracking +50
+- SUBHEADLINE: "Cormorant Garamond Light Italic" — champagne, ultra-thin, letterspaced +100
+- CTA: "Didot Bold" — platinum chrome, mirror reflection
 - BADGE TEXT: "Bodoni MT Bold" — gold gradient, thin elegant outline`
 : wizardStyle === 'luxo' ? `
-- HEADLINE: "Didot Bold" — chrome mirror effect, platinum-to-white gradient fill, razor-sharp serifs
+- HEADLINE: "Didot Bold" — chrome mirror, platinum-to-white gradient, razor-sharp serifs
 - SUBHEADLINE: "Optima Regular" — light gold, ultra-refined, minimal tracking
-- CTA: "Trajan Pro Bold" — all caps, gold embossed on dark background, regal
-- BADGE TEXT: "Copperplate Gothic" — metallic gold, premium feel`
+- CTA: "Trajan Pro Bold" — all caps, gold embossed, regal
+- BADGE TEXT: "Copperplate Gothic" — metallic gold, premium`
 : wizardStyle === 'divertido' ? `
-- HEADLINE: "Paytone One" — vibrant rainbow gradient fill (pink→orange→yellow), thick white outline 5px, bouncy 3D extrusion, playful rotation
-- SUBHEADLINE: "Nunito ExtraBold 800" — bright contrasting color, rounded, friendly shadow
-- CTA: "Fredoka One" — white on vivid gradient button, bubbly rounded corners
-- BADGE TEXT: "Baloo 2 ExtraBold" — multicolor, energetic, popping`
+- HEADLINE: "Paytone One" — rainbow gradient (pink→orange→yellow), thick white outline 5px, bouncy 3D
+- SUBHEADLINE: "Nunito ExtraBold 800" — bright contrast, rounded, friendly shadow
+- CTA: "Fredoka One" — white on vivid gradient, bubbly rounded
+- BADGE TEXT: "Baloo 2 ExtraBold" — multicolor, energetic`
 : wizardStyle === 'minimalista' ? `
-- HEADLINE: "Helvetica Neue UltraLight" — hairline weight, maximum letterspacing +300, no fill just stroke 0.5px
-- SUBHEADLINE: "Futura Light" — minimal, refined, perfectly balanced
-- CTA: "Gill Sans Light" — understated, elegant, monochromatic
-- BADGE TEXT: "Univers 45 Light" — simple, clean, geometric`
+- HEADLINE: "Helvetica Neue UltraLight" — hairline weight, letterspacing +300, stroke 0.5px only
+- SUBHEADLINE: "Futura Light" — minimal, balanced
+- CTA: "Gill Sans Light" — understated, monochromatic
+- BADGE TEXT: "Univers 45 Light" — simple, geometric`
 : `
-- HEADLINE: "Montserrat Black 900" — clean white fill, sharp drop shadow offset 4px 45deg, strong hierarchy
+- HEADLINE: "Montserrat Black 900" — white fill, drop shadow 4px 45deg, strong hierarchy
 - SUBHEADLINE: "Inter SemiBold 600" — light grey, clean, modern
-- CTA: "Montserrat ExtraBold" — white on brand color gradient, professional
+- CTA: "Montserrat ExtraBold" — white on brand gradient, professional
 - BADGE TEXT: "Oswald Bold" — high contrast, authoritative`}
 
 MANDATORY VISUAL EFFECTS — USE AT LEAST 4:
-1. DEPTH LAYERS: 3 distinct planes — blurred background, sharp midground subject, overlay foreground elements
-2. LIGHT EFFECTS: Choose 2+ from: [god rays piercing through clouds | lens flare on light source | rim light halo around subject | neon tube glow | light leak film effect | bokeh circles various sizes]
-3. PARTICLE SYSTEM: Floating elements matching niche — [sparkles & stars | dust particles | confetti | flower petals | smoke wisps | digital pixels | golden coins]
-4. BACKGROUND TREATMENT: Never flat — choose: [gradient mesh with 3+ colors | textured surface (marble/concrete/silk) | bokeh blur | geometric pattern overlay | dark vignette with color center]
-5. OVERLAY EFFECTS: [holographic iridescent sheen | glassmorphism frosted panel | color gradient overlay 40% opacity | film grain texture | chromatic aberration edges]
-6. BADGE/CTA ENHANCEMENT: Apply to the chosen offer badge → [starburst with multi-layer glow effect | wax seal with emboss texture | price slash with red lightning bolt | urgency pill with pulsing ring | ribbon banner with gold foil | 3D button with specular highlight shine | corner fold with shadow depth | shield with gradient fill | circular burst with radial lines]
-7. CINEMATIC GRADE: Apply color grading LUT — ${wizardStyle === 'urgencia' ? 'warm orange-red tones, high contrast, punchy saturation' : wizardStyle === 'elegante' || wizardStyle === 'luxo' ? 'cool desaturated with gold accents, filmic, sophisticated' : wizardStyle === 'divertido' ? 'hyper-saturated, vivid, pop-art vibrance' : 'teal-orange cinematic, professional color grade'}
+1. DEPTH LAYERS: 3 distinct planes — blurred background, sharp midground, overlay foreground
+2. LIGHT EFFECTS: Choose 2+ from: [god rays | lens flare | rim light halo | neon glow | light leak | bokeh circles]
+3. PARTICLE SYSTEM: Floating elements matching niche — [sparkles | dust | confetti | petals | smoke | pixels | coins]
+4. BACKGROUND: Never flat — choose: [gradient mesh 3+ colors | textured surface | bokeh blur | geometric overlay | dark vignette]
+5. OVERLAY: [holographic sheen | glassmorphism panel | gradient overlay 40% | film grain | chromatic aberration]
+6. BADGE/CTA ENHANCEMENT (if badge present): [starburst glow | wax seal emboss | ribbon gold foil | 3D button shine | shield gradient]
+7. CINEMATIC GRADE: ${wizardStyle === 'urgencia' ? 'warm orange-red, high contrast, punchy saturation' : wizardStyle === 'elegante' || wizardStyle === 'luxo' ? 'cool desaturated + gold accents, filmic, sophisticated' : wizardStyle === 'divertido' ? 'hyper-saturated, vivid, pop-art vibrance' : 'teal-orange cinematic, professional color grade'}
 
 PORTUGUESE TEXT — PERFECT RENDERING:
-- Include ALL text elements as exact quoted strings the image model must render
-- Headline text to render: CREATE A POWERFUL HEADLINE in perfect Portuguese (BR) for: ${wizardProduct}, objective: ${goalMap[adGoal] || adGoal}
-- CTA text: render EXACTLY this text character by character: "${wizardCta || 'Saiba Mais'}"
-- Every accent: ã ç ê ó á í ú â ô õ — MANDATORY, never omit
+- ALL text as exact quoted strings for the image model to render
+- Headline: CREATE A POWERFUL MAX-6-WORD HEADLINE in perfect Portuguese (BR) relevant to: ${wizardProduct}, goal: ${goalMap[adGoal] || adGoal}
+- Subheadline: 1 specific sentence with a concrete benefit or number — NOT generic phrases like "começa agora" or "é para você"
+- CTA: render EXACTLY "${wizardCta || 'Saiba Mais'}" — character by character, no changes
+- Accents MANDATORY: ã ç ê ó á í ú â ô õ — zero tolerance for errors
 - ZERO tolerance: "promoçao"→"promoção" | "negocios"→"negócios" | "voce"→"você"
+
+COMPOSITION & QUALITY:
+- Visual hierarchy: HERO → HEADLINE → SUBHEADLINE → BADGE (if present) → CTA → FOOTER URL
+- Minimum 40% breathing space — never cluttered
+- Rounded corners 12-24px on all closed elements
+- 4K resolution, photorealistic, zero artifacts, no watermarks, no logos embedded in image
+- Agency-grade finish — $50k campaign creative
+
+OUTPUT: ONE complete image prompt in English (maximum 400 words). Include ALL visual specs above. No explanations — prompt only.`;
 
 COMPOSITION & QUALITY:
 - Visual hierarchy flow: HERO → HEADLINE → PROOF → BADGE → CTA
