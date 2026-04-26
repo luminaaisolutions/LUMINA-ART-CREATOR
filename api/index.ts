@@ -392,63 +392,78 @@ CINEMATIC LIGHTING & PHOTOGRAPHY:
 - VISUAL TREND 2025: ${detectedNiche === 'tech' ? 'Dark glassmorphism — frosted panels, electric blue grid lines, holographic overlays' : detectedNiche === 'gospel' ? 'Divine dark luxe — deep navy, golden god rays, purple mystical particles' : detectedNiche === 'fitness' ? 'Power dramatic — split lighting, orange-red energy burst, dark concrete' : detectedNiche === 'beleza' ? '3D hyperreal — liquid organic shapes, rose gold surfaces, silk textures' : detectedNiche === 'food' ? 'Appetite cinematic — warm amber, steam rising, macro textures, dark moody' : 'Controlled maximalism — rich layered depth, bold contrasts, premium feel'}
 - NICHE VISUAL BASE: ${nicheVisual}
 
-ADVANCED TYPOGRAPHY — STYLE-MATCHED FONTS:
+ADVANCED TYPOGRAPHY — INTELLIGENT ADAPTIVE SYSTEM:
+The typography must be treated as a DESIGN ELEMENT, not just text. Every font choice, size, weight, tracking and effect must harmonize perfectly with the hero image, persona, product, and overall mood. The text must NEVER look pasted on — it must feel like it was born with the image.
+
+TYPOGRAPHY INTELLIGENCE RULES:
+- Analyze the visual complexity of the scene and adjust font weight inversely — busy backgrounds need heavier fonts with stronger shadows; minimal clean backgrounds can use lighter, more elegant fonts
+- Font size hierarchy STRICT: HEADLINE 2.5-3x larger than subheadline, CTA 1.5-2x larger than subheadline
+- NEVER use the same font weight for more than one text element
+- Text placement must respect the visual center of gravity — never cover the face, eyes, or hero product
+- If persona is present: text goes in the lower 35% or upper 15% of the canvas — NEVER over the face
+- If product is hero: headline text frames the product, never overlaps it
+
+STYLE-MATCHED FONT SYSTEM:
 ${wizardStyle === 'urgencia' ? `
-- HEADLINE: "Bebas Neue Bold Condensed" — 3D extruded, deep shadow offset 8px, orange inner glow, white + black stroke 3px
-- SUBHEADLINE: "Impact Heavy" — white, hard black drop shadow 3px
-- CTA: "Oswald ExtraBold" — all caps, white on deep red gradient, embossed
-- BADGE TEXT: "Anton Regular" — yellow fill, black outline 2px, rotation -5deg`
+URGENCY TYPOGRAPHY — Maximum Impact:
+- HEADLINE: Bebas Neue or Impact Condensed | Size: DOMINANT — 3x subheadline | Style: 3D extruded with 8px perspective shadow, electric orange inner glow (#FF6B00), white fill, 3px black stroke | Effect: slight upward angle -3deg for kinetic energy
+- SUBHEADLINE: Oswald SemiBold | Size: medium | Style: white, hard black shadow 3px offset, slightly condensed | Placement: immediately below headline with 12px gap
+- CTA BUTTON TEXT: Oswald ExtraBold ALL CAPS | Style: white on deep red-to-orange gradient (#D00→#FF6B00), embossed, inner highlight | Size: 1.8x subheadline
+- OVERLAY TEXT (if price/offer): Anton Regular | Yellow (#FFE500) fill, black outline 2.5px, rotation -5° | Maximum contrast against any background`
 : wizardStyle === 'elegante' ? `
-- HEADLINE: "Playfair Display Black Italic" — gold foil metallic, letter emboss, tracking +50
-- SUBHEADLINE: "Cormorant Garamond Light Italic" — champagne, ultra-thin, letterspaced +100
-- CTA: "Didot Bold" — platinum chrome, mirror reflection
-- BADGE TEXT: "Bodoni MT Bold" — gold gradient, thin elegant outline`
+ELEGANT TYPOGRAPHY — Refined Luxury:
+- HEADLINE: Playfair Display Black Italic or Cormorant Garamond Bold | Size: large but NOT aggressive | Style: gold foil metallic gradient (#D4AF37→#F5E6A3→#D4AF37), letter press emboss effect, tracking +80 | Effect: subtle shadow blur 4px, no hard edges
+- SUBHEADLINE: Cormorant Garamond Light Italic | Size: 40% of headline | Style: champagne white, letterspacing +120, ultra-thin | Placement: centered, generous space below headline
+- CTA BUTTON TEXT: Didot Regular | Style: platinum chrome on dark pill, mirror reflection highlight | Size: 1.5x subheadline, never aggressive
+- OVERALL: generous whitespace between ALL text elements — crowding kills elegance`
 : wizardStyle === 'luxo' ? `
-- HEADLINE: "Didot Bold" — chrome mirror, platinum-to-white gradient, razor-sharp serifs
-- SUBHEADLINE: "Optima Regular" — light gold, ultra-refined, minimal tracking
-- CTA: "Trajan Pro Bold" — all caps, gold embossed, regal
-- BADGE TEXT: "Copperplate Gothic" — metallic gold, premium`
+LUXURY TYPOGRAPHY — Prestige & Authority:
+- HEADLINE: Didot Bold or Bodoni 72 Bold | Size: commanding — 2.8x subheadline | Style: chrome mirror effect, platinum-to-pure-white gradient, razor-sharp serifs, 2px white stroke | Shadow: deep 6px offset, 45°, black with 20% opacity for subtle depth
+- SUBHEADLINE: Optima Regular or Trajan Pro Light | Size: 35% of headline | Style: warm gold (#D4AF37), ultra-refined, tracking +60, ultra-readable | Placement: 16px below headline
+- CTA BUTTON TEXT: Trajan Pro Bold ALL CAPS | Style: gold embossed on dark obsidian pill (#1a1a1a), inner gold glow, regal | Size: between headline and subheadline
+- OVERLAY TEXT: Copperplate Gothic | Metallic gold gradient, premium | All text must feel like it belongs on a $500 product`
 : wizardStyle === 'divertido' ? `
-- HEADLINE: "Paytone One" — rainbow gradient (pink→orange→yellow), thick white outline 5px, bouncy 3D
-- SUBHEADLINE: "Nunito ExtraBold 800" — bright contrast, rounded, friendly shadow
-- CTA: "Fredoka One" — white on vivid gradient, bubbly rounded
-- BADGE TEXT: "Baloo 2 ExtraBold" — multicolor, energetic`
+PLAYFUL TYPOGRAPHY — Energy & Joy:
+- HEADLINE: Paytone One or Boogaloo | Size: BIG and BOLD — almost aggressive | Style: rainbow gradient (pink→orange→yellow→green), thick white outline 5px, 3D extrusion with depth shadow, playful slight rotation (+2° to -2°) | Effect: bouncy feel, rounded
+- SUBHEADLINE: Nunito ExtraBold 800 | Size: 45% of headline | Style: bright contrasting solid color (electric blue or hot pink), friendly shadow, rounded feel | Placement: close to headline, energetic
+- CTA BUTTON TEXT: Fredoka One or Rounded Bold | Style: white on vivid saturated gradient pill, bubbly corners | Size: matches subheadline
+- OVERALL: colors must POP — maximum saturation, zero subtlety, joyful chaos with structure`
 : wizardStyle === 'minimalista' ? `
-- HEADLINE: "Helvetica Neue UltraLight" — hairline weight, letterspacing +300, stroke 0.5px only
-- SUBHEADLINE: "Futura Light" — minimal, balanced
-- CTA: "Gill Sans Light" — understated, monochromatic
-- BADGE TEXT: "Univers 45 Light" — simple, geometric`
+MINIMALIST TYPOGRAPHY — Less is More:
+- HEADLINE: Helvetica Neue UltraLight or Futura Light | Size: surprisingly large but hairline weight | Style: NO fill — only 0.5px stroke, maximum letterspacing +400 | Effect: pure negative space art — the emptiness IS the design
+- SUBHEADLINE: Futura Light or Gill Sans Light | Size: 50% of headline | Style: 50% grey, balanced, zero decoration | Placement: 24px below headline with no shadow
+- CTA BUTTON TEXT: Gill Sans Regular | Style: dark text on white pill or white on dark pill — binary contrast only | Size: same as subheadline
+- RULE: maximum 2 text elements visible at once — everything else is visual silence`
 : `
-- HEADLINE: "Montserrat Black 900" — white fill, drop shadow 4px 45deg, strong hierarchy
-- SUBHEADLINE: "Inter SemiBold 600" — light grey, clean, modern
-- CTA: "Montserrat ExtraBold" — white on brand gradient, professional
-- BADGE TEXT: "Oswald Bold" — high contrast, authoritative`}
+PROFESSIONAL TYPOGRAPHY — Balanced Authority:
+- HEADLINE: Montserrat Black 900 or Inter Black | Size: dominant — 2.5x subheadline | Style: clean white fill, crisp drop shadow 4px at 45°, 1px white stroke for crispness | Effect: strong hierarchy, zero decoration beyond shadow
+- SUBHEADLINE: Inter SemiBold 600 or Lato SemiBold | Size: 40% of headline | Style: light grey (#CCCCCC) or white 80%, clean, modern, no decoration | Placement: 14px below headline
+- CTA BUTTON TEXT: Montserrat ExtraBold ALL CAPS | Style: white on brand gradient pill, professional | Size: 1.6x subheadline
+- OVERALL: precision and clarity — every element earns its place`}
 
-MANDATORY VISUAL EFFECTS — USE AT LEAST 4:
-1. DEPTH LAYERS: 3 distinct planes — blurred background, sharp midground, overlay foreground
-2. LIGHT EFFECTS: Choose 2+ from: [god rays | lens flare | rim light halo | neon glow | light leak | bokeh circles]
-3. PARTICLE SYSTEM: Floating elements matching niche — [sparkles | dust | confetti | petals | smoke | pixels | coins]
-4. BACKGROUND: Never flat — choose: [gradient mesh 3+ colors | textured surface | bokeh blur | geometric overlay | dark vignette]
-5. OVERLAY: [holographic sheen | glassmorphism panel | gradient overlay 40% | film grain | chromatic aberration]
-6. BADGE/CTA ENHANCEMENT (if badge present): [starburst glow | wax seal emboss | ribbon gold foil | 3D button shine | shield gradient]
-7. CINEMATIC GRADE: ${wizardStyle === 'urgencia' ? 'warm orange-red, high contrast, punchy saturation' : wizardStyle === 'elegante' || wizardStyle === 'luxo' ? 'cool desaturated + gold accents, filmic, sophisticated' : wizardStyle === 'divertido' ? 'hyper-saturated, vivid, pop-art vibrance' : 'teal-orange cinematic, professional color grade'}
+TEXT RENDERING — OVERLAY DIRECTIVE:
+- HEADLINE text: render as large overlay text in upper-third or lower-third. SPECIFIC POSITION: ${adGoal === 'conversoes' ? 'lower third, above CTA button' : adGoal === 'awareness' ? 'upper third, centered' : adGoal === 'engajamento' ? 'upper-center, dynamic placement' : 'centered, commanding'}
+- SUBHEADLINE: immediately below headline, same horizontal alignment
+- CTA text: render as pill/button shape at bottom-center — EXACT TEXT: "${wizardCta || 'Saiba Mais'}" — do NOT paraphrase, do NOT translate, do NOT modify
+- All text elements: render with explicit drop shadows and outlines as specified above — text must be 100% readable at thumbnail size (200x200px)
 
-PORTUGUESE TEXT — PERFECT RENDERING:
-- ALL text as exact quoted strings for the image model to render
-- Headline: CREATE A POWERFUL MAX-6-WORD HEADLINE in perfect Portuguese (BR) relevant to: ${wizardProduct}, goal: ${goalMap[adGoal] || adGoal}
-- Subheadline: 1 specific sentence with a concrete benefit or number — NOT generic phrases like "começa agora" or "é para você"
-- CTA: render EXACTLY "${wizardCta || 'Saiba Mais'}" — character by character, no changes
-- Accents MANDATORY: ã ç ê ó á í ú â ô õ — zero tolerance for errors
-- ZERO tolerance: "promoçao"→"promoção" | "negocios"→"negócios" | "voce"→"você"
+PORTUGUESE TEXT — ZERO ERROR POLICY:
+- Headline: CREATE in perfect Brazilian Portuguese for: ${wizardProduct} | Goal: ${goalMap[adGoal] || adGoal} | MAX 6 WORDS
+- Subheadline: 1 sentence, SPECIFIC benefit/number/proof — NOT generic. Examples: "Resultado em 7 dias garantido" / "+10.000 clientes transformados" / "Frete grátis hoje"
+- CTA: render CHARACTER BY CHARACTER: "${wizardCta || 'Saiba Mais'}" — zero changes
+- Mandatory accents: ã ç ê ó á í ú â ô õ — NEVER omit
+- Zero tolerance: "promoçao"→"promoção" | "voce"→"você" | "musica"→"música"
 
 COMPOSITION & QUALITY:
 - Visual hierarchy: HERO → HEADLINE → SUBHEADLINE → BADGE (if present) → CTA → FOOTER URL
+- Text never covers: face/eyes of persona, hero product, key visual element
 - Minimum 40% breathing space — never cluttered
 - Rounded corners 12-24px on all closed elements
 - 4K resolution, photorealistic, zero artifacts, no watermarks, no logos embedded in image
 - Agency-grade finish — $50k campaign creative
+- FINAL CHECK: would a senior art director approve this? If not, adjust.
 
-OUTPUT: ONE complete image prompt in English (maximum 400 words). Include ALL visual specs above. No explanations — prompt only.`;
+OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL visual specs above. No explanations — prompt only.`;
 
       const result = await client.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -987,19 +1002,23 @@ OUTPUT: ONE complete image prompt in English (maximum 400 words). Include ALL vi
           return res.status(503).json({ error: "Serviço Ideogram indisponível. Configure FAL_API_KEY." });
         }
 
-        const aspectRatioMap: Record<string, string> = {
-          '1:1':    'SQUARE',
-          '9:16':   'PORTRAIT_9_16',
-          '16:9':   'LANDSCAPE_16_9',
-          '4:5':    'PORTRAIT_4_5',
-          '1.91:1': 'LANDSCAPE_16_9'
+        const imageSizeMap: Record<string, string> = {
+          '1:1':    'square_hd',
+          '9:16':   'portrait_16_9',
+          '16:9':   'landscape_16_9',
+          '4:5':    'portrait_4_3',
+          '1.91:1': 'landscape_16_9',
+          '4:3':    'landscape_4_3',
+          '3:4':    'portrait_4_3',
         };
 
         const ideogramBody: any = {
           prompt: args.prompt,
-          aspect_ratio: aspectRatioMap[args.aspectRatio || '1:1'] || 'SQUARE',
+          image_size: imageSizeMap[args.aspectRatio || '1:1'] || 'square_hd',
           rendering_speed: args.quality === 'QUALITY' ? 'QUALITY' : 'BALANCED',
-          magic_prompt_option: 'OFF'
+          expand_prompt: false,
+          num_images: 1,
+          style: 'REALISTIC',
         };
 
         // Adiciona referência de personagem se houver (base64 → upload fal.ai → URL)
