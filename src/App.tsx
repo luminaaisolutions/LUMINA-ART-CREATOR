@@ -5470,8 +5470,8 @@ const handleBatchDownload = async (ids: string[]) => {
                         <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">👄 Sincronizar vídeo existente</span>
                         <div className="space-y-1.5">
                           {([
-                            { id: 'sync',    icon: '🔄', label: 'Sync.so v2',  sub: 'Dubbing geral · $3/min',    badge: '' },
-                            { id: 'syncpro', icon: '💎', label: 'Sync.so Pro', sub: 'Close-up premium · $5/min', badge: 'PRO' },
+                            { id: 'sync',    icon: '🔄', label: 'Sync.so v2',  sub: 'Dubbing geral',    badge: '' },
+                            { id: 'syncpro', icon: '💎', label: 'Sync.so Pro', sub: 'Close-up premium', badge: 'PRO' },
                           ] as const).map(m => (
                             <button key={m.id} type="button"
                               onClick={() => handleLipsyncEngineChange(m.id)}
