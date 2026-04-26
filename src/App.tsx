@@ -5856,23 +5856,28 @@ const handleBatchDownload = async (ids: string[]) => {
                                 <p className="text-sm font-bold text-white">Onde vai publicar?</p>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                   {[
-                                    { id: 'instagram', label: 'Instagram', sub: 'Feed e Stories', icon: '📸' },
-                                    { id: 'tiktok',    label: 'TikTok',    sub: 'Vídeo curto',   icon: '🎵' },
-                                    { id: 'facebook',  label: 'Facebook',  sub: 'Feed de notícias', icon: '👥' },
-                                    { id: 'youtube',   label: 'YouTube',   sub: 'Antes do vídeo', icon: '▶️' },
+                                    { id: 'instagram', label: 'Instagram', sub: 'Feed, Stories e Reels', icon: '📸' },
+                                    { id: 'tiktok',    label: 'TikTok',    sub: 'Feed e For You Page',  icon: '🎵' },
+                                    { id: 'facebook',  label: 'Facebook',  sub: 'Feed e Marketplace',   icon: '👥' },
+                                    { id: 'youtube',   label: 'YouTube',   sub: 'Thumbnail e Banner',   icon: '▶️' },
                                   ].map(p => (
                                     <button
-                                      key={p.id}
                                       type="button"
-                                      onClick={() => setAdPlatform(adPlatform === p.id ? '' as any : p.id as any)}
-                                      className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border text-center transition-all ${adPlatform === p.id ? 'bg-[#1a2a4a] border-blue-500' : 'bg-[#161616] border-[#1e1e1e] hover:border-[#2a2a2a]'}`}
+                                      key={p.id}
+                                      onClick={() => setAdPlatform(p.id as any)}
+                                      className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${adPlatform === p.id ? 'bg-blue-600/15 border-blue-500 text-blue-400' : 'bg-[#161616] border-[#1e1e1e] text-gray-400 hover:border-[#333]'}`}
                                     >
-                                      <span className="text-xl leading-none">{p.icon}</span>
-                                      <span className={`text-sm font-black ${adPlatform === p.id ? 'text-blue-400' : 'text-gray-300'}`}>{p.label}</span>
-                                      <span className="text-[12px] text-gray-600 leading-tight">{p.sub}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-base">{p.icon}</span>
+                                        <span className={`text-sm font-black ${adPlatform === p.id ? 'text-blue-400' : 'text-white'}`}>{p.label}</span>
+                                      </div>
+                                      <span className="text-[11px] text-gray-500 leading-tight">{p.sub}</span>
                                     </button>
                                   ))}
                                 </div>
+                                <p className="text-[11px] text-gray-600 bg-[#111] rounded-xl px-3 py-2 border border-[#1a1a1a]">
+                                  💡 A Lumina gera <strong className="text-gray-400">imagens estáticas</strong> otimizadas para o formato e estética de cada plataforma. Formatos de vídeo estão disponíveis no <strong className="text-gray-400">Estúdio Lumina</strong>.
+                                </p>
                               </div>
 
                               <button
@@ -6189,14 +6194,15 @@ const handleBatchDownload = async (ids: string[]) => {
                               <label className="block text-[12px] font-bold text-gray-400 uppercase tracking-widest">Plataforma</label>
                               <div className="grid grid-cols-2 gap-1.5">
                                 {[
-                                  { id: 'instagram', label: 'Meta' },
-                                  { id: 'tiktok',    label: 'TikTok' },
-                                  { id: 'facebook',  label: 'Facebook' },
-                                  { id: 'youtube',   label: 'YouTube' },
+                                  { id: 'instagram', label: 'Instagram', sub: 'Feed · Stories · Reels' },
+                                  { id: 'tiktok',    label: 'TikTok',    sub: 'Feed · For You Page' },
+                                  { id: 'facebook',  label: 'Facebook',  sub: 'Feed · Marketplace' },
+                                  { id: 'youtube',   label: 'YouTube',   sub: 'Thumbnail · Banner' },
                                 ].map(p => (
                                   <button key={p.id} type="button" onClick={() => setAdPlatform(adPlatform === p.id ? '' as any : p.id as any)}
-                                    className={`py-2 rounded-xl border text-sm font-black transition-all ${adPlatform === p.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-[#161616] border-[#1e1e1e] text-gray-500 hover:border-[#2a2a2a]'}`}>
-                                    {p.label}
+                                    className={`py-2.5 px-3 rounded-xl border text-left transition-all ${adPlatform === p.id ? 'bg-blue-600/20 text-blue-400 border-blue-500' : 'bg-[#161616] border-[#1e1e1e] text-gray-400 hover:border-[#2a2a2a]'}`}>
+                                    <div className="text-sm font-black leading-tight">{p.label}</div>
+                                    <div className="text-[11px] text-gray-500 mt-0.5">{p.sub}</div>
                                   </button>
                                 ))}
                               </div>
