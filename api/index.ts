@@ -450,15 +450,6 @@ COMPOSITION & QUALITY:
 
 OUTPUT: ONE complete image prompt in English (maximum 400 words). Include ALL visual specs above. No explanations — prompt only.`;
 
-COMPOSITION & QUALITY:
-- Visual hierarchy flow: HERO → HEADLINE → PROOF → BADGE → CTA
-- Minimum 40% breathing space — never cluttered
-- All closed elements have rounded corners radius 12-24px
-- 4K resolution, photorealistic, zero artifacts, no watermarks
-- Agency-grade finish — looks like $50k campaign creative
-
-OUTPUT: Generate ONE complete, detailed image prompt in English (maximum 400 words). Include ALL visual specifications above. No explanations — only the prompt.`;
-
       const result = await client.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: [{ role: 'user', parts: [{ text: systemPrompt }] }]
