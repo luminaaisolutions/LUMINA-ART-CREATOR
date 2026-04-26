@@ -720,7 +720,7 @@ function AppContent() {
   const [type, setType] = useState<'video' | 'image'>('video');
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [resolution, setResolution] = useState('1080p');
-  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram'>('nano');
+  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana'>('nano');
   const [quantity, setQuantity] = useState(1);
   const [videoDuration, setVideoDuration] = useState(4); // Default 4s
   const [lipsyncDuration, setLipsyncDuration] = useState(4); // Default 4s
@@ -2122,16 +2122,20 @@ function AppContent() {
 
           while (imageAttempt <= maxImageAttempts && !base64Data) {
             try {
-              // Respect user model choice (Nano = Gemini 2.5 Flash Image, Imagen = Imagen 4.0)
+              // Respect user model choice
               const modelName = currentModelType === 'imagen' 
                 ? 'imagen-4.0-generate-001' 
                 : currentModelType === 'ideogram'
                 ? 'ideogram-v3'
+                : currentModelType === 'nanoBanana'
+                ? 'nano-banana-2'
                 : 'gemini-2.5-flash-image';
               const methodToUse = currentModelType === 'imagen' 
                 ? 'generateImages' 
                 : currentModelType === 'ideogram'
                 ? 'generateIdeogram'
+                : currentModelType === 'nanoBanana'
+                ? 'generateNanoBanana'
                 : 'generateContent';
               
               // Se tem template selecionado, usa o backgroundPrompt do template
@@ -2140,14 +2144,12 @@ function AppContent() {
                 : enhancedPrompt;
               
               if (currentRefAsset && currentRefAsset.type === 'image' && currentModelType === 'imagen') {
-                // Imagen 3 supports image-to-image or identity reference via specific prompts
-                // But for now, we just ensure the identity is requested in a natural way
                 promptText = `Maintain the person's identity from the reference. ${enhancedPrompt}`;
               }
 
-              // Final Branding & Text Guard: Force the model to NOT include any text/logos
-              // Exception: Ideogram is specifically used to generate ads WITH text
-              if (currentModelType !== 'ideogram') {
+              // Final Branding & Text Guard
+              // Exceção: Ideogram e Nano Banana são usados para ads COM texto
+              if (currentModelType !== 'ideogram' && currentModelType !== 'nanoBanana') {
                 if (!promptText.toLowerCase().includes("text") && !promptText.toLowerCase().includes("logo")) {
                   promptText += ". Absolutely no text, logos, watermarks, signatures, or brand names should be present in the final image.";
                 }
@@ -2199,7 +2201,7 @@ function AppContent() {
               let characterMimeType: string = 'image/png';
               const hasRefAsset = currentRefAsset && currentRefAsset.type === 'image';
 
-              if (hasRefAsset && currentRefAsset?.data && currentModelType !== 'ideogram' && currentModelType !== 'imagen') {
+              if (hasRefAsset && currentRefAsset?.data && currentModelType !== 'ideogram' && currentModelType !== 'imagen' && currentModelType !== 'nanoBanana') {
                 try {
                   console.log('[Fidelidade] Gerando personagem isolado para reforço de identidade...');
                   const charResponse = await callGeminiAPI({
@@ -2248,14 +2250,21 @@ function AppContent() {
               const response = await callGeminiAPI({
                 model: modelName,
                 method: methodToUse,
-                prompt: (currentModelType === 'imagen' || currentModelType === 'ideogram') ? promptText : undefined,
-                contents: (currentModelType === 'imagen' || currentModelType === 'ideogram') ? undefined : [{ role: 'user', parts }],
+                prompt: (currentModelType === 'imagen' || currentModelType === 'ideogram' || currentModelType === 'nanoBanana') ? promptText : undefined,
+                contents: (currentModelType === 'imagen' || currentModelType === 'ideogram' || currentModelType === 'nanoBanana') ? undefined : [{ role: 'user', parts }],
                 // Parâmetros específicos do Ideogram
                 ...(currentModelType === 'ideogram' && {
                   aspectRatio: currentAspectRatio,
                   quality: currentResolution === '2K' || currentResolution === '4K' ? 'QUALITY' : 'BALANCED',
                   referenceImageBase64: currentRefAsset?.data || undefined,
                   referenceImageMimeType: currentRefAsset?.mimeType || 'image/jpeg',
+                  logoBase64: (currentUseLogoInArt && currentCreativeLogo?.data) ? currentCreativeLogo.data : undefined,
+                  logoPosition: (currentUseLogoInArt && currentCreativeLogo?.data) ? currentLogoPosition : undefined,
+                }),
+                // Parâmetros específicos do Nano Banana 2
+                ...(currentModelType === 'nanoBanana' && {
+                  aspectRatio: currentAspectRatio,
+                  referenceImageBase64: currentRefAsset?.data || undefined,
                   logoBase64: (currentUseLogoInArt && currentCreativeLogo?.data) ? currentCreativeLogo.data : undefined,
                   logoPosition: (currentUseLogoInArt && currentCreativeLogo?.data) ? currentLogoPosition : undefined,
                 }),
@@ -2275,7 +2284,7 @@ function AppContent() {
                 config: currentModelType === 'imagen' ? {
                   numberOfImages: 1,
                   aspectRatio: currentAspectRatio as any,
-                } : currentModelType === 'ideogram' ? {} : {
+                } : (currentModelType === 'ideogram' || currentModelType === 'nanoBanana') ? {} : {
                   responseModalities: ['IMAGE'],
                   imageConfig: {
                     aspectRatio: currentAspectRatio as any,
@@ -4801,11 +4810,12 @@ const handleBatchDownload = async (ids: string[]) => {
 
                         <div className="mb-3">
                   <label className="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-widest">Motor de Imagem</label>
-                  <div className="grid grid-cols-3 gap-1">
+                  <div className="grid grid-cols-2 gap-1">
                     {[
-                      { id: 'nano', label: '⚡ Gemini', desc: 'Rápido' },
-                      { id: 'imagen', label: '🎨 Imagen', desc: 'Qualidade' },
-                      { id: 'ideogram', label: '✍️ Ideogram', desc: 'Design' }
+                      { id: 'nano',        label: '⚡ Gemini',      desc: 'Rápido' },
+                      { id: 'nanoBanana',  label: '🍌 Nano Banana', desc: 'Melhor ADS' },
+                      { id: 'imagen',      label: '🎨 Imagen 4',    desc: 'Qualidade' },
+                      { id: 'ideogram',    label: '✍️ Ideogram',    desc: 'Design' }
                     ].map(m => (
                       <button
                         type="button"
@@ -6116,10 +6126,11 @@ const handleBatchDownload = async (ids: string[]) => {
                           {/* Motor */}
                           <div className="space-y-2">
                             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Motor de geração</label>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                               {[
-                                { id: 'nano',   label: 'Gemini',   sub: '⚡ Rápido',       badge: 'Padrão' },
-                                { id: 'imagen', label: 'Imagen 4', sub: '🎨 Alta qualidade', badge: 'Pro' },
+                                { id: 'nano',       label: 'Gemini',      sub: '⚡ Rápido',        badge: 'Padrão' },
+                                { id: 'nanoBanana', label: 'Nano Banana', sub: '🍌 Melhor PT-BR',   badge: 'Novo' },
+                                { id: 'imagen',     label: 'Imagen 4',    sub: '🎨 Alta qualidade', badge: 'Pro' },
                               ].map(m => (
                                 <button
                                   type="button"
@@ -6127,6 +6138,9 @@ const handleBatchDownload = async (ids: string[]) => {
                                   onClick={() => setModelType(m.id as any)}
                                   className={`p-3 rounded-xl border text-center transition-all relative ${modelType === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#1e1e1e] bg-[#161616] hover:border-[#2a2a2a]'}`}
                                 >
+                                  {m.badge === 'Novo' && (
+                                    <span className="absolute -top-1.5 -right-1.5 bg-green-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase">Novo</span>
+                                  )}
                                   <div className={`text-xs font-black mb-0.5 ${modelType === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
                                   <div className="text-[9px] text-gray-500">{m.sub}</div>
                                 </button>
