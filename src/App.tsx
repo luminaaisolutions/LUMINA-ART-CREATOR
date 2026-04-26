@@ -719,6 +719,8 @@ function AppContent() {
   // Form State
   const [prompt, setPrompt] = useState('');
   const [type, setType] = useState<'video' | 'image'>('video');
+  const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance'>('veo');
+  const [videoTier, setVideoTier] = useState<'standard' | 'pro' | 'fast'>('standard');
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [resolution, setResolution] = useState('1080p');
   const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage'>('nano');
@@ -2480,6 +2482,8 @@ function AppContent() {
           // 3. Generate Video
           // Use current state-of-the-art models recommended in documentation
           const isLipsyncJob = currentUseLipsync;
+          const currentVideoEngine = videoEngine;
+          const currentVideoTier = videoTier;
           const modelToUse = isLipsyncJob ? 'veo-3.0-generate-001' : 'veo-3.0-generate-001';
           
           const activeKey = await getActiveKey();
@@ -2555,6 +2559,67 @@ if (referenceImages.length > 0) {
           }
 
           // Use server-side proxy for video generation
+          // Kling e Seedance usam fal.ai (síncrono), Veo usa Vertex AI (assíncrono/polling)
+          if (!isLipsyncJob && (currentVideoEngine === 'kling' || currentVideoEngine === 'seedance')) {
+            // Upload da imagem de referência para fal.ai se houver
+            let imageUrl: string | undefined;
+            if (hasImageRef && activeAsset?.data) {
+              try {
+                const falKey = 'FAL_KEY_FROM_BACKEND'; // Será resolvido no backend
+                const uploadRes = await fetch('/api/gemini', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    method: 'uploadToFal',
+                    args: { base64: activeAsset.data, mimeType: activeAsset.mimeType }
+                  })
+                });
+                if (uploadRes.ok) {
+                  const uploadData = await uploadRes.json();
+                  imageUrl = uploadData?.url;
+                }
+              } catch (e) {
+                console.warn('[VideoEngine] Falha no upload da referência:', e);
+              }
+            }
+
+            const falMethod = currentVideoEngine === 'kling' ? 'generateKling' : 'generateSeedance';
+            const falRes = await fetch('/api/gemini', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                method: falMethod,
+                args: {
+                  prompt: videoParams.prompt,
+                  duration: videoParams.config?.durationSeconds || 5,
+                  aspectRatio: videoParams.config?.aspectRatio || '9:16',
+                  tier: currentVideoTier,
+                  imageUrl,
+                  generateAudio: true
+                }
+              })
+            });
+
+            if (!falRes.ok) {
+              const errData = await falRes.json().catch(() => ({}));
+              throw new Error(errData.error || `Erro no motor ${currentVideoEngine}`);
+            }
+
+            const falData = await falRes.json();
+            if (falData?.videoUrl) {
+              await updateDoc(doc(db, itemPath), {
+                status: 'completed',
+                progress: 100,
+                videoUrl: falData.videoUrl,
+                previewUrl: falData.videoUrl
+              });
+              setSessionPreviews(prev => ({ ...prev, [item.id]: falData.videoUrl }));
+              console.log(`[${currentVideoEngine}] Vídeo gerado: ${falData.videoUrl}`);
+              continue;
+            }
+            throw new Error(`${currentVideoEngine} não retornou vídeo válido.`);
+          }
+
           const videoGenRes = await fetch('/api/gemini', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -4688,23 +4753,117 @@ const handleBatchDownload = async (ids: string[]) => {
                               {fastMode ? 'TURBO' : 'QUALIDADE'}
                             </button>
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            <button 
-                              type="button"
-                              onClick={() => setType('video')}
-                              className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'video' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
-                            >
-                              <Video size={20} />
-                              <span className="text-sm font-black uppercase tracking-widest">Vídeo Veo 3.1</span>
-                            </button>
-                            <button 
-                              type="button"
-                              onClick={() => setType('image')}
-                              className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'image' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
-                            >
-                              <ImageIcon size={20} />
-                              <span className="text-sm font-black uppercase tracking-widest">Imagem Pro</span>
-                            </button>
+                          <div className="space-y-3">
+                            {/* Tipo: Vídeo ou Imagem */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setType('video')}
+                                className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'video' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
+                              >
+                                <Video size={18} />
+                                <span className="text-sm font-black uppercase tracking-widest">Vídeo</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setType('image')}
+                                className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'image' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
+                              >
+                                <ImageIcon size={18} />
+                                <span className="text-sm font-black uppercase tracking-widest">Imagem</span>
+                              </button>
+                            </div>
+
+                            {/* Seletor de motor de vídeo */}
+                            {type === 'video' && (
+                              <div className="space-y-2">
+                                <span className="text-[12px] font-black text-gray-500 uppercase tracking-widest">Motor de Vídeo</span>
+                                <div className="space-y-1.5">
+                                  {/* Veo 3.0 */}
+                                  <button
+                                    type="button"
+                                    onClick={() => { setVideoEngine('veo'); setVideoTier('standard'); }}
+                                    className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${videoEngine === 'veo' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-base">🎬</span>
+                                      <div>
+                                        <div className={`text-sm font-black leading-tight ${videoEngine === 'veo' ? 'text-[#d4af37]' : 'text-white'}`}>Veo 3.0</div>
+                                        <div className="text-[11px] text-gray-500">Google · Áudio nativo</div>
+                                      </div>
+                                    </div>
+                                    {videoEngine === 'veo' && <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-full">ATIVO</span>}
+                                  </button>
+
+                                  {/* Kling 3.0 */}
+                                  <button
+                                    type="button"
+                                    onClick={() => { setVideoEngine('kling'); setVideoTier('standard'); }}
+                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'kling' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-base">🔥</span>
+                                        <div>
+                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'kling' ? 'text-[#d4af37]' : 'text-white'}`}>Kling 3.0</div>
+                                          <div className="text-[11px] text-gray-500">fal.ai · Multi-shot · Cinema</div>
+                                        </div>
+                                      </div>
+                                      <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">NOVO</span>
+                                    </div>
+                                    {videoEngine === 'kling' && (
+                                      <div className="flex gap-1.5 mt-2">
+                                        {(['standard', 'pro'] as const).map(t => (
+                                          <button key={t} type="button"
+                                            onClick={e => { e.stopPropagation(); setVideoTier(t); }}
+                                            className={`flex-1 py-1 rounded-lg text-[10px] font-black uppercase border transition-all ${videoTier === t ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#111] text-gray-500 border-[#333] hover:border-[#555]'}`}>
+                                            {t === 'standard' ? '⚡ Standard' : '💎 Pro'}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </button>
+
+                                  {/* Seedance 2.0 */}
+                                  <button
+                                    type="button"
+                                    onClick={() => { setVideoEngine('seedance'); setVideoTier('standard'); }}
+                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'seedance' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-base">🌱</span>
+                                        <div>
+                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'seedance' ? 'text-[#d4af37]' : 'text-white'}`}>Seedance 2.0</div>
+                                          <div className="text-[11px] text-gray-500">ByteDance · Física realista</div>
+                                        </div>
+                                      </div>
+                                      <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">NOVO</span>
+                                    </div>
+                                    {videoEngine === 'seedance' && (
+                                      <div className="flex gap-1.5 mt-2">
+                                        {(['standard', 'fast'] as const).map(t => (
+                                          <button key={t} type="button"
+                                            onClick={e => { e.stopPropagation(); setVideoTier(t); }}
+                                            className={`flex-1 py-1 rounded-lg text-[10px] font-black uppercase border transition-all ${videoTier === t ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#111] text-gray-500 border-[#333] hover:border-[#555]'}`}>
+                                            {t === 'standard' ? '🌿 Standard' : '⚡ Fast'}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </button>
+                                </div>
+
+                                {/* Info de custo */}
+                                <p className="text-[11px] text-gray-600 leading-relaxed">
+                                  {videoEngine === 'veo' ? '🎬 Veo 3.0 — Google Vertex AI · áudio nativo incluído'
+                                  : videoEngine === 'kling' && videoTier === 'standard' ? '🔥 Kling Standard — $0.112/seg sem áudio · $0.168/seg com áudio'
+                                  : videoEngine === 'kling' && videoTier === 'pro' ? '💎 Kling Pro — $0.168/seg sem áudio · qualidade máxima'
+                                  : videoEngine === 'seedance' && videoTier === 'standard' ? '🌿 Seedance Standard — $0.30/seg · áudio nativo incluído'
+                                  : '⚡ Seedance Fast — $0.24/seg · menor latência'}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
