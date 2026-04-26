@@ -2615,7 +2615,7 @@ if (referenceImages.length > 0) {
               });
               setSessionPreviews(prev => ({ ...prev, [item.id]: falData.videoUrl }));
               console.log(`[${currentVideoEngine}] Vídeo gerado: ${falData.videoUrl}`);
-              continue;
+              return; // ← encerra generateItem para este item
             }
             throw new Error(`${currentVideoEngine} não retornou vídeo válido.`);
           }
