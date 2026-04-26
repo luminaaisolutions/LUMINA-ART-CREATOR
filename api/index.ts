@@ -268,7 +268,7 @@ async function createServer() {
         profissional: 'PROFISSIONAL — corporativo, sério, confiável'
       };
 
-      const recommendedModel = 'nano'; // Gemini como motor padrão para ADS — melhor PT-BR
+      const recommendedModel = 'nanoBanana'; // Nano Banana 2 — master do Wizard ADS
 
       // Mapas avançados baseados nos Frameworks Master + Visual Direction
       const layoutMap: Record<string, string> = {
@@ -658,6 +658,149 @@ OUTPUT: Generate ONE complete, detailed image prompt in English (maximum 400 wor
   app.post("/api/gemini", async (req, res) => {
     try {
       const { method, args, apiKey: clientApiKey } = req.body;
+
+      // --- generateGptImage — tratado ANTES da validação de GEMINI_API_KEY ---
+      if (method === 'generateGptImage') {
+        console.log(`[GptImage2] Calling gpt-image-2 via fal.ai`);
+
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) {
+          console.error("[GptImage2] FAL_API_KEY not configured");
+          return res.status(503).json({ error: "Serviço GPT Image 2 indisponível. Configure FAL_API_KEY." });
+        }
+
+        // Mapeamento de aspect ratio para image_size do gpt-image-2 via fal.ai
+        const imageSizeMap: Record<string, string> = {
+          '1:1':    'square_hd',
+          '9:16':   'portrait_16_9',
+          '16:9':   'landscape_16_9',
+          '4:5':    'portrait_4_3',
+          '1.91:1': 'landscape_16_9'
+        };
+
+        const hasReferenceImage = !!(args.referenceImageBase64);
+        const endpoint = hasReferenceImage
+          ? 'https://fal.run/fal-ai/gpt-image-2/image-to-image'
+          : 'https://fal.run/fal-ai/gpt-image-2';
+
+        const gptBody: any = {
+          prompt: args.prompt,
+          image_size: imageSizeMap[args.aspectRatio || '1:1'] || 'square_hd',
+          quality: args.quality === 'QUALITY' ? 'high' : 'medium',
+          num_images: 1,
+          output_format: 'png'
+        };
+
+        // Adiciona referências se houver
+        if (hasReferenceImage) {
+          // Upload da imagem de referência para fal.ai
+          try {
+            const uploadRes = await fetch('https://fal.run/files/upload', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Key ${falKey}`,
+                'Content-Type': 'application/octet-stream',
+                'X-Fal-File-Name': 'reference.png'
+              },
+              body: Buffer.from(args.referenceImageBase64, 'base64')
+            });
+            if (uploadRes.ok) {
+              const uploadData = await uploadRes.json();
+              const refUrl = uploadData?.url || uploadData?.file_url;
+              if (refUrl) {
+                gptBody.image_urls = [refUrl];
+                console.log(`[GptImage2] Referência uploaded: ${refUrl}`);
+              }
+            }
+          } catch (uploadErr) {
+            console.warn('[GptImage2] Upload de referência falhou:', uploadErr);
+          }
+
+          // Upload do logo se disponível
+          if (args.logoBase64) {
+            try {
+              const logoUploadRes = await fetch('https://fal.run/files/upload', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Key ${falKey}`,
+                  'Content-Type': 'application/octet-stream',
+                  'X-Fal-File-Name': 'logo.png'
+                },
+                body: Buffer.from(args.logoBase64, 'base64')
+              });
+              if (logoUploadRes.ok) {
+                const logoData = await logoUploadRes.json();
+                const logoUrl = logoData?.url || logoData?.file_url;
+                if (logoUrl) {
+                  gptBody.image_urls = [...(gptBody.image_urls || []), logoUrl];
+                  console.log(`[GptImage2] Logo uploaded: ${logoUrl}`);
+                }
+              }
+            } catch (logoErr) {
+              console.warn('[GptImage2] Upload de logo falhou:', logoErr);
+            }
+          }
+        }
+
+        console.log(`[GptImage2] endpoint=${hasReferenceImage ? 'image-to-image' : 't2i'} size=${gptBody.image_size} quality=${gptBody.quality}`);
+        console.log(`[GptImage2] Prompt: "${(args.prompt || '').substring(0, 80)}..."`);
+
+        const gptResponse = await withRetry(
+          () => fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Key ${falKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(gptBody)
+          }),
+          3, 4000, 'generateGptImage2'
+        );
+
+        if (!gptResponse.ok) {
+          const errData = await gptResponse.json().catch(() => ({ error: gptResponse.statusText }));
+          console.error("[GptImage2] API error:", JSON.stringify(errData));
+          return res.status(gptResponse.status).json({ error: errData?.detail || errData?.error || 'GPT Image 2 generation failed' });
+        }
+
+        const gptData = await gptResponse.json();
+        console.log(`[GptImage2] Sucesso. Images: ${gptData?.images?.length || 0}`);
+
+        if (gptData?.images?.[0]?.url) {
+          const imgResponse = await fetch(gptData.images[0].url);
+          const imgBuffer = await imgResponse.arrayBuffer();
+          let base64 = Buffer.from(imgBuffer).toString('base64');
+
+          // Sobrepõe logo real da marca se disponível
+          if (args.logoBase64 && args.logoPosition && !args.templateLayers) {
+            console.log(`[Sharp/GptImage2] Sobrepondo logo na posição: ${args.logoPosition}`);
+            base64 = await overlayLogoOnImage(base64, args.logoBase64, args.logoPosition);
+          }
+
+          // ENGINE DE COMPOSIÇÃO — Template com camadas
+          if (args.templateLayers && args.templateTexts) {
+            console.log(`[Sharp/GptImage2] Composição de template com ${args.templateLayers.length} camadas`);
+            base64 = await composeTemplateImage(
+              base64,
+              args.templateLayers,
+              args.templateTexts,
+              args.logoBase64ForTemplate,
+              args.logoPositionForTemplate || 'bottom-right'
+            );
+          }
+
+          return res.json({
+            generatedImages: [{
+              image: {
+                imageBytes: base64,
+                mimeType: 'image/png'
+              }
+            }]
+          });
+        }
+
+        return res.status(500).json({ error: 'GPT Image 2 não retornou imagem válida.' });
+      }
 
       // --- generateNanoBanana — tratado ANTES da validação de GEMINI_API_KEY ---
       if (method === 'generateNanoBanana') {
@@ -1152,7 +1295,7 @@ OUTPUT: Generate ONE complete, detailed image prompt in English (maximum 400 wor
 
       // ── Motor recomendado por objetivo ──
       const needsTextInImage = false; // Gemini é o motor padrão para ADS
-      const recommendedModel = 'nano'; // Gemini — melhor qualidade PT-BR
+      const recommendedModel = 'nanoBanana'; // Nano Banana 2 — master do Wizard ADS (fallback)
 
       // ── CTA automático por objetivo se não foi preenchido ──
       const ctaMap: Record<string, string> = {
@@ -1263,7 +1406,7 @@ Return ONLY the prompt, no explanations.`;
       console.error("[WizardPrompt] Error:", error.message);
 
       const { wizardProduct = 'product', wizardAudience = '', adPlatform = 'instagram', wizardStyle = '', adGoal = 'conversoes', wizardCta = '' } = req.body;
-      const recModel = 'nano'; // Gemini sempre
+      const recModel = 'nanoBanana'; // Nano Banana 2 sempre
       const ctaFallback = wizardCta || (adGoal === 'conversoes' ? 'Compre Agora — Oferta Limitada' : adGoal === 'lead' ? 'Cadastre-se Grátis' : 'Saiba Mais');
 
       const fallback = `${wizardProduct} as the central visual hero, dramatically lit, sharply focused, ${
