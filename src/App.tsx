@@ -5422,15 +5422,17 @@ const handleBatchDownload = async (ids: string[]) => {
         {activeTab === 'lipsync' && (
           <div className="w-full max-w-6xl mx-auto py-8 px-4 md:px-8">
             <div className="flex flex-col gap-8">
-              {/* Lipsync Controls - Horizontal/Top Layout */}
+
+              {/* Controls Panel */}
               <div className="w-full">
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`bg-[#111] p-8 md:p-10 rounded-[40px] border transition-all ${useLipsync && lipsyncAudio ? 'border-[#d4af37] shadow-lg shadow-[#d4af37]/10' : 'border-[#222]'}`}
+                  className="bg-[#111] p-8 md:p-10 rounded-[40px] border border-[#222]"
                 >
                   <div className="flex flex-wrap items-start gap-10">
-                    {/* Left: Title + Motor Selector */}
+
+                    {/* LEFT — Motor Selector */}
                     <div className="w-full lg:w-auto lg:min-w-[300px] space-y-5">
                       <div className="flex items-center gap-3">
                         <Mic size={22} className="text-[#d4af37]" />
@@ -5441,13 +5443,13 @@ const handleBatchDownload = async (ids: string[]) => {
                       <div className="space-y-2">
                         <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">🎭 Criar avatar falante</span>
                         <div className="space-y-1.5">
-                          {[
-                            { id: 'veo',       icon: '🎬', label: 'Veo 3.0',        sub: 'Google DeepMind · LipSync nativo',    input: 'Imagem' },
-                            { id: 'omnihuman', icon: '🧠', label: 'OmniHuman v1.5', sub: 'ByteDance · Melhor emoção e expressão', input: 'Imagem' },
-                            { id: 'aurora',    icon: '✨', label: 'Aurora',          sub: 'Creatify · Máxima qualidade de avatar', input: 'Imagem' },
-                          ].map(m => (
+                          {([
+                            { id: 'veo',       icon: '🎬', label: 'Veo 3.0',        sub: 'Google DeepMind · LipSync nativo' },
+                            { id: 'omnihuman', icon: '🧠', label: 'OmniHuman v1.5', sub: 'ByteDance · Melhor emoção e expressão' },
+                            { id: 'aurora',    icon: '✨', label: 'Aurora',          sub: 'Creatify · Máxima qualidade de avatar' },
+                          ] as const).map(m => (
                             <button key={m.id} type="button"
-                              onClick={() => handleLipsyncEngineChange(m.id as any)}
+                              onClick={() => handleLipsyncEngineChange(m.id)}
                               className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
                             >
                               <div className="flex items-center gap-2.5">
@@ -5463,16 +5465,16 @@ const handleBatchDownload = async (ids: string[]) => {
                         </div>
                       </div>
 
-                      {/* Categoria 2: Sincronizar vídeo existente */}
+                      {/* Categoria 2: Sincronizar vídeo */}
                       <div className="space-y-2">
                         <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">👄 Sincronizar vídeo existente</span>
                         <div className="space-y-1.5">
-                          {[
-                            { id: 'sync',    icon: '🔄', label: 'Sync.so v2',     sub: 'Dubbing geral · $3/min',         badge: '' },
-                            { id: 'syncpro', icon: '💎', label: 'Sync.so Pro',    sub: 'Close-up premium · $5/min',      badge: 'PRO' },
-                          ].map(m => (
+                          {([
+                            { id: 'sync',    icon: '🔄', label: 'Sync.so v2',  sub: 'Dubbing geral · $3/min',    badge: '' },
+                            { id: 'syncpro', icon: '💎', label: 'Sync.so Pro', sub: 'Close-up premium · $5/min', badge: 'PRO' },
+                          ] as const).map(m => (
                             <button key={m.id} type="button"
-                              onClick={() => handleLipsyncEngineChange(m.id as any)}
+                              onClick={() => handleLipsyncEngineChange(m.id)}
                               className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
                             >
                               <div className="flex items-center gap-2.5">
@@ -5490,19 +5492,19 @@ const handleBatchDownload = async (ids: string[]) => {
                           ))}
                         </div>
 
-                        {/* Sync mode — só aparece para Sync.so */}
+                        {/* Sync mode */}
                         {(lipsyncEngine === 'sync' || lipsyncEngine === 'syncpro') && (
                           <div className="space-y-1.5 pt-1">
                             <span className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Modo de sync</span>
                             <div className="grid grid-cols-2 gap-1">
-                              {[
+                              {([
                                 { id: 'cut_off', label: '✂️ Cortar excesso' },
                                 { id: 'loop',    label: '🔁 Repetir vídeo' },
                                 { id: 'bounce',  label: '🏀 Palindromo' },
                                 { id: 'remap',   label: '🔀 Esticar tempo' },
-                              ].map(s => (
+                              ] as const).map(s => (
                                 <button key={s.id} type="button"
-                                  onClick={() => setSyncMode(s.id as any)}
+                                  onClick={() => setSyncMode(s.id)}
                                   className={`py-1.5 px-2 rounded-lg border text-[10px] font-black transition-all text-left ${syncMode === s.id ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]' : 'border-[#222] bg-[#111] text-gray-500 hover:border-[#333]'}`}
                                 >{s.label}</button>
                               ))}
@@ -5511,7 +5513,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         )}
                       </div>
 
-                      {/* Flyer de créditos */}
+                      {/* Flyer créditos */}
                       {showLipsyncCreditFlyer && (
                         <div className="flex items-center gap-2 px-3 py-2 bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-xl animate-pulse">
                           <Sparkles size={12} className="text-[#d4af37] shrink-0" />
@@ -5522,38 +5524,40 @@ const handleBatchDownload = async (ids: string[]) => {
                       )}
                     </div>
 
-                    {/* Middle: Assets + Audio Prompt */}
+                    {/* MIDDLE — Assets + Prompt + Settings */}
                     <div className="flex-1 min-w-[300px] space-y-6">
                       <div className="grid grid-cols-3 gap-4">
-                        <div 
+
+                        {/* Personagem / Vídeo */}
+                        <div
                           className={`aspect-square bg-[#1a1a1a] rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all relative group ${lipsyncAsset ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#222] hover:border-[#333] cursor-pointer'}`}
                           onClick={() => !lipsyncAsset && lipsyncAssetInputRef.current?.click()}
                         >
-                          <input 
+                          <input
                             ref={lipsyncAssetInputRef}
-                            type="file" 
-                            className="hidden" 
-                            accept={(lipsyncEngine === 'sync' || lipsyncEngine === 'syncpro') ? "video/*" : "image/*,video/*"}
+                            type="file"
+                            className="hidden"
+                            accept={(lipsyncEngine === 'sync' || lipsyncEngine === 'syncpro') ? 'video/*' : 'image/*,video/*'}
                             onChange={handleLipsyncAssetUpload}
                             onClick={(e) => e.stopPropagation()}
                           />
                           {lipsyncAsset ? (
                             <>
                               {lipsyncAsset.type === 'image' ? (
-                                <img 
-                                  src={`data:${lipsyncAsset.mimeType};base64,${lipsyncAsset.data}`} 
-                                  alt="Ref" 
-                                  className="w-full h-full object-cover rounded-2xl cursor-pointer hover:opacity-80 transition-opacity" 
+                                <img
+                                  src={`data:${lipsyncAsset.mimeType};base64,${lipsyncAsset.data}`}
+                                  alt="Ref"
+                                  className="w-full h-full object-cover rounded-2xl cursor-pointer hover:opacity-80 transition-opacity"
                                   onClick={(e) => { e.stopPropagation(); setSelectedMedia({ url: `data:${lipsyncAsset.mimeType};base64,${lipsyncAsset.data}`, type: lipsyncAsset.type }); }}
                                 />
                               ) : (
-                                <video 
-                                  src={`data:${lipsyncAsset.mimeType};base64,${lipsyncAsset.data}`} 
-                                  className="w-full h-full object-cover rounded-2xl cursor-pointer hover:opacity-80 transition-opacity"
+                                <video
+                                  src={`data:${lipsyncAsset.mimeType};base64,${lipsyncAsset.data}`}
+                                  className="w-full h-full object-cover rounded-2xl"
                                   onClick={(e) => e.stopPropagation()}
                                 />
                               )}
-                              <button 
+                              <button
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLipsyncAsset(null); }}
                                 className="absolute top-2 right-2 w-8 h-8 bg-black/80 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border border-red-500/30"
@@ -5571,27 +5575,28 @@ const handleBatchDownload = async (ids: string[]) => {
                           )}
                         </div>
 
-                        <div 
+                        {/* Produto */}
+                        <div
                           className={`aspect-square bg-[#1a1a1a] rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all relative group ${lipsyncProductAsset ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#222] hover:border-[#333] cursor-pointer'}`}
                           onClick={() => !lipsyncProductAsset && lipsyncProductAssetInputRef.current?.click()}
                         >
-                          <input 
+                          <input
                             ref={lipsyncProductAssetInputRef}
-                            type="file" 
-                            className="hidden" 
-                            accept="image/*" 
-                            onChange={handleLipsyncProductAssetUpload} 
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleLipsyncProductAssetUpload}
                             onClick={(e) => e.stopPropagation()}
                           />
                           {lipsyncProductAsset ? (
                             <>
-                              <img 
-                                src={`data:${lipsyncProductAsset.mimeType};base64,${lipsyncProductAsset.data}`} 
-                                alt="Product" 
-                                className="w-full h-full object-cover rounded-2xl cursor-pointer hover:opacity-80 transition-opacity" 
+                              <img
+                                src={`data:${lipsyncProductAsset.mimeType};base64,${lipsyncProductAsset.data}`}
+                                alt="Product"
+                                className="w-full h-full object-cover rounded-2xl cursor-pointer hover:opacity-80 transition-opacity"
                                 onClick={(e) => { e.stopPropagation(); setSelectedMedia({ url: `data:${lipsyncProductAsset.mimeType};base64,${lipsyncProductAsset.data}`, type: 'image' }); }}
                               />
-                              <button 
+                              <button
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLipsyncProductAsset(null); }}
                                 className="absolute top-2 right-2 w-8 h-8 bg-black/80 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border border-red-500/30"
@@ -5607,23 +5612,24 @@ const handleBatchDownload = async (ids: string[]) => {
                           )}
                         </div>
 
-                        <div 
+                        {/* Áudio */}
+                        <div
                           className={`aspect-square bg-[#1a1a1a] rounded-2xl border flex flex-col items-center justify-center gap-2 transition-all relative group ${lipsyncAudio || lipsyncAudioPrompt.trim() !== '' ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#222] hover:border-[#333] cursor-pointer'}`}
                           onClick={() => !lipsyncAudio && audioInputRef.current?.click()}
                         >
-                          <input 
+                          <input
                             ref={audioInputRef}
-                            type="file" 
-                            className="hidden" 
-                            accept="audio/*" 
-                            onChange={handleAudioUpload} 
+                            type="file"
+                            className="hidden"
+                            accept="audio/*"
+                            onChange={handleAudioUpload}
                             onClick={(e) => e.stopPropagation()}
                           />
                           {lipsyncAudio ? (
                             <>
                               <div className="flex flex-col items-center gap-3">
                                 <div className="flex items-center gap-2">
-                                  <button 
+                                  <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); isAudioPlaying ? pauseAudio() : playAudio(); }}
                                     className="w-10 h-10 bg-[#d4af37] text-black rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg"
@@ -5633,7 +5639,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                 </div>
                                 <span className="text-[12px] font-bold text-[#d4af37] uppercase">Áudio OK</span>
                               </div>
-                              <button 
+                              <button
                                 type="button"
                                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLipsyncAudio(null); setIsAudioPlaying(false); }}
                                 className="absolute top-2 right-2 w-8 h-8 bg-black/80 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all border border-red-500/30"
@@ -5653,10 +5659,12 @@ const handleBatchDownload = async (ids: string[]) => {
                             </>
                           )}
                         </div>
+                      </div>
 
+                      {/* Texto para Voz */}
                       <div>
                         <label className="block text-sm font-bold text-gray-400 mb-3 uppercase tracking-widest">Texto para Voz / Prompt</label>
-                        <textarea 
+                        <textarea
                           value={lipsyncAudioPrompt}
                           onChange={(e) => setLipsyncAudioPrompt(e.target.value)}
                           placeholder="Ou digite o texto para a voz..."
@@ -5664,28 +5672,28 @@ const handleBatchDownload = async (ids: string[]) => {
                         />
                       </div>
 
-                      {/* Formato e Duração — só para Veo */}
+                      {/* Formato e Duração — só Veo */}
                       {lipsyncEngine === 'veo' && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[12px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Formato</label>
-                          <select value={lipsyncAspectRatio} onChange={(e) => setLipsyncAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-sm focus:outline-none focus:border-[#d4af37] appearance-none">
-                            <option value="9:16">9:16 (Vertical)</option>
-                            <option value="16:9">16:9 (Horizontal)</option>
-                          </select>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[12px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Formato</label>
+                            <select value={lipsyncAspectRatio} onChange={(e) => setLipsyncAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-sm focus:outline-none focus:border-[#d4af37] appearance-none">
+                              <option value="9:16">9:16 (Vertical)</option>
+                              <option value="16:9">16:9 (Horizontal)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[12px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Duração</label>
+                            <select value={lipsyncDuration} onChange={(e) => setLipsyncDuration(parseInt(e.target.value))} className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-sm focus:outline-none focus:border-[#d4af37] appearance-none">
+                              <option value={4}>4 Segundos</option>
+                              <option value={8}>8 Segundos</option>
+                            </select>
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-gray-400 mb-2 uppercase tracking-widest">Duração</label>
-                          <select value={lipsyncDuration} onChange={(e) => setLipsyncDuration(parseInt(e.target.value))} className="w-full bg-[#1a1a1a] border border-[#222] rounded-xl p-3 text-sm focus:outline-none focus:border-[#d4af37] appearance-none">
-                            <option value={4}>4 Segundos</option>
-                            <option value={8}>8 Segundos</option>
-                          </select>
-                        </div>
-                      </div>
                       )}
                     </div>
 
-                    {/* Right: Actions */}
+                    {/* RIGHT — Actions */}
                     <div className="w-full lg:w-auto lg:min-w-[280px] space-y-4 pt-6 lg:pt-0">
                       <button
                         type="button"
@@ -5709,18 +5717,19 @@ const handleBatchDownload = async (ids: string[]) => {
                         <span className="text-[12px] opacity-80 font-bold uppercase tracking-tighter">Custo: {getCostPerItem(true, false) * lipsyncQuantity} CRÉDITOS</span>
                       </button>
                     </div>
+
                   </div>
                 </motion.div>
               </div>
 
-              {/* Results Gallery - Below Controls */}
+              {/* Results Gallery */}
               <div className="w-full space-y-8">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <h3 className="text-2xl font-bold">Resultados LipSync</h3>
                     <p className="text-gray-500 text-sm">Suas sincronizações labiais recentes aparecem aqui.</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setActiveTab('library')}
                     className="text-sm font-bold text-[#d4af37] uppercase tracking-widest hover:underline flex items-center gap-2"
                   >
@@ -5740,91 +5749,77 @@ const handleBatchDownload = async (ids: string[]) => {
                           transition={{ delay: i * 0.05 }}
                           className="bg-[#111] rounded-[32px] border border-[#222] overflow-hidden group relative"
                         >
-                          <div 
+                          <div
                             className="aspect-[9/16] bg-black relative cursor-pointer overflow-hidden"
                             onClick={() => openPreview(item, lipsyncList)}
                           >
-                          {sessionPreviews[item.id] || item.previewUrl ? (
-                            <video 
-                              src={sessionPreviews[item.id] || item.previewUrl} 
-                              className="w-full h-full object-cover" 
-                              muted
-                              loop
-                              onMouseOver={e => e.currentTarget.play()}
-                              onMouseOut={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                            />
-                          ) : item.status === 'failed' ? (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center gap-4">
-                              <AlertCircle size={40} className="text-red-500/50" />
-                              <p className="text-[12px] text-red-400 font-medium leading-relaxed">{item.error}</p>
-                            </div>
-                          ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-                              <div className="relative">
-                                <div className="w-16 h-16 border-4 border-[#d4af37]/20 border-t-[#d4af37] rounded-full animate-spin" />
-                                <div className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[#d4af37]">
-                                  {item.progress}%
-                                </div>
+                            {sessionPreviews[item.id] || item.previewUrl ? (
+                              <video
+                                src={sessionPreviews[item.id] || item.previewUrl}
+                                className="w-full h-full object-cover"
+                                muted
+                                loop
+                                onMouseOver={e => e.currentTarget.play()}
+                                onMouseOut={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                {item.status === 'failed' ? (
+                                  <div className="flex flex-col items-center gap-2">
+                                    <div className="w-10 h-10 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
+                                      <span className="text-red-400 text-lg">!</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center gap-3">
+                                    <div className="w-8 h-8 border-2 border-[#d4af37]/30 border-t-[#d4af37] rounded-full animate-spin" />
+                                    <span className="text-[11px] text-gray-500 font-bold">{item.progress || 0}%</span>
+                                  </div>
+                                )}
                               </div>
-                              <span className="text-[12px] font-black text-gray-500 uppercase tracking-widest animate-pulse">Processando...</span>
-                            </div>
-                          )}
-                          
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                            <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
-                              <Play size={20} className="text-white fill-white ml-1" />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="p-4 flex items-center justify-between bg-[#161616]">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${item.status === 'completed' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-[#d4af37] animate-pulse'}`} />
-                            <span className="text-[13px] font-black text-gray-400 uppercase tracking-widest">
-                              {item.status === 'completed' ? 'Finalizado' : item.status === 'failed' ? 'Falhou' : 'Gerando'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            {(sessionPreviews[item.id] || item.previewUrl) && (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id);
-                                }}
-                                className="text-gray-600 hover:text-[#d4af37] transition-colors"
-                                title="Baixar"
-                              >
-                                <Download size={14} />
-                              </button>
                             )}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(item.id);
-                              }}
-                              className="text-gray-600 hover:text-red-500 transition-colors"
-                              title="Excluir"
-                            >
-                              <Trash2 size={14} />
-                            </button>
                           </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="bg-[#111] rounded-[40px] border border-[#222] border-dashed p-20 flex flex-col items-center justify-center text-center gap-6">
-                  <div className="w-20 h-20 bg-[#1a1a1a] rounded-full flex items-center justify-center border border-[#222]">
-                    <Mic size={32} className="text-gray-700" />
+                          <div className="p-3 flex items-center justify-between bg-[#161616]">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`w-2 h-2 rounded-full ${item.status === 'completed' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-[#d4af37] animate-pulse'}`} />
+                              <span className="text-[11px] font-black text-gray-400 uppercase">
+                                {item.status === 'completed' ? 'Pronto' : item.status === 'failed' ? 'Erro' : 'Gerando'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              {item.status === 'completed' && (sessionPreviews[item.id] || item.previewUrl) && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id); }}
+                                  className="p-1.5 bg-[#d4af37]/10 text-[#d4af37] rounded-lg hover:bg-[#d4af37] hover:text-black transition-all"
+                                >
+                                  <Download size={13} />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="text-gray-600 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                   </div>
-                    <div className="space-y-2">
-                      <h4 className="text-lg font-bold text-gray-400">Nenhum LipSync gerado ainda</h4>
-                      <p className="text-gray-600 text-sm max-w-xs mx-auto">Use o painel ao lado para criar sua primeira sincronização labial de alta fidelidade.</p>
+                ) : (
+                  <div className="bg-[#111] rounded-[40px] border border-[#222] border-dashed p-12 flex flex-col items-center justify-center text-center gap-4">
+                    <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center border border-[#222]">
+                      <Mic size={24} className="text-gray-700" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-bold text-gray-400">Nenhum LipSync gerado ainda</p>
+                      <p className="text-sm text-gray-600">Seus resultados aparecerão aqui.</p>
                     </div>
                   </div>
                 )}
               </div>
+
             </div>
           </div>
         )}
