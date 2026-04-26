@@ -351,7 +351,38 @@ FRAMEWORK MASTER — 7 REQUIRED COMPONENTS (ALL must be present):
 1. HERO VISUAL: Occupies 55-65% of canvas — cinematic product shot OR dramatic human portrait with emotion
 2. HEADLINE: Max 6 words | Ultra-bold weight 900 | Hook formula: ${hookFormula} | Must be INSTANTLY readable at thumbnail size
 3. SUBHEADLINE/PROOF: 1-2 lines — concrete statistic, social proof number, or powerful benefit statement
-4. OFFER BADGE: Starburst, circle or ribbon shape — gradient fill, drop shadow, high contrast
+4. OFFER BADGE: Choose the MOST CONVERSION-OPTIMIZED badge type for this campaign from the list below. Render it with maximum visual impact — 3D depth, strong shadows, high contrast, readable at small sizes.
+
+BADGE TYPE SELECTION (pick the best fit for objective "${adGoal}" and style "${wizardStyle}"):
+${adGoal === 'conversoes' || adGoal === 'lead' ? `
+PRIORITY BADGES FOR CONVERSION:
+- STARBURST EXPLOSION: 12-pointed yellow/orange starburst with inner glow, drop shadow 8px, bold text center — use for: PROMOÇÃO, OFERTA, DESCONTO
+- URGENCY COUNTDOWN: Red pill badge with clock icon + "ÚLTIMAS HORAS" or "ENCERRA HOJE" — creates FOMO
+- PRICE SLASH: Old price with red strikethrough + new price in large green — "DE R$197 POR R$97"
+- GUARANTEE SHIELD: Green shield icon + "GARANTIA 30 DIAS" — removes purchase risk
+- SCARCITY PILL: Orange rounded pill "RESTAM APENAS [X] VAGAS" or "ÚLTIMAS [X] UNIDADES"
+- BESTSELLER RIBBON: Gold diagonal corner ribbon "MAIS VENDIDO" or "Nº1 EM VENDAS"
+- FREE BONUS TAG: Bright green tag shape "GRÁTIS + BRINDE" or "FRETE GRÁTIS"
+- SOCIAL PROOF BURST: Purple starburst "+[X] MIL CLIENTES SATISFEITOS" or "[X]★ AVALIAÇÕES"
+- LIMITED EDITION STAMP: Wax seal style "EDIÇÃO LIMITADA" in luxury gold
+- FIRST ACCESS FLAG: Angled banner "SEJA O PRIMEIRO" or "LANÇAMENTO EXCLUSIVO"` : adGoal === 'engajamento' ? `
+PRIORITY BADGES FOR ENGAGEMENT:
+- VIRAL TAG: Flame emoji + "TREND DO MOMENTO" in bright gradient
+- COMMUNITY BURST: Heart burst "#COMUNIDADE" or "JUNTE-SE A NÓS"
+- CHALLENGE PILL: Electric blue "DESAFIO" or "COMPARTILHE"
+- EMOTION STAMP: Bold "VOCÊ PRECISA VER ISSO" in attention-grabbing contrast` : `
+PRIORITY BADGES FOR AWARENESS:
+- AWARD SEAL: Gold circular seal "PREMIADO" or "RECONHECIDO"
+- CERTIFIED BADGE: Blue checkmark "CERTIFICADO" or "OFICIAL"
+- HERITAGE STAMP: Classic "DESDE [ANO]" in authoritative serif
+- TRUST SHIELD: Green "CONFIANÇA GARANTIDA" with padlock icon`}
+
+BADGE STYLING RULES:
+- Size: occupies 18-25% of canvas width — big enough to read instantly
+- Position: strategic corner or overlapping the product/hero image for maximum attention
+- Typography: ultra-bold, condensed, 0 letter-spacing — readable at thumbnail
+- Effect: drop shadow 10px offset, inner highlight glow, slight rotation -8° to +8° for dynamism
+- Color: maximum contrast with background — never blend in
 5. PRODUCT VISUAL: Hero product with photorealistic 3D feel, studio lighting, tridimensional shadow
 6. CTA BUTTON: "${wizardCta || 'Saiba Mais'}" — 3D pill button, gradient fill, inner highlight, deep shadow
 7. BRAND STRIP: Logo top-left discreet + URL footer — always present
@@ -403,7 +434,7 @@ MANDATORY VISUAL EFFECTS — USE AT LEAST 4:
 3. PARTICLE SYSTEM: Floating elements matching niche — [sparkles & stars | dust particles | confetti | flower petals | smoke wisps | digital pixels | golden coins]
 4. BACKGROUND TREATMENT: Never flat — choose: [gradient mesh with 3+ colors | textured surface (marble/concrete/silk) | bokeh blur | geometric pattern overlay | dark vignette with color center]
 5. OVERLAY EFFECTS: [holographic iridescent sheen | glassmorphism frosted panel | color gradient overlay 40% opacity | film grain texture | chromatic aberration edges]
-6. BADGE/CTA ENHANCEMENT: [starburst shape with glow | 3D button with highlight shine | ribbon banner with depth | metallic gradient fill]
+6. BADGE/CTA ENHANCEMENT: Apply to the chosen offer badge → [starburst with multi-layer glow effect | wax seal with emboss texture | price slash with red lightning bolt | urgency pill with pulsing ring | ribbon banner with gold foil | 3D button with specular highlight shine | corner fold with shadow depth | shield with gradient fill | circular burst with radial lines]
 7. CINEMATIC GRADE: Apply color grading LUT — ${wizardStyle === 'urgencia' ? 'warm orange-red tones, high contrast, punchy saturation' : wizardStyle === 'elegante' || wizardStyle === 'luxo' ? 'cool desaturated with gold accents, filmic, sophisticated' : wizardStyle === 'divertido' ? 'hyper-saturated, vivid, pop-art vibrance' : 'teal-orange cinematic, professional color grade'}
 
 PORTUGUESE TEXT — PERFECT RENDERING:
