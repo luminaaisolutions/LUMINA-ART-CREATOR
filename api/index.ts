@@ -1455,17 +1455,31 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
 
         const veoEndpoint = `https://${veoLocation}-aiplatform.googleapis.com/v1/projects/${luminaProject}/locations/${veoLocation}/publishers/google/models/${args.model}:predictLongRunning`;
 
+        const veoController = new AbortController();
+        const veoTimeout = setTimeout(() => veoController.abort(), 25000); // 25s timeout
+
         console.log(`[Veo] POST ${veoEndpoint}`);
         console.log(`[Veo] duration=${requestBody.parameters.durationSeconds}s ratio=${requestBody.parameters.aspectRatio}`);
 
-        const veoRes = await fetch(veoEndpoint, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${oauthToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(requestBody)
-        });
+        let veoRes: Response;
+        try {
+          veoRes = await fetch(veoEndpoint, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${oauthToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody),
+            signal: veoController.signal
+          });
+        } catch (fetchErr: any) {
+          clearTimeout(veoTimeout);
+          if (fetchErr.name === 'AbortError') {
+            return res.status(504).json({ error: 'Veo API timeout — tente novamente em alguns segundos.' });
+          }
+          throw fetchErr;
+        }
+        clearTimeout(veoTimeout);
 
         const veoText = await veoRes.text();
         console.log(`[Veo] HTTP ${veoRes.status} | body: ${veoText.substring(0, 300)}`);
