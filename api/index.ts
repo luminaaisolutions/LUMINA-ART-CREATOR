@@ -1401,122 +1401,126 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         return res.status(500).json({ error: 'Seedance não retornou vídeo válido.' });
       }
 
-      // --- generateVideos via REST API with OAuth (Service Account) ---
+      // --- generateVideos via Vertex AI SDK (Veo 3.0) ---
       if (method === 'generateVideos') {
-        console.log(`[Gemini Proxy] Calling generateVideos for ${args.model} via REST`);
-        
-        // Try OAuth token first (service account), fallback to API key
+        const luminaProject = process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions';
+        const veoLocation = 'us-central1';
+
+        console.log(`[Veo] Starting generateVideos | model=${args.model} project=${luminaProject}`);
+
+        // Usar GoogleGenAI SDK com vertexai:true (método oficial para Veo no Vertex AI)
+        const luminaSA = process.env.LUMINA_SERVICE_ACCOUNT
+          ? JSON.parse(process.env.LUMINA_SERVICE_ACCOUNT)
+          : null;
+
+        if (!luminaSA) {
+          return res.status(503).json({ error: 'LUMINA_SERVICE_ACCOUNT não configurada.' });
+        }
+
+        // Obter token OAuth para o SDK
         const oauthToken = await getServiceAccountAccessToken();
-        
-        let videoResponse;
-        
-        if (oauthToken) {
-          console.log("[Gemini Proxy] Using OAuth token for video generation");
-          
-          const luminaProject = process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions';
-          const veoRegion = 'us-central1';
+        if (!oauthToken) {
+          return res.status(503).json({ error: 'Falha ao obter token OAuth para o Veo.' });
+        }
 
-          const requestBody: any = {
-            instances: [{
-              prompt: args.prompt,
-              ...(args.image ? { image: args.image } : {}),
-              ...(args.audio_input ? { audio_input: args.audio_input } : {}),
-            }],
-            parameters: {
-              sampleCount: args.config?.numberOfVideos || 1,
-              durationSeconds: args.config?.durationSeconds || 4,
-              aspectRatio: args.config?.aspectRatio || '9:16',
-              resolution: args.config?.resolution || '720p'
-            }
+        // Usar REST API do Vertex AI com o formato correto documentado
+        const requestBody: any = {
+          instances: [{
+            prompt: args.prompt,
+          }],
+          parameters: {
+            sampleCount: 1,
+            durationSeconds: args.config?.durationSeconds || 4,
+            aspectRatio: args.config?.aspectRatio || '9:16',
+          }
+        };
+
+        if (args.image) {
+          requestBody.instances[0].image = {
+            bytesBase64Encoded: args.image.imageBytes,
+            mimeType: args.image.mimeType || 'image/jpeg'
           };
-
-          console.log(`[Veo] Calling Vertex AI project=${luminaProject} model=${args.model}`);
-          console.log(`[Veo] Params: duration=${requestBody.parameters.durationSeconds}s ratio=${requestBody.parameters.aspectRatio}`);
-
-          videoResponse = await fetch(
-            `https://${veoRegion}-aiplatform.googleapis.com/v1/projects/${luminaProject}/locations/${veoRegion}/publishers/google/models/${args.model}:generateVideos`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${oauthToken}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(requestBody)
-            }
-          );
-        } else {
-          console.log("[Gemini Proxy] OAuth failed, using API key for video generation");
-          const client = new GoogleGenAI({ apiKey });
-          const result = await withRetry(
-            () => (client as any).models.generateVideos({
-              model: args.model,
-              prompt: args.prompt,
-              config: {
-                ...args.config,
-                safetySettings: undefined // Remove safetySettings for Veo
-              },
-              image: args.image,
-              audio_input: args.audio_input
-            }),
-            3, 5000, 'generateVideos'
-          );
-          return res.json(result);
         }
 
-        if (!videoResponse.ok) {
-          const text = await videoResponse.text();
-          let errData: any = { error: `HTTP ${videoResponse.status}` };
-          try { if (text) errData = JSON.parse(text); } catch {}
-          console.error(`[Veo] HTTP ${videoResponse.status} | body: "${text?.substring(0, 300) || 'VAZIO'}" | content-type: ${videoResponse.headers.get('content-type')}`);
-          return res.status(videoResponse.status).json(errData);
+        if (args.audio_input?.prompt) {
+          requestBody.instances[0].audioConfig = {
+            audioPrompt: args.audio_input.prompt
+          };
+        } else if (args.audio_input?.audio) {
+          requestBody.instances[0].audioConfig = {
+            audioBytes: args.audio_input.audio.audioBytes,
+            mimeType: args.audio_input.audio.mimeType
+          };
         }
 
-        const videoText = await videoResponse.text();
-        if (!videoText || !videoText.trim()) {
-          console.error("[Veo] HTTP 200 mas body vazio — quota esgotada ou modelo indisponível");
-          return res.status(503).json({ error: 'Veo API retornou resposta vazia. Verifique quota do projeto Google.' });
+        const veoEndpoint = `https://${veoLocation}-aiplatform.googleapis.com/v1/projects/${luminaProject}/locations/${veoLocation}/publishers/google/models/${args.model}:predictLongRunning`;
+
+        console.log(`[Veo] POST ${veoEndpoint}`);
+        console.log(`[Veo] duration=${requestBody.parameters.durationSeconds}s ratio=${requestBody.parameters.aspectRatio}`);
+
+        const veoRes = await fetch(veoEndpoint, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${oauthToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        const veoText = await veoRes.text();
+        console.log(`[Veo] HTTP ${veoRes.status} | body: ${veoText.substring(0, 300)}`);
+
+        if (!veoRes.ok) {
+          let errData: any = { error: `Veo HTTP ${veoRes.status}` };
+          try { if (veoText) errData = JSON.parse(veoText); } catch {}
+          return res.status(veoRes.status).json(errData);
         }
-        console.log(`[Veo] Resposta OK. Body preview: ${videoText.substring(0, 100)}`);
-        const videoData = JSON.parse(videoText);
-        return res.json(videoData);
+
+        if (!veoText?.trim()) {
+          return res.status(503).json({ error: 'Veo retornou resposta vazia.' });
+        }
+
+        const veoData = JSON.parse(veoText);
+        console.log(`[Veo] Operação iniciada: ${veoData?.name}`);
+        return res.json(veoData);
+
+      // --- getVideosOperation (polling Veo) ---
+      } else if (method === 'getVideosOperation') {
 
       // --- getVideosOperation (polling) ---
       } else if (method === 'getVideosOperation') {
         const opName = args.operation?.name || args.operation;
-        console.log(`[Veo Polling] Getting operation: ${opName}`);
+        console.log(`[Veo Polling] Operation: ${opName}`);
 
         const oauthToken = await getServiceAccountAccessToken();
         const luminaProject = process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions';
-        const veoRegion = 'us-central1';
+        const veoLocation = 'us-central1';
 
-        let pollResponse;
-        if (oauthToken) {
-          // Se opName já é uma URL completa ou path de operação do Vertex AI
-          const pollUrl = opName?.startsWith('http')
-            ? opName
-            : `https://${veoRegion}-aiplatform.googleapis.com/v1/${opName}`;
+        // O opName vem no formato: projects/{project}/locations/{location}/publishers/google/models/{model}/operations/{id}
+        const pollUrl = opName?.startsWith('http')
+          ? opName
+          : `https://${veoLocation}-aiplatform.googleapis.com/v1/${opName}`;
 
-          console.log(`[Veo Polling] URL: ${pollUrl}`);
-          pollResponse = await fetch(pollUrl, {
-            headers: {
-              'Authorization': `Bearer ${oauthToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-        } else {
-          // Fallback: generativelanguage
-          const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
-          pollResponse = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+        console.log(`[Veo Polling] GET ${pollUrl}`);
+
+        const pollRes = await fetch(pollUrl, {
+          headers: {
+            'Authorization': `Bearer ${oauthToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const pollText = await pollRes.text();
+        let pollData: any = {};
+        try { if (pollText) pollData = JSON.parse(pollText); } catch {}
+
+        if (!pollRes.ok) {
+          console.error(`[Veo Polling] HTTP ${pollRes.status}: ${pollText?.substring(0, 200)}`);
+          return res.status(pollRes.status).json(pollData);
         }
 
-        const pollText = await pollResponse.text();
-        let data: any = {};
-        try { if (pollText) data = JSON.parse(pollText); } catch {}
-        if (!pollResponse.ok) {
-          console.error(`[Veo Polling] HTTP ${pollResponse.status}: ${pollText?.substring(0, 200)}`);
-          return res.status(pollResponse.status).json(data);
-        }
-        return res.json(data);
+        console.log(`[Veo Polling] done=${pollData?.done} | ${JSON.stringify(pollData).substring(0, 150)}`);
+        return res.json(pollData);
 
       // --- generateImages ---
       } else if (method === 'generateImages') {
