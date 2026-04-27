@@ -1507,22 +1507,35 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         console.log(`[Veo Polling] Operation: ${opName}`);
 
         const oauthToken = await getServiceAccountAccessToken();
-        const luminaProject = process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions';
         const veoLocation = 'us-central1';
 
-        // O opName vem no formato: projects/{project}/locations/{location}/publishers/google/models/{model}/operations/{id}
         const pollUrl = opName?.startsWith('http')
           ? opName
           : `https://${veoLocation}-aiplatform.googleapis.com/v1/${opName}`;
 
         console.log(`[Veo Polling] GET ${pollUrl}`);
 
-        const pollRes = await fetch(pollUrl, {
-          headers: {
-            'Authorization': `Bearer ${oauthToken}`,
-            'Content-Type': 'application/json'
+        const pollController = new AbortController();
+        const pollTimeout = setTimeout(() => pollController.abort(), 20000); // 20s timeout
+
+        let pollRes: Response;
+        try {
+          pollRes = await fetch(pollUrl, {
+            headers: {
+              'Authorization': `Bearer ${oauthToken}`,
+              'Content-Type': 'application/json'
+            },
+            signal: pollController.signal
+          });
+        } catch (fetchErr: any) {
+          clearTimeout(pollTimeout);
+          if (fetchErr.name === 'AbortError') {
+            // Retorna "ainda processando" — o frontend continua tentando
+            return res.json({ done: false, name: opName });
           }
-        });
+          throw fetchErr;
+        }
+        clearTimeout(pollTimeout);
 
         const pollText = await pollRes.text();
         let pollData: any = {};
