@@ -2610,7 +2610,7 @@ function AppContent() {
                 videoUrl: falData.videoUrl,
                 previewUrl: falData.videoUrl
               });
-              setSessionPreviews(prev => ({ ...prev, [item.id]: falData.videoUrl }));
+              setSessionPreviews(prev => ({ ...prev, [itemId]: falData.videoUrl }));
               return;
             }
             throw new Error('Motor de LipSync não retornou vídeo.');
@@ -2721,8 +2721,8 @@ if (referenceImages.length > 0) {
                 method: falMethod,
                 args: {
                   prompt: videoParams.prompt,
-                  duration: videoParams.config?.durationSeconds || 5,
-                  aspectRatio: videoParams.config?.aspectRatio || '9:16',
+                  duration: currentVideoDuration, // usar duração selecionada pelo usuário, não a do Veo
+                  aspectRatio: currentAspectRatio,
                   tier: currentVideoTier,
                   imageUrl,
                   generateAudio: true
@@ -2743,7 +2743,7 @@ if (referenceImages.length > 0) {
                 videoUrl: falData.videoUrl,
                 previewUrl: falData.videoUrl
               });
-              setSessionPreviews(prev => ({ ...prev, [item.id]: falData.videoUrl }));
+              setSessionPreviews(prev => ({ ...prev, [itemId]: falData.videoUrl }));
               console.log(`[${currentVideoEngine}] Vídeo gerado: ${falData.videoUrl}`);
               return; // ← encerra generateItem para este item
             }
