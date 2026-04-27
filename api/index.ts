@@ -1515,35 +1515,38 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
 
         console.log(`[Veo Polling] GET ${pollUrl}`);
 
-        const pollController = new AbortController();
-        const pollTimeout = setTimeout(() => pollController.abort(), 20000); // 20s timeout
+        // Promise.race garante que nunca ficamos presos mais de 15s
+        const timeoutPromise = new Promise<{ timedOut: true }>(resolve =>
+          setTimeout(() => resolve({ timedOut: true }), 15000)
+        );
 
-        let pollRes: Response;
-        try {
-          pollRes = await fetch(pollUrl, {
-            headers: {
-              'Authorization': `Bearer ${oauthToken}`,
-              'Content-Type': 'application/json'
-            },
-            signal: pollController.signal
-          });
-        } catch (fetchErr: any) {
-          clearTimeout(pollTimeout);
-          if (fetchErr.name === 'AbortError') {
-            // Retorna "ainda processando" — o frontend continua tentando
-            return res.json({ done: false, name: opName });
+        const fetchPromise = fetch(pollUrl, {
+          headers: {
+            'Authorization': `Bearer ${oauthToken}`,
+            'Content-Type': 'application/json'
           }
-          throw fetchErr;
+        }).then(async r => {
+          const text = await r.text();
+          return { timedOut: false as const, status: r.status, text };
+        }).catch(err => {
+          return { timedOut: false as const, status: 500, text: JSON.stringify({ error: err.message }) };
+        });
+
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+
+        // Se timeout — retorna done:false para o frontend continuar tentando
+        if ('timedOut' in result && result.timedOut) {
+          console.log(`[Veo Polling] Timeout 15s — retornando done:false`);
+          return res.json({ done: false, name: opName });
         }
-        clearTimeout(pollTimeout);
 
-        const pollText = await pollRes.text();
+        const { status, text } = result as { timedOut: false, status: number, text: string };
         let pollData: any = {};
-        try { if (pollText) pollData = JSON.parse(pollText); } catch {}
+        try { if (text) pollData = JSON.parse(text); } catch {}
 
-        if (!pollRes.ok) {
-          console.error(`[Veo Polling] HTTP ${pollRes.status}: ${pollText?.substring(0, 200)}`);
-          return res.status(pollRes.status).json(pollData);
+        if (status !== 200) {
+          console.error(`[Veo Polling] HTTP ${status}: ${text?.substring(0, 200)}`);
+          return res.status(status).json(pollData);
         }
 
         console.log(`[Veo Polling] done=${pollData?.done} | ${JSON.stringify(pollData).substring(0, 150)}`);
