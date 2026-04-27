@@ -4007,7 +4007,7 @@ const handleBatchDownload = async (ids: string[]) => {
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {batch.slice(0, 5).map((item, i) => (
+                {batch.filter(Boolean).slice(0, 5).map((item, i) => (
                   <motion.div
                     key={item.id}
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -4061,7 +4061,7 @@ const handleBatchDownload = async (ids: string[]) => {
                     <p>Nenhuma geração encontrada. Comece criando algo novo!</p>
                   </div>
                 ) : (
-                  batch.map((item) => (
+                  batch.filter(Boolean).map((item) => (
                     <motion.div 
                       key={item.id}
                       initial={{ opacity: 0 }}
@@ -5262,10 +5262,10 @@ const handleBatchDownload = async (ids: string[]) => {
                   </button>
                 </div>
 
-                {batch.filter(item => item.sourceTab === 'creative_studio').length > 0 ? (
+                {batch.filter(item => item && item.sourceTab === 'creative_studio').length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {batch.filter(item => item.sourceTab === 'creative_studio').map((item, i) => {
-                      const studioList = batch.filter(item => item.sourceTab === 'creative_studio');
+                    {batch.filter(item => item && item.sourceTab === 'creative_studio').map((item, i) => {
+                      const studioList = batch.filter(item => item && item.sourceTab === 'creative_studio');
                       return (
                         <motion.div
                           key={item.id}
@@ -5737,10 +5737,10 @@ const handleBatchDownload = async (ids: string[]) => {
                   </button>
                 </div>
 
-                {batch.filter(item => item.sourceTab === 'lipsync').length > 0 ? (
+                {batch.filter(item => item && item.sourceTab === 'lipsync').length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    {batch.filter(item => item.sourceTab === 'lipsync').map((item, i) => {
-                      const lipsyncList = batch.filter(item => item.sourceTab === 'lipsync');
+                    {batch.filter(item => item && item.sourceTab === 'lipsync').map((item, i) => {
+                      const lipsyncList = batch.filter(item => item && item.sourceTab === 'lipsync');
                       return (
                         <motion.div
                           key={item.id}
@@ -6658,10 +6658,10 @@ const handleBatchDownload = async (ids: string[]) => {
                   </button>
                 </div>
 
-                {batch.filter(item => item.sourceTab === 'projects').length > 0 ? (
+                {batch.filter(item => item && item.sourceTab === 'projects').length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {batch.filter(item => item.sourceTab === 'projects').map((item, i) => {
-                      const projectsList = batch.filter(item => item.sourceTab === 'projects');
+                    {batch.filter(item => item && item.sourceTab === 'projects').map((item, i) => {
+                      const projectsList = batch.filter(item => item && item.sourceTab === 'projects');
                       return (
                         <motion.div
                           key={item.id}
