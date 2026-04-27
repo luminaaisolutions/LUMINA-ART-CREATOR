@@ -157,16 +157,27 @@ async function composeTemplateImage(
   }
 }
 
-// Helper: get OAuth2 access token from service account for Vertex AI
+// Helper: get OAuth2 access token from service account for Vertex AI / Veo
+// Usa LUMINA_SERVICE_ACCOUNT (projeto lumina-ai-solutions) como prioritário
+// Fallback: FIREBASE_SERVICE_ACCOUNT
 async function getServiceAccountAccessToken(): Promise<string | null> {
   try {
-    const serviceAccount = serviceAccountCredentials || 
+    // Prioridade: LUMINA_SERVICE_ACCOUNT (tem permissão no Veo/Vertex AI)
+    const luminaSA = process.env.LUMINA_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.LUMINA_SERVICE_ACCOUNT)
+      : null;
+
+    const firebaseSA = serviceAccountCredentials ||
       (process.env.FIREBASE_SERVICE_ACCOUNT ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT) : null);
-    
+
+    const serviceAccount = luminaSA || firebaseSA;
+
     if (!serviceAccount) {
-      console.warn("[Auth] No service account found for OAuth token");
+      console.warn("[Auth] Nenhuma service account encontrada para OAuth token (Veo)");
       return null;
     }
+
+    console.log(`[Auth] Usando SA: ${serviceAccount.client_email || 'unknown'}`);
 
     const auth = new GoogleAuth({
       credentials: serviceAccount,
@@ -177,7 +188,7 @@ async function getServiceAccountAccessToken(): Promise<string | null> {
     const tokenResponse = await client.getAccessToken();
     return tokenResponse.token || null;
   } catch (e: any) {
-    console.error("[Auth] Failed to get service account token:", e.message);
+    console.error("[Auth] Falha ao obter token OAuth:", e.message);
     return null;
   }
 }
@@ -1402,21 +1413,28 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         if (oauthToken) {
           console.log("[Gemini Proxy] Using OAuth token for video generation");
           
+          const luminaProject = process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions';
+          const veoRegion = 'us-central1';
+
           const requestBody: any = {
-            prompt: args.prompt,
-            config: {
-              numberOfVideos: args.config?.numberOfVideos || 1,
+            instances: [{
+              prompt: args.prompt,
+              ...(args.image ? { image: args.image } : {}),
+              ...(args.audio_input ? { audio_input: args.audio_input } : {}),
+            }],
+            parameters: {
+              sampleCount: args.config?.numberOfVideos || 1,
               durationSeconds: args.config?.durationSeconds || 4,
               aspectRatio: args.config?.aspectRatio || '9:16',
               resolution: args.config?.resolution || '720p'
             }
           };
 
-          if (args.image) requestBody.image = args.image;
-          if (args.audio_input) requestBody.audio_input = args.audio_input;
+          console.log(`[Veo] Calling Vertex AI project=${luminaProject} model=${args.model}`);
+          console.log(`[Veo] Params: duration=${requestBody.parameters.durationSeconds}s ratio=${requestBody.parameters.aspectRatio}`);
 
           videoResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateVideos`,
+            `https://${veoRegion}-aiplatform.googleapis.com/v1/projects/${luminaProject}/locations/${veoRegion}/publishers/google/models/${args.model}:generateVideos`,
             {
               method: 'POST',
               headers: {
@@ -1449,43 +1467,55 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           const text = await videoResponse.text();
           let errData: any = { error: `HTTP ${videoResponse.status}` };
           try { if (text) errData = JSON.parse(text); } catch {}
-          console.error("[Gemini Proxy] Video generation error:", text?.substring(0, 200));
+          console.error(`[Veo] HTTP ${videoResponse.status} | body: "${text?.substring(0, 300) || 'VAZIO'}" | content-type: ${videoResponse.headers.get('content-type')}`);
           return res.status(videoResponse.status).json(errData);
         }
 
         const videoText = await videoResponse.text();
         if (!videoText || !videoText.trim()) {
-          console.error("[Veo] Resposta vazia da API — possível erro de quota ou endpoint");
-          return res.status(503).json({ error: 'Veo API retornou resposta vazia. Verifique quota ou tente novamente.' });
+          console.error("[Veo] HTTP 200 mas body vazio — quota esgotada ou modelo indisponível");
+          return res.status(503).json({ error: 'Veo API retornou resposta vazia. Verifique quota do projeto Google.' });
         }
+        console.log(`[Veo] Resposta OK. Body preview: ${videoText.substring(0, 100)}`);
         const videoData = JSON.parse(videoText);
         return res.json(videoData);
 
       // --- getVideosOperation (polling) ---
       } else if (method === 'getVideosOperation') {
         const opName = args.operation?.name || args.operation;
-        console.log(`[Gemini Proxy] Getting operation status: ${opName}`);
-        
+        console.log(`[Veo Polling] Getting operation: ${opName}`);
+
         const oauthToken = await getServiceAccountAccessToken();
-        
+        const luminaProject = process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions';
+        const veoRegion = 'us-central1';
+
         let pollResponse;
         if (oauthToken) {
-          pollResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/${opName}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${oauthToken}`,
-                'Content-Type': 'application/json'
-              }
+          // Se opName já é uma URL completa ou path de operação do Vertex AI
+          const pollUrl = opName?.startsWith('http')
+            ? opName
+            : `https://${veoRegion}-aiplatform.googleapis.com/v1/${opName}`;
+
+          console.log(`[Veo Polling] URL: ${pollUrl}`);
+          pollResponse = await fetch(pollUrl, {
+            headers: {
+              'Authorization': `Bearer ${oauthToken}`,
+              'Content-Type': 'application/json'
             }
-          );
+          });
         } else {
+          // Fallback: generativelanguage
           const url = `https://generativelanguage.googleapis.com/v1beta/${opName}?key=${apiKey}`;
           pollResponse = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
         }
-        
-        const data = await pollResponse.json();
-        if (!pollResponse.ok) return res.status(pollResponse.status).json(data);
+
+        const pollText = await pollResponse.text();
+        let data: any = {};
+        try { if (pollText) data = JSON.parse(pollText); } catch {}
+        if (!pollResponse.ok) {
+          console.error(`[Veo Polling] HTTP ${pollResponse.status}: ${pollText?.substring(0, 200)}`);
+          return res.status(pollResponse.status).json(data);
+        }
         return res.json(data);
 
       // --- generateImages ---
