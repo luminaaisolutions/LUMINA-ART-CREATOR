@@ -1190,7 +1190,108 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         return res.json({ url });
       }
 
-      // --- generateKling — Kling 3.0 via fal.ai ---
+      // --- generateOmniHuman — ByteDance OmniHuman v1.5 via fal.ai ---
+      if (method === 'generateOmniHuman') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
+
+        const omniBody: any = {
+          image_url: args.imageUrl,
+          audio_url: args.audioUrl,
+          resolution: args.resolution || '720p',
+          guidance_scale: 1,
+          audio_guidance_scale: 2,
+        };
+        if (args.prompt) omniBody.prompt = args.prompt;
+
+        console.log(`[OmniHuman] image=${args.imageUrl?.substring(0,60)} audio=${args.audioUrl?.substring(0,60)}`);
+
+        const res2 = await withRetry(
+          () => fetch('https://fal.run/fal-ai/bytedance/omnihuman/v1.5', {
+            method: 'POST',
+            headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(omniBody)
+          }), 3, 5000, 'generateOmniHuman'
+        );
+        if (!res2.ok) {
+          const err = await res2.json().catch(() => ({}));
+          return res.status(res2.status).json({ error: err?.detail || err?.error || 'OmniHuman failed' });
+        }
+        const data = await res2.json();
+        const url = data?.video?.url || data?.url;
+        if (url) return res.json({ videoUrl: url, done: true });
+        return res.status(500).json({ error: 'OmniHuman não retornou vídeo.' });
+      }
+
+      // --- generateAurora — Creatify Aurora via fal.ai ---
+      if (method === 'generateAurora') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
+
+        const auroraBody: any = {
+          image_url: args.imageUrl,
+          audio_url: args.audioUrl,
+          resolution: args.resolution || '720p',
+        };
+        if (args.prompt) auroraBody.prompt = args.prompt;
+
+        console.log(`[Aurora] image=${args.imageUrl?.substring(0,60)} audio=${args.audioUrl?.substring(0,60)}`);
+
+        const res3 = await withRetry(
+          () => fetch('https://fal.run/fal-ai/creatify-aurora', {
+            method: 'POST',
+            headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(auroraBody)
+          }), 3, 5000, 'generateAurora'
+        );
+        if (!res3.ok) {
+          const err = await res3.json().catch(() => ({}));
+          return res.status(res3.status).json({ error: err?.detail || err?.error || 'Aurora failed' });
+        }
+        const data3 = await res3.json();
+        const url3 = data3?.video?.url || data3?.url;
+        if (url3) return res.json({ videoUrl: url3, done: true });
+        return res.status(500).json({ error: 'Aurora não retornou vídeo.' });
+      }
+
+      // --- generateSyncLipsync — Sync.so lipsync-2 / lipsync-2-pro via fal.ai ---
+      if (method === 'generateSyncLipsync') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
+
+        const tier = args.tier || 'standard'; // 'standard' | 'pro'
+        const endpoint = tier === 'pro'
+          ? 'https://fal.run/fal-ai/sync-lipsync/v2/pro'
+          : 'https://fal.run/fal-ai/sync-lipsync/v2';
+
+        const syncBody: any = {
+          video_url: args.videoUrl,
+          audio_url: args.audioUrl,
+          sync_mode: args.syncMode || 'cut_off',
+          model: tier === 'pro' ? 'lipsync-2-pro' : 'lipsync-2',
+        };
+        if (args.occlusionDetection) syncBody.occlusion_detection_enabled = true;
+
+        console.log(`[SyncLipsync] tier=${tier} video=${args.videoUrl?.substring(0,60)} audio=${args.audioUrl?.substring(0,60)}`);
+
+        const res4 = await withRetry(
+          () => fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(syncBody)
+          }), 3, 5000, 'generateSyncLipsync'
+        );
+        if (!res4.ok) {
+          const err = await res4.json().catch(() => ({}));
+          return res.status(res4.status).json({ error: err?.detail || err?.error || 'Sync Lipsync failed' });
+        }
+        const data4 = await res4.json();
+        const url4 = data4?.video?.url || data4?.url;
+        if (url4) return res.json({ videoUrl: url4, done: true });
+        return res.status(500).json({ error: 'Sync Lipsync não retornou vídeo.' });
+      }
+
+      // --- generateOmniHuman — ByteDance OmniHuman v1.5 via fal.ai ---
       if (method === 'generateKling') {
         const falKey = process.env.FAL_API_KEY;
         if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
@@ -1201,8 +1302,8 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
 
         const klingBody: any = {
           prompt: args.prompt,
-          duration: String(args.duration || 5),
-          aspect_ratio: args.aspectRatio || '9:16',
+          duration: String(args.duration || '5'),  // string conforme docs fal.ai
+          aspect_ratio: args.aspectRatio || '16:9',
           cfg_scale: 0.5,
           generate_audio: args.generateAudio !== false,
         };
@@ -1243,7 +1344,7 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         const falKey = process.env.FAL_API_KEY;
         if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
 
-        const tier = args.tier || 'standard'; // 'standard' | 'fast'
+        const tier = args.tier || 'standard';
         const mode = args.imageUrl ? 'image-to-video' : 'text-to-video';
         const modelId = tier === 'fast'
           ? `bytedance/seedance-2.0/fast/${mode}`
@@ -1252,10 +1353,11 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
 
         const seedanceBody: any = {
           prompt: args.prompt,
-          duration: String(args.duration || 5),
+          duration: String(args.duration || '5'),  // DEVE ser string conforme docs fal.ai
           resolution: '720p',
-          aspect_ratio: args.aspectRatio || '9:16',
+          aspect_ratio: args.aspectRatio || '16:9',
           generate_audio: args.generateAudio !== false,
+          watermark: false,
         };
 
         if (args.imageUrl) seedanceBody.image_url = args.imageUrl;
@@ -1344,12 +1446,19 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         }
 
         if (!videoResponse.ok) {
-          const errData = await videoResponse.json();
-          console.error("[Gemini Proxy] Video generation error:", JSON.stringify(errData));
+          const text = await videoResponse.text();
+          let errData: any = { error: `HTTP ${videoResponse.status}` };
+          try { if (text) errData = JSON.parse(text); } catch {}
+          console.error("[Gemini Proxy] Video generation error:", text?.substring(0, 200));
           return res.status(videoResponse.status).json(errData);
         }
 
-        const videoData = await videoResponse.json();
+        const videoText = await videoResponse.text();
+        if (!videoText || !videoText.trim()) {
+          console.error("[Veo] Resposta vazia da API — possível erro de quota ou endpoint");
+          return res.status(503).json({ error: 'Veo API retornou resposta vazia. Verifique quota ou tente novamente.' });
+        }
+        const videoData = JSON.parse(videoText);
         return res.json(videoData);
 
       // --- getVideosOperation (polling) ---
