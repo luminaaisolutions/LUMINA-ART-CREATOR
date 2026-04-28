@@ -1280,21 +1280,21 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         }
 
         // 4. Criar geração (POST /generations)
+        const ttsText = args.audioText || '';
         const genBody: any = {
           type: 'video',
           ai_model_id: modelId,
           start_keyframe_id: imageId,
           generated_video_inputs: {
-            prompt: args.textPrompt || (args.audioText ? args.audioText.substring(0, 200) : 'A person talking naturally'),
+            text_prompt: ttsText || 'A person talking naturally to camera',
             resolution: args.resolution || '720p',
             aspect_ratio: args.aspectRatio || '9:16',
           }
         };
         if (audioId) {
           genBody.audio_id = audioId;
-        } else if (args.audioText && !audioId) {
-          // TTS: campos corretos conforme API Hedra
-          genBody.generated_video_inputs.voice_text = args.audioText;
+        } else if (ttsText) {
+          genBody.generated_video_inputs.voice_text = ttsText;
           genBody.generated_video_inputs.audio_source = 'tts';
         }
 
