@@ -741,7 +741,7 @@ function AppContent() {
   const [quantity, setQuantity] = useState(1);
   const [videoDuration, setVideoDuration] = useState(4); // Default 4s
   const [lipsyncDuration, setLipsyncDuration] = useState(4);
-  const [lipsyncEngine, setLipsyncEngine] = useState<'veo' | 'omnihuman' | 'aurora' | 'sync' | 'syncpro'>('veo');
+  const [lipsyncEngine, setLipsyncEngine] = useState<'hedra' | 'veo' | 'omnihuman' | 'aurora' | 'sync' | 'syncpro'>('hedra');
   const [syncMode, setSyncMode] = useState<'cut_off' | 'loop' | 'bounce' | 'remap'>('cut_off');
   const [showLipsyncCreditFlyer, setShowLipsyncCreditFlyer] = useState(false);
   const lipsyncFlyerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2569,7 +2569,20 @@ function AppContent() {
             let falMethod = '';
             let falArgs: any = {};
 
-            if (currentLipsyncEngine === 'sync' || currentLipsyncEngine === 'syncpro') {
+            if (currentLipsyncEngine === 'hedra') {
+              falMethod = 'generateHedra';
+              falArgs = {
+                modelId: 'hedra_character_3',
+                imageBase64: activeAsset?.data,
+                imageMimeType: activeAsset?.mimeType,
+                audioBase64: currentLipsyncAudio?.data,
+                audioMimeType: currentLipsyncAudio?.mimeType,
+                audioText: currentLipsyncAudioPrompt.trim() || undefined,
+                aspectRatio: currentAspectRatio || '9:16',
+                resolution: '720p',
+                durationSeconds: 10,
+              };
+            } else if (currentLipsyncEngine === 'sync' || currentLipsyncEngine === 'syncpro') {
               falMethod = 'generateSyncLipsync';
               falArgs = {
                 videoUrl: mediaUrl,
@@ -2608,6 +2621,37 @@ function AppContent() {
             }
 
             const falData = await falRes.json();
+
+            // Hedra é assíncrono — polling necessário
+            if (currentLipsyncEngine === 'hedra' && falData?.generationId) {
+              const hedraGenId = falData.generationId;
+              console.log(`[Hedra] Polling id=${hedraGenId}`);
+              await updateDoc(doc(db, itemPath), { progress: 30, status: 'processing' });
+
+              let hedraVideoUrl: string | undefined;
+              const maxPolls = 40;
+              for (let poll = 0; poll < maxPolls; poll++) {
+                await new Promise(r => setTimeout(r, 10000));
+                const pollRes = await fetch('/api/gemini', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ method: 'getHedraStatus', args: { generationId: hedraGenId } })
+                });
+                if (!pollRes.ok) continue;
+                const pollData = await pollRes.json();
+                const prog = Math.min(30 + Math.floor((poll / maxPolls) * 65), 94);
+                await updateDoc(doc(db, itemPath), { progress: prog, status: 'processing' });
+                if (pollData?.status === 'complete' && pollData?.videoUrl) { hedraVideoUrl = pollData.videoUrl; break; }
+                if (pollData?.status === 'failed') throw new Error(pollData?.error || 'Hedra: geração falhou');
+                console.log(`[Hedra Poll] ${poll+1}/${maxPolls} status=${pollData?.status}`);
+              }
+              if (!hedraVideoUrl) throw new Error('Hedra: timeout sem resposta.');
+              await updateDoc(doc(db, itemPath), { status: 'completed', progress: 100, videoUrl: hedraVideoUrl, previewUrl: hedraVideoUrl });
+              setSessionPreviews(prev => ({ ...prev, [itemId]: hedraVideoUrl! }));
+              return;
+            }
+
+            // fal.ai motores síncronos
             if (falData?.videoUrl) {
               await updateDoc(doc(db, itemPath), {
                 status: 'completed',
@@ -5452,9 +5496,10 @@ const handleBatchDownload = async (ids: string[]) => {
                         <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">🎭 Criar avatar falante</span>
                         <div className="space-y-1.5">
                           {([
-                            { id: 'veo',       icon: '🎬', label: 'Veo 3.0',        sub: 'Google DeepMind · LipSync nativo' },
-                            { id: 'omnihuman', icon: '🧠', label: 'OmniHuman v1.5', sub: 'ByteDance · Melhor emoção e expressão' },
-                            { id: 'aurora',    icon: '✨', label: 'Aurora',          sub: 'Creatify · Máxima qualidade de avatar' },
+                            { id: 'hedra',     icon: '⚡', label: 'Hedra Character-3', sub: 'Melhor lip-sync · Omnimodal' },
+                            { id: 'veo',       icon: '🎬', label: 'Veo 3.0',           sub: 'Google DeepMind · LipSync nativo' },
+                            { id: 'omnihuman', icon: '🧠', label: 'OmniHuman v1.5',    sub: 'ByteDance · Melhor emoção e expressão' },
+                            { id: 'aurora',    icon: '✨', label: 'Aurora',             sub: 'Creatify · Máxima qualidade de avatar' },
                           ] as const).map(m => (
                             <button key={m.id} type="button"
                               onClick={() => handleLipsyncEngineChange(m.id)}
