@@ -1285,15 +1285,17 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           ai_model_id: modelId,
           start_keyframe_id: imageId,
           generated_video_inputs: {
-            text_prompt: args.textPrompt || 'Generate a talking avatar',
+            text_prompt: args.textPrompt || '',
             resolution: args.resolution || '720p',
             aspect_ratio: args.aspectRatio || '9:16',
           }
         };
-        if (audioId) genBody.audio_id = audioId;
-        if (args.audioText && !audioId) {
-          genBody.generated_video_inputs.voice_text = args.audioText;
-          genBody.generated_video_inputs.audio_source = 'tts';
+        if (audioId) {
+          genBody.audio_id = audioId;
+        } else if (args.audioText && !audioId) {
+          // TTS: text vai no body principal, não dentro de generated_video_inputs
+          genBody.text = args.audioText;
+          genBody.audio_source = 'tts';
         }
 
         console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
