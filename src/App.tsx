@@ -2527,7 +2527,62 @@ function AppContent() {
           if (isLipsyncJob && currentLipsyncEngine !== 'veo') {
             await updateDoc(doc(db, itemPath), { progress: 20, status: 'processing' });
 
-            // Upload vídeo/imagem para fal.ai
+            // Hedra não precisa de upload prévio — usa base64 direto
+            if (currentLipsyncEngine === 'hedra') {
+              if (!activeAsset?.data) throw new Error('Imagem do personagem obrigatória para o Hedra.');
+              if (!currentLipsyncAudio?.data && !currentLipsyncAudioPrompt.trim()) throw new Error('Áudio ou texto necessário para o Hedra.');
+              await updateDoc(doc(db, itemPath), { progress: 30, status: 'processing' });
+              const falMethod = 'generateHedra';
+              const falArgs: any = {
+                modelId: 'hedra_character_3',
+                imageBase64: activeAsset.data,
+                imageMimeType: activeAsset.mimeType,
+                audioBase64: currentLipsyncAudio?.data,
+                audioMimeType: currentLipsyncAudio?.mimeType,
+                audioText: currentLipsyncAudioPrompt.trim() || undefined,
+                aspectRatio: currentAspectRatio || '9:16',
+                resolution: '720p',
+                durationSeconds: 10,
+              };
+              const falRes = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ method: falMethod, args: falArgs })
+              });
+              if (!falRes.ok) {
+                const errData = await falRes.json().catch(() => ({}));
+                throw new Error(errData.error || 'Erro ao iniciar geração no Hedra.');
+              }
+              const falData = await falRes.json();
+              if (!falData?.generationId) throw new Error('Hedra não retornou generationId.');
+
+              // Polling Hedra
+              const hedraGenId = falData.generationId;
+              console.log(`[Hedra] Polling id=${hedraGenId}`);
+              let hedraVideoUrl: string | undefined;
+              const maxPolls = 40;
+              for (let poll = 0; poll < maxPolls; poll++) {
+                await new Promise(r => setTimeout(r, 10000));
+                const pollRes = await fetch('/api/gemini', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ method: 'getHedraStatus', args: { generationId: hedraGenId } })
+                });
+                if (!pollRes.ok) continue;
+                const pollData = await pollRes.json();
+                const prog = Math.min(30 + Math.floor((poll / maxPolls) * 65), 94);
+                await updateDoc(doc(db, itemPath), { progress: prog, status: 'processing' });
+                if (pollData?.status === 'complete' && pollData?.videoUrl) { hedraVideoUrl = pollData.videoUrl; break; }
+                if (pollData?.status === 'failed') throw new Error(pollData?.error || 'Hedra: geração falhou');
+                console.log(`[Hedra Poll] ${poll+1}/${maxPolls} status=${pollData?.status}`);
+              }
+              if (!hedraVideoUrl) throw new Error('Hedra: timeout sem resposta.');
+              await updateDoc(doc(db, itemPath), { status: 'completed', progress: 100, videoUrl: hedraVideoUrl, previewUrl: hedraVideoUrl });
+              setSessionPreviews(prev => ({ ...prev, [itemId]: hedraVideoUrl! }));
+              return;
+            }
+
+            // Upload vídeo/imagem para fal.ai (OmniHuman, Aurora, Sync.so)
             let mediaUrl: string | undefined;
             if (activeAsset?.data) {
               const uploadRes = await fetch('/api/gemini', {
@@ -2569,20 +2624,7 @@ function AppContent() {
             let falMethod = '';
             let falArgs: any = {};
 
-            if (currentLipsyncEngine === 'hedra') {
-              falMethod = 'generateHedra';
-              falArgs = {
-                modelId: 'hedra_character_3',
-                imageBase64: activeAsset?.data,
-                imageMimeType: activeAsset?.mimeType,
-                audioBase64: currentLipsyncAudio?.data,
-                audioMimeType: currentLipsyncAudio?.mimeType,
-                audioText: currentLipsyncAudioPrompt.trim() || undefined,
-                aspectRatio: currentAspectRatio || '9:16',
-                resolution: '720p',
-                durationSeconds: 10,
-              };
-            } else if (currentLipsyncEngine === 'sync' || currentLipsyncEngine === 'syncpro') {
+            if (currentLipsyncEngine === 'sync' || currentLipsyncEngine === 'syncpro') {
               falMethod = 'generateSyncLipsync';
               falArgs = {
                 videoUrl: mediaUrl,
@@ -2621,35 +2663,6 @@ function AppContent() {
             }
 
             const falData = await falRes.json();
-
-            // Hedra é assíncrono — polling necessário
-            if (currentLipsyncEngine === 'hedra' && falData?.generationId) {
-              const hedraGenId = falData.generationId;
-              console.log(`[Hedra] Polling id=${hedraGenId}`);
-              await updateDoc(doc(db, itemPath), { progress: 30, status: 'processing' });
-
-              let hedraVideoUrl: string | undefined;
-              const maxPolls = 40;
-              for (let poll = 0; poll < maxPolls; poll++) {
-                await new Promise(r => setTimeout(r, 10000));
-                const pollRes = await fetch('/api/gemini', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ method: 'getHedraStatus', args: { generationId: hedraGenId } })
-                });
-                if (!pollRes.ok) continue;
-                const pollData = await pollRes.json();
-                const prog = Math.min(30 + Math.floor((poll / maxPolls) * 65), 94);
-                await updateDoc(doc(db, itemPath), { progress: prog, status: 'processing' });
-                if (pollData?.status === 'complete' && pollData?.videoUrl) { hedraVideoUrl = pollData.videoUrl; break; }
-                if (pollData?.status === 'failed') throw new Error(pollData?.error || 'Hedra: geração falhou');
-                console.log(`[Hedra Poll] ${poll+1}/${maxPolls} status=${pollData?.status}`);
-              }
-              if (!hedraVideoUrl) throw new Error('Hedra: timeout sem resposta.');
-              await updateDoc(doc(db, itemPath), { status: 'completed', progress: 100, videoUrl: hedraVideoUrl, previewUrl: hedraVideoUrl });
-              setSessionPreviews(prev => ({ ...prev, [itemId]: hedraVideoUrl! }));
-              return;
-            }
 
             // fal.ai motores síncronos
             if (falData?.videoUrl) {
