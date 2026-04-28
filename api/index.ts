@@ -1333,6 +1333,7 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
       }
 
       // --- generateOmniHuman — ByteDance OmniHuman v1.5 via fal.ai ---
+      if (method === 'generateOmniHuman') {
         const falKey = process.env.FAL_API_KEY;
         if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
 
@@ -1432,7 +1433,7 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         return res.status(500).json({ error: 'Sync Lipsync não retornou vídeo.' });
       }
 
-      // --- generateOmniHuman — ByteDance OmniHuman v1.5 via fal.ai ---
+      // --- generateKling — Kling 3.0 via fal.ai ---
       if (method === 'generateKling') {
         const falKey = process.env.FAL_API_KEY;
         if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
