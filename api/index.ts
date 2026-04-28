@@ -1401,157 +1401,72 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         return res.status(500).json({ error: 'Seedance não retornou vídeo válido.' });
       }
 
-      // --- generateVideos via Vertex AI SDK (Veo 3.0) ---
+       // --- generateVideos (Veo 3.0 via Vertex AI) ---
       if (method === 'generateVideos') {
         const luminaProject = process.env.LUMINA_PROJECT_ID || 'lumina-ai-solutions';
-        const veoLocation = 'us-central1';
-
-        console.log(`[Veo] Starting generateVideos | model=${args.model} project=${luminaProject}`);
-
-        // Usar GoogleGenAI SDK com vertexai:true (método oficial para Veo no Vertex AI)
-        const luminaSA = process.env.LUMINA_SERVICE_ACCOUNT
-          ? JSON.parse(process.env.LUMINA_SERVICE_ACCOUNT)
-          : null;
-
-        if (!luminaSA) {
-          return res.status(503).json({ error: 'LUMINA_SERVICE_ACCOUNT não configurada.' });
-        }
-
-        // Obter token OAuth para o SDK
         const oauthToken = await getServiceAccountAccessToken();
-        if (!oauthToken) {
-          return res.status(503).json({ error: 'Falha ao obter token OAuth para o Veo.' });
-        }
+        if (!oauthToken) return res.status(503).json({ error: 'OAuth token falhou.' });
 
-        // Usar REST API do Vertex AI com o formato correto documentado
         const requestBody: any = {
-          instances: [{
-            prompt: args.prompt,
-          }],
+          instances: [{ prompt: args.prompt }],
           parameters: {
             sampleCount: 1,
             durationSeconds: args.config?.durationSeconds || 4,
             aspectRatio: args.config?.aspectRatio || '9:16',
+            resolution: args.config?.resolution || '720p',
+            generateAudio: true,
           }
         };
+        if (args.image) requestBody.instances[0].image = { bytesBase64Encoded: args.image.imageBytes, mimeType: args.image.mimeType || 'image/jpeg' };
+        if (args.audio_input?.prompt) requestBody.parameters.audioPrompt = args.audio_input.prompt;
 
-        if (args.image) {
-          requestBody.instances[0].image = {
-            bytesBase64Encoded: args.image.imageBytes,
-            mimeType: args.image.mimeType || 'image/jpeg'
-          };
-        }
+        const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${luminaProject}/locations/us-central1/publishers/google/models/${args.model}:predictLongRunning`;
+        console.log(`[Veo] POST ${endpoint} | duration=${requestBody.parameters.durationSeconds}s ratio=${requestBody.parameters.aspectRatio}`);
 
-        if (args.audio_input?.prompt) {
-          requestBody.instances[0].audioConfig = {
-            audioPrompt: args.audio_input.prompt
-          };
-        } else if (args.audio_input?.audio) {
-          requestBody.instances[0].audioConfig = {
-            audioBytes: args.audio_input.audio.audioBytes,
-            mimeType: args.audio_input.audio.mimeType
-          };
-        }
-
-        const veoEndpoint = `https://${veoLocation}-aiplatform.googleapis.com/v1/projects/${luminaProject}/locations/${veoLocation}/publishers/google/models/${args.model}:predictLongRunning`;
-
-        const veoController = new AbortController();
-        const veoTimeout = setTimeout(() => veoController.abort(), 25000); // 25s timeout
-
-        console.log(`[Veo] POST ${veoEndpoint}`);
-        console.log(`[Veo] duration=${requestBody.parameters.durationSeconds}s ratio=${requestBody.parameters.aspectRatio}`);
-
-        let veoRes: Response;
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 25000);
+        let r: Response;
         try {
-          veoRes = await fetch(veoEndpoint, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${oauthToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody),
-            signal: veoController.signal
-          });
-        } catch (fetchErr: any) {
-          clearTimeout(veoTimeout);
-          if (fetchErr.name === 'AbortError') {
-            return res.status(504).json({ error: 'Veo API timeout — tente novamente em alguns segundos.' });
-          }
-          throw fetchErr;
+          r = await fetch(endpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${oauthToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody), signal: ctrl.signal });
+        } catch (e: any) {
+          clearTimeout(t);
+          return res.status(504).json({ error: 'Veo timeout ao iniciar.' });
         }
-        clearTimeout(veoTimeout);
+        clearTimeout(t);
 
-        const veoText = await veoRes.text();
-        console.log(`[Veo] HTTP ${veoRes.status} | body: ${veoText.substring(0, 300)}`);
-
-        if (!veoRes.ok) {
-          let errData: any = { error: `Veo HTTP ${veoRes.status}` };
-          try { if (veoText) errData = JSON.parse(veoText); } catch {}
-          return res.status(veoRes.status).json(errData);
-        }
-
-        if (!veoText?.trim()) {
-          return res.status(503).json({ error: 'Veo retornou resposta vazia.' });
-        }
-
-        const veoData = JSON.parse(veoText);
-        console.log(`[Veo] Operação iniciada: ${veoData?.name}`);
-        return res.json(veoData);
+        const txt = await r.text();
+        console.log(`[Veo] HTTP ${r.status} | ${txt.substring(0, 200)}`);
+        if (!r.ok) { let e: any = { error: `HTTP ${r.status}` }; try { e = JSON.parse(txt); } catch {} return res.status(r.status).json(e); }
+        return res.json(JSON.parse(txt));
 
       // --- getVideosOperation (polling Veo) ---
       } else if (method === 'getVideosOperation') {
         const opName = args.operation?.name || args.operation;
-        console.log(`[Veo Polling] Operation: ${opName}`);
-
         const oauthToken = await getServiceAccountAccessToken();
-        const veoLocation = 'us-central1';
+        const pollUrl = `https://us-central1-aiplatform.googleapis.com/v1/${opName}`;
+        console.log(`[Veo Poll] GET ${pollUrl}`);
 
-        // Endpoint correto: POST ao path completo da operação + :fetchLongRunningOperation
-        // Ref: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.publishers.models/predictLongRunning
-        const pollUrl = `https://${veoLocation}-aiplatform.googleapis.com/v1/${opName}:fetchLongRunningOperation`;
+        const timeout = new Promise<{ timedOut: true }>(res => setTimeout(() => res({ timedOut: true }), 15000));
+        const req = fetch(pollUrl, { method: 'GET', headers: { 'Authorization': `Bearer ${oauthToken}` } })
+          .then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
 
-        console.log(`[Veo Polling] POST ${pollUrl}`);
-
-        console.log(`[Veo Polling] GET ${pollUrl}`);
-
-        // Promise.race garante que nunca ficamos presos mais de 15s
-        const timeoutPromise = new Promise<{ timedOut: true }>(resolve =>
-          setTimeout(() => resolve({ timedOut: true }), 15000)
-        );
-
-        const fetchPromise = fetch(pollUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${oauthToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({})
-        }).then(async r => {
-          const text = await r.text();
-          return { timedOut: false as const, status: r.status, text };
-        }).catch(err => {
-          return { timedOut: false as const, status: 500, text: JSON.stringify({ error: err.message }) };
-        });
-
-        const result = await Promise.race([fetchPromise, timeoutPromise]);
-
-        // Se timeout — retorna done:false para o frontend continuar tentando
+        const result = await Promise.race([req, timeout]);
         if ('timedOut' in result && result.timedOut) {
-          console.log(`[Veo Polling] Timeout 15s — retornando done:false`);
+          console.log('[Veo Poll] 15s timeout → done:false');
           return res.json({ done: false, name: opName });
         }
 
         const { status, text } = result as { timedOut: false, status: number, text: string };
-        let pollData: any = {};
-        try { if (text) pollData = JSON.parse(text); } catch {}
-
+        let data: any = {};
+        try { if (text) data = JSON.parse(text); } catch {}
         if (status !== 200) {
-          console.error(`[Veo Polling] HTTP ${status}: ${text?.substring(0, 200)}`);
-          return res.status(status).json(pollData);
+          console.error(`[Veo Poll] HTTP ${status}: ${text?.substring(0, 150)}`);
+          if (status === 404 || status === 400) return res.json({ done: false, name: opName });
+          return res.status(status).json(data);
         }
-
-        console.log(`[Veo Polling] done=${pollData?.done} | ${JSON.stringify(pollData).substring(0, 150)}`);
-        return res.json(pollData);
+        console.log(`[Veo Poll] done=${data?.done}`);
+        return res.json(data);
 
       // --- generateImages ---
       } else if (method === 'generateImages') {
