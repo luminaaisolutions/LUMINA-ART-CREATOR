@@ -1506,9 +1506,22 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         const oauthToken = await getServiceAccountAccessToken();
         const veoLocation = 'us-central1';
 
-        const pollUrl = opName?.startsWith('http')
-          ? opName
-          : `https://${veoLocation}-aiplatform.googleapis.com/v1/${opName}`;
+        // O opName vem como: projects/{p}/locations/{l}/publishers/google/models/{m}/operations/{id}
+        // O endpoint correto de polling é: projects/{p}/locations/{l}/operations/{id}
+        let pollPath = opName;
+        const opsMatch = opName?.match(/operations\/([^/]+)$/);
+        const projMatch = opName?.match(/projects\/([^/]+)/);
+        const locMatch = opName?.match(/locations\/([^/]+)/);
+
+        if (opsMatch && projMatch && locMatch) {
+          const opId = opsMatch[1];
+          const proj = projMatch[1];
+          const loc = locMatch[1];
+          pollPath = `projects/${proj}/locations/${loc}/operations/${opId}`;
+          console.log(`[Veo Polling] Path corrigido: ${pollPath}`);
+        }
+
+        const pollUrl = `https://${veoLocation}-aiplatform.googleapis.com/v1/${pollPath}`;
 
         console.log(`[Veo Polling] GET ${pollUrl}`);
 
