@@ -1792,6 +1792,11 @@ function AppContent() {
 
   const handleCreate = async (e: React.FormEvent, forceLipsync?: boolean, forceCreative?: boolean, forcePrompt?: string) => {
     e.preventDefault();
+    // Guard contra duplo clique / chamada simultânea
+    if (isProcessing) {
+      console.warn('[handleCreate] Já processando, ignorando chamada duplicada.');
+      return;
+    }
     if (!user || !userData) return;
     const isLipsyncActive = forceLipsync !== undefined ? forceLipsync : (activeTab === 'lipsync');
     const isCreativeActive = forceCreative !== undefined ? forceCreative : (activeTab === 'projects');
@@ -5122,8 +5127,10 @@ const handleBatchDownload = async (ids: string[]) => {
                         </div>
 
                         <div className="mb-3">
-                  <label className="block text-sm font-bold text-gray-400 mb-1 uppercase tracking-widest">Motor de Imagem</label>
-                  <div className="grid grid-cols-3 gap-1">
+                  <label className={`block text-sm font-bold mb-1 uppercase tracking-widest ${type === 'video' ? 'text-gray-600' : 'text-gray-400'}`}>
+                    Motor de Imagem {type === 'video' && <span className="text-[10px] font-normal normal-case text-gray-700 ml-1">(disponível no modo Imagem)</span>}
+                  </label>
+                  <div className={`grid grid-cols-3 gap-1 transition-all ${type === 'video' ? 'opacity-30 pointer-events-none select-none' : ''}`}>
                     {[
                       { id: 'nano',       label: '⚡ Gemini',       desc: 'Rápido e versátil' },
                       { id: 'nanoBanana', label: '🍌 Nano Banana 2', desc: 'Alta fidelidade' },
@@ -5134,6 +5141,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       <button
                         type="button"
                         key={m.id}
+                        disabled={type === 'video'}
                         onClick={() => setModelType(m.id as any)}
                         className={`p-2 rounded-lg border text-center transition-all ${
                           modelType === m.id
