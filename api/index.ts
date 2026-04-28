@@ -1202,149 +1202,120 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
       }
 
 
-      // --- generateHedra — Hedra Character-3 via api.hedra.com ---
+      // --- generateHedra — Hedra Character-3 via api.hedra.com/web-app/public ---
       if (method === 'generateHedra') {
         const hedraKey = process.env.HEDRA_API_KEY;
         if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
 
-        const hedraBase = 'https://mercury.dev.dream-ai.com/api';
-        const modelId = args.modelId || 'hedra_character_3';
+        const hedraBase = 'https://api.hedra.com/web-app/public';
+        const hedraHeaders: Record<string, string> = { 'X-API-Key': hedraKey };
 
-        console.log(`[Hedra] model=${modelId} hasImage=${!!args.imageBase64} hasAudio=${!!args.audioBase64} hasText=${!!args.audioText}`);
+        console.log(`[Hedra] hasImage=${!!args.imageBase64} hasAudio=${!!args.audioBase64} hasText=${!!args.audioText}`);
 
-        // 1. Upload imagem via POST /v1/portrait (multipart/form-data)
-        let portraitUrl: string | undefined;
+        // 1. Upload imagem via POST /assets (multipart)
+        let imageAssetId: string | undefined;
         if (args.imageBase64) {
-          const imgBuffer = Buffer.from(args.imageBase64, 'base64');
+          const imgBuf = Buffer.from(args.imageBase64, 'base64');
           const imgMime = args.imageMimeType || 'image/jpeg';
-          const imgExt = imgMime.includes('png') ? 'png' : imgMime.includes('webp') ? 'webp' : 'jpg';
+          const imgExt = imgMime.includes('png') ? 'png' : 'jpg';
+          const form = new FormData();
+          form.append('file', new Blob([imgBuf], { type: imgMime }), `portrait.${imgExt}`);
+          form.append('name', `portrait_${Date.now()}`);
+          form.append('type', 'image');
 
-          const formData = new FormData();
-          const blob = new Blob([imgBuffer], { type: imgMime });
-          formData.append('file', blob, `portrait.${imgExt}`);
-
-          const portraitRes = await fetch(`${hedraBase}/v1/portrait?aspect_ratio=${args.aspectRatio || '9:16'}`, {
-            method: 'POST',
-            headers: { 'X-API-Key': hedraKey },
-            body: formData
-          });
-
-          const portraitText = await portraitRes.text();
-          console.log(`[Hedra] Portrait HTTP ${portraitRes.status}: ${portraitText.substring(0, 200)}`);
-
-          if (!portraitRes.ok) {
-            let e: any = {};
-            try { e = JSON.parse(portraitText); } catch {}
-            return res.status(portraitRes.status).json({ error: e?.message || e?.detail || `Hedra portrait HTTP ${portraitRes.status}` });
-          }
-          const portraitData = JSON.parse(portraitText);
-          portraitUrl = portraitData?.url;
-          console.log(`[Hedra] Portrait URL: ${portraitUrl}`);
+          const r = await fetch(`${hedraBase}/assets`, { method: 'POST', headers: hedraHeaders, body: form });
+          const t = await r.text();
+          console.log(`[Hedra] Image asset HTTP ${r.status}: ${t.substring(0, 200)}`);
+          if (!r.ok) { let e: any = {}; try { e = JSON.parse(t); } catch {} return res.status(r.status).json({ error: e?.message || e?.detail || `Hedra image upload HTTP ${r.status}` }); }
+          const d = JSON.parse(t);
+          imageAssetId = d?.id || d?.assetId;
+          console.log(`[Hedra] Image assetId: ${imageAssetId}`);
         }
 
-        // 2. Upload áudio via POST /v1/audio (multipart/form-data)
-        let audioUrl: string | undefined;
+        // 2. Upload áudio via POST /assets (multipart)
+        let audioAssetId: string | undefined;
         if (args.audioBase64) {
-          const audBuffer = Buffer.from(args.audioBase64, 'base64');
+          const audBuf = Buffer.from(args.audioBase64, 'base64');
           const audMime = args.audioMimeType || 'audio/mpeg';
-          const audExt = audMime.includes('wav') ? 'wav' : audMime.includes('ogg') ? 'ogg' : 'mp3';
+          const audExt = audMime.includes('wav') ? 'wav' : 'mp3';
+          const form = new FormData();
+          form.append('file', new Blob([audBuf], { type: audMime }), `audio.${audExt}`);
+          form.append('name', `audio_${Date.now()}`);
+          form.append('type', 'audio');
 
-          const audioForm = new FormData();
-          const audBlob = new Blob([audBuffer], { type: audMime });
-          audioForm.append('file', audBlob, `audio.${audExt}`);
-
-          const audioRes = await fetch(`${hedraBase}/v1/audio`, {
-            method: 'POST',
-            headers: { 'X-API-Key': hedraKey },
-            body: audioForm
-          });
-
-          const audioText = await audioRes.text();
-          console.log(`[Hedra] Audio HTTP ${audioRes.status}: ${audioText.substring(0, 200)}`);
-
-          if (!audioRes.ok) {
-            let e: any = {};
-            try { e = JSON.parse(audioText); } catch {}
-            return res.status(audioRes.status).json({ error: e?.message || e?.detail || `Hedra audio HTTP ${audioRes.status}` });
-          }
-          const audioData = JSON.parse(audioText);
-          audioUrl = audioData?.url;
-          console.log(`[Hedra] Audio URL: ${audioUrl}`);
+          const r = await fetch(`${hedraBase}/assets`, { method: 'POST', headers: hedraHeaders, body: form });
+          const t = await r.text();
+          console.log(`[Hedra] Audio asset HTTP ${r.status}: ${t.substring(0, 200)}`);
+          if (!r.ok) { let e: any = {}; try { e = JSON.parse(t); } catch {} return res.status(r.status).json({ error: e?.message || e?.detail || `Hedra audio upload HTTP ${r.status}` }); }
+          const d = JSON.parse(t);
+          audioAssetId = d?.id || d?.assetId;
+          console.log(`[Hedra] Audio assetId: ${audioAssetId}`);
         }
 
-        // 3. Criar personagem via POST /v1/characters
-        const charBody: any = {
-          aspectRatio: args.aspectRatio || '9:16',
+        // 3. Criar geração via POST /generations
+        const genBody: any = {
+          ai_model_id: 'hedra_character_3',
+          aspect_ratio: args.aspectRatio || '9:16',
+          resolution: args.resolution || '720p',
         };
-        if (portraitUrl) charBody.avatarImage = portraitUrl;
-        if (audioUrl) {
-          charBody.voiceUrl = audioUrl;
-          charBody.audioSource = 'audio';
+        if (imageAssetId) genBody.start_keyframe_id = imageAssetId;
+        if (audioAssetId) {
+          genBody.audio_id = audioAssetId;
+          genBody.audio_source = 'audio';
         } else if (args.audioText) {
-          charBody.text = args.audioText;
-          charBody.audioSource = 'tts';
+          genBody.text = args.audioText;
+          genBody.audio_source = 'tts';
         }
+        if (args.textPrompt) genBody.text_prompt = args.textPrompt;
 
-        console.log(`[Hedra] POST /v1/characters: ${JSON.stringify(charBody)}`);
+        console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
 
-        const charRes = await fetch(`${hedraBase}/v1/characters`, {
+        const genR = await fetch(`${hedraBase}/generations`, {
           method: 'POST',
-          headers: { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify(charBody)
+          headers: { ...hedraHeaders, 'Content-Type': 'application/json' },
+          body: JSON.stringify(genBody)
         });
+        const genT = await genR.text();
+        console.log(`[Hedra] Generations HTTP ${genR.status}: ${genT.substring(0, 300)}`);
+        let genD: any = {};
+        try { genD = JSON.parse(genT); } catch {}
+        if (!genR.ok) return res.status(genR.status).json({ error: genD?.message || genD?.detail || `Hedra generations HTTP ${genR.status}` });
 
-        const charText = await charRes.text();
-        console.log(`[Hedra] Characters HTTP ${charRes.status}: ${charText.substring(0, 200)}`);
-
-        let charData: any = {};
-        try { charData = JSON.parse(charText); } catch {}
-
-        if (!charRes.ok) {
-          return res.status(charRes.status).json({ error: charData?.message || charData?.detail || `Hedra characters HTTP ${charRes.status}` });
-        }
-
-        const jobId = charData?.jobId;
-        console.log(`[Hedra] Job iniciado: ${jobId}`);
-        return res.json({ generationId: jobId, status: 'pending' });
+        const genId = genD?.id || genD?.jobId || genD?.generation_id;
+        console.log(`[Hedra] Geração iniciada: ${genId}`);
+        return res.json({ generationId: genId, status: 'pending' });
       }
 
-      // --- getHedraStatus — polling via GET /v1/projects/{jobId} ---
+      // --- getHedraStatus — polling via GET /generations/{id} ---
       if (method === 'getHedraStatus') {
         const hedraKey = process.env.HEDRA_API_KEY;
         if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
 
-        const jobId = args.generationId;
-        if (!jobId) return res.status(400).json({ error: 'generationId obrigatório.' });
+        const genId = args.generationId;
+        if (!genId) return res.status(400).json({ error: 'generationId obrigatório.' });
 
         const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 15000));
-        const req = fetch(`https://mercury.dev.dream-ai.com/api/v1/projects/${jobId}`, {
+        const req = fetch(`https://api.hedra.com/web-app/public/generations/${genId}`, {
           headers: { 'X-API-Key': hedraKey }
         }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
           .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
 
         const result = await Promise.race([req, timeout]);
-        if ('timedOut' in result && result.timedOut) {
-          console.log('[Hedra Poll] timeout → pending');
-          return res.json({ status: 'pending', generationId: jobId });
-        }
+        if ('timedOut' in result && result.timedOut) { console.log('[Hedra Poll] timeout → pending'); return res.json({ status: 'pending', generationId: genId }); }
 
         const { status, text } = result as { timedOut: false, status: number, text: string };
         let data: any = {};
         try { data = JSON.parse(text); } catch {}
+        if (status !== 200) { console.error(`[Hedra Poll] HTTP ${status}: ${text?.substring(0, 200)}`); return res.status(status).json(data); }
 
-        if (status !== 200) {
-          console.error(`[Hedra Poll] HTTP ${status}: ${text?.substring(0, 200)}`);
-          return res.status(status).json(data);
-        }
+        const jobStatus = data?.status || data?.state;
+        const videoUrl = data?.videoUrl || data?.video_url || data?.asset?.url || data?.output_url;
+        console.log(`[Hedra Poll] id=${genId} status=${jobStatus} hasVideo=${!!videoUrl}`);
+        console.log(`[Hedra Poll] raw: ${JSON.stringify(data).substring(0, 300)}`);
 
-        // Status do projeto Hedra: Completed, Processing, Failed
-        const jobStatus = data?.status;
-        const videoUrl = data?.videoUrl || data?.video_url;
-        console.log(`[Hedra Poll] jobId=${jobId} status=${jobStatus} videoUrl=${videoUrl ? 'sim' : 'não'}`);
-
-        if (jobStatus === 'Completed' && videoUrl) return res.json({ status: 'complete', videoUrl, generationId: jobId });
-        if (jobStatus === 'Failed' || jobStatus === 'failed') return res.json({ status: 'failed', error: data?.errorMessage || 'Hedra: geração falhou', generationId: jobId });
-        return res.json({ status: 'pending', progress: data?.progress || 0, generationId: jobId });
+        if ((jobStatus === 'Completed' || jobStatus === 'complete' || jobStatus === 'completed') && videoUrl) return res.json({ status: 'complete', videoUrl, generationId: genId });
+        if (jobStatus === 'Failed' || jobStatus === 'failed' || jobStatus === 'error') return res.json({ status: 'failed', error: data?.errorMessage || data?.error || 'Hedra: geração falhou', generationId: genId });
+        return res.json({ status: 'pending', progress: data?.progress || 0, generationId: genId });
       }
 
 
