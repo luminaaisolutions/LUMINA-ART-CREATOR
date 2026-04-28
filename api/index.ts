@@ -1207,7 +1207,7 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         const hedraKey = process.env.HEDRA_API_KEY;
         if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
 
-        const hedraBase = 'https://api.hedra.com';
+        const hedraBase = 'https://mercury.dev.dream-ai.com/api';
         const modelId = args.modelId || 'hedra_character_3';
 
         console.log(`[Hedra] model=${modelId} hasImage=${!!args.imageBase64} hasAudio=${!!args.audioBase64} hasText=${!!args.audioText}`);
@@ -1317,7 +1317,7 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         if (!jobId) return res.status(400).json({ error: 'generationId obrigatório.' });
 
         const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 15000));
-        const req = fetch(`https://api.hedra.com/v1/projects/${jobId}`, {
+        const req = fetch(`https://mercury.dev.dream-ai.com/api/v1/projects/${jobId}`, {
           headers: { 'X-API-Key': hedraKey }
         }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
           .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
