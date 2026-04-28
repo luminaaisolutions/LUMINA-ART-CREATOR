@@ -1880,6 +1880,7 @@ function AppContent() {
     const currentLipsyncAudio = lipsyncAudio;
     const currentLipsyncAudioPrompt = lipsyncAudioPrompt;
     const currentUseLipsync = isLipsyncActive;
+    const currentLipsyncEngineCapture = lipsyncEngine;
     const currentAudioStart = audioStart;
     const currentLowPriority = isLipsyncActive ? lipsyncLowPriority : lowPriority;
     const currentVideoDuration = isLipsyncActive ? lipsyncDuration : videoDuration;
@@ -2520,7 +2521,7 @@ function AppContent() {
           const isLipsyncJob = currentUseLipsync;
           const currentVideoEngine = videoEngine;
           const currentVideoTier = videoTier;
-          const currentLipsyncEngine = lipsyncEngine;
+          const currentLipsyncEngine = currentLipsyncEngineCapture;
           const modelToUse = isLipsyncJob ? 'veo-3.0-generate-001' : 'veo-3.0-generate-001';
 
           // Motores fal.ai para LipSync — roteamento direto
