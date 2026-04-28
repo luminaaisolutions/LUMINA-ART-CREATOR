@@ -1324,14 +1324,11 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
 
         console.log(`[Kling3] endpoint=${endpoint} duration=${klingBody.duration}s ratio=${klingBody.aspect_ratio} audio=${klingBody.generate_audio}`);
 
-        const klingRes = await withRetry(
-          () => fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(klingBody)
-          }),
-          3, 5000, 'generateKling'
-        );
+        const klingRes = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(klingBody)
+        });
 
         if (!klingRes.ok) {
           const err = await klingRes.json().catch(() => ({ error: klingRes.statusText }));
@@ -1376,14 +1373,11 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
 
         console.log(`[Seedance2] endpoint=${endpoint} duration=${seedanceBody.duration}s ratio=${seedanceBody.aspect_ratio} tier=${tier}`);
 
-        const seedanceRes = await withRetry(
-          () => fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(seedanceBody)
-          }),
-          3, 5000, 'generateSeedance'
-        );
+        const seedanceRes = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(seedanceBody)
+        });
 
         if (!seedanceRes.ok) {
           const err = await seedanceRes.json().catch(() => ({ error: seedanceRes.statusText }));
