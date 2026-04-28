@@ -1285,7 +1285,7 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           ai_model_id: modelId,
           start_keyframe_id: imageId,
           generated_video_inputs: {
-            text_prompt: args.textPrompt || '',
+            prompt: args.textPrompt || (args.audioText ? args.audioText.substring(0, 200) : 'A person talking naturally'),
             resolution: args.resolution || '720p',
             aspect_ratio: args.aspectRatio || '9:16',
           }
@@ -1293,9 +1293,9 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         if (audioId) {
           genBody.audio_id = audioId;
         } else if (args.audioText && !audioId) {
-          // TTS: text vai no body principal, não dentro de generated_video_inputs
-          genBody.text = args.audioText;
-          genBody.audio_source = 'tts';
+          // TTS: campos corretos conforme API Hedra
+          genBody.generated_video_inputs.voice_text = args.audioText;
+          genBody.generated_video_inputs.audio_source = 'tts';
         }
 
         console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
