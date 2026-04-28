@@ -1201,8 +1201,138 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         return res.json({ url });
       }
 
+
+      // --- generateHedra — Hedra Character-3 / Omnia / Avatar via api.hedra.com ---
+      if (method === 'generateHedra') {
+        const hedraKey = process.env.HEDRA_API_KEY;
+        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
+
+        const hedraHeaders: Record<string, string> = {
+          'X-API-Key': hedraKey,
+          'Content-Type': 'application/json'
+        };
+        const hedraBase = 'https://api.hedra.com';
+        const modelId = args.modelId || 'hedra_character_3';
+
+        console.log(`[Hedra] model=${modelId} hasImage=${!!args.imageBase64} hasAudio=${!!args.audioBase64}`);
+
+        // 1. Upload imagem se base64 fornecido
+        let imageAssetId: string | undefined;
+        if (args.imageBase64) {
+          const imgBuf = Buffer.from(args.imageBase64, 'base64');
+          const imgMime = args.imageMimeType || 'image/jpeg';
+          const imgExt = imgMime.includes('png') ? 'png' : 'jpg';
+
+          const cImgRes = await fetch(`${hedraBase}/v1/assets`, {
+            method: 'POST', headers: hedraHeaders,
+            body: JSON.stringify({ name: `img_${Date.now()}.${imgExt}`, type: 'image' })
+          });
+          if (!cImgRes.ok) { const e = await cImgRes.json().catch(()=>({})); return res.status(cImgRes.status).json({ error: e?.message || 'Hedra: erro ao criar asset imagem' }); }
+          const imgAsset = await cImgRes.json();
+          imageAssetId = imgAsset?.id;
+
+          const uImgRes = await fetch(`${hedraBase}/v1/assets/${imageAssetId}/upload`, {
+            method: 'POST',
+            headers: { 'X-API-Key': hedraKey, 'Content-Type': imgMime },
+            body: imgBuf
+          });
+          if (!uImgRes.ok) { const e = await uImgRes.json().catch(()=>({})); return res.status(uImgRes.status).json({ error: e?.message || 'Hedra: erro upload imagem' }); }
+          console.log(`[Hedra] Image asset: ${imageAssetId}`);
+        }
+
+        // 2. Upload áudio se base64 fornecido
+        let audioAssetId: string | undefined;
+        if (args.audioBase64) {
+          const audBuf = Buffer.from(args.audioBase64, 'base64');
+          const audMime = args.audioMimeType || 'audio/mpeg';
+          const audExt = audMime.includes('wav') ? 'wav' : audMime.includes('ogg') ? 'ogg' : 'mp3';
+
+          const cAudRes = await fetch(`${hedraBase}/v1/assets`, {
+            method: 'POST', headers: hedraHeaders,
+            body: JSON.stringify({ name: `aud_${Date.now()}.${audExt}`, type: 'audio' })
+          });
+          if (!cAudRes.ok) { const e = await cAudRes.json().catch(()=>({})); return res.status(cAudRes.status).json({ error: e?.message || 'Hedra: erro ao criar asset áudio' }); }
+          const audAsset = await cAudRes.json();
+          audioAssetId = audAsset?.id;
+
+          const uAudRes = await fetch(`${hedraBase}/v1/assets/${audioAssetId}/upload`, {
+            method: 'POST',
+            headers: { 'X-API-Key': hedraKey, 'Content-Type': audMime },
+            body: audBuf
+          });
+          if (!uAudRes.ok) { const e = await uAudRes.json().catch(()=>({})); return res.status(uAudRes.status).json({ error: e?.message || 'Hedra: erro upload áudio' }); }
+          console.log(`[Hedra] Audio asset: ${audioAssetId}`);
+        }
+
+        // 3. Gerar vídeo
+        const genBody: any = {
+          ai_model_id: modelId,
+          resolution: args.resolution || '720p',
+          aspect_ratio: args.aspectRatio || '9:16',
+          duration_ms: (args.durationSeconds || 10) * 1000,
+        };
+        if (imageAssetId) genBody.start_keyframe_id = imageAssetId;
+        if (audioAssetId) genBody.audio_id = audioAssetId;
+        if (args.textPrompt) genBody.text_prompt = args.textPrompt;
+        if (args.audioText) genBody.audio_generation = { text: args.audioText, language: 'pt' };
+
+        console.log(`[Hedra] POST /v1/generations/video | model=${modelId} resolution=${genBody.resolution} duration=${genBody.duration_ms}ms`);
+
+        const genRes = await fetch(`${hedraBase}/v1/generations/video`, {
+          method: 'POST', headers: hedraHeaders,
+          body: JSON.stringify(genBody)
+        });
+        const genText = await genRes.text();
+        let genData: any = {};
+        try { genData = JSON.parse(genText); } catch {}
+
+        if (!genRes.ok) {
+          console.error(`[Hedra] HTTP ${genRes.status}: ${genText.substring(0, 200)}`);
+          return res.status(genRes.status).json({ error: genData?.message || genData?.detail || `Hedra HTTP ${genRes.status}` });
+        }
+        console.log(`[Hedra] Geração iniciada: ${genData?.id} status=${genData?.status}`);
+        return res.json({ generationId: genData?.id, status: genData?.status });
+      }
+
+      // --- getHedraStatus — polling do status ---
+      if (method === 'getHedraStatus') {
+        const hedraKey = process.env.HEDRA_API_KEY;
+        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
+
+        const genId = args.generationId;
+        if (!genId) return res.status(400).json({ error: 'generationId obrigatório.' });
+
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 15000));
+        const req = fetch(`https://api.hedra.com/v1/generations/${genId}`, {
+          headers: { 'X-API-Key': hedraKey }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) {
+          console.log('[Hedra Poll] 15s timeout → pending');
+          return res.json({ status: 'pending', generationId: genId });
+        }
+
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let data: any = {};
+        try { data = JSON.parse(text); } catch {}
+
+        if (status !== 200) {
+          console.error(`[Hedra Poll] HTTP ${status}: ${text?.substring(0, 200)}`);
+          return res.status(status).json(data);
+        }
+
+        const genStatus = data?.status;
+        const videoUrl = data?.asset?.asset?.url;
+        console.log(`[Hedra Poll] id=${genId} status=${genStatus} progress=${data?.progress}`);
+
+        if (genStatus === 'complete' && videoUrl) return res.json({ status: 'complete', videoUrl, generationId: genId });
+        if (genStatus === 'failed') return res.json({ status: 'failed', error: data?.error_message || 'Hedra: geração falhou', generationId: genId });
+        return res.json({ status: genStatus || 'pending', progress: data?.progress || 0, generationId: genId });
+      }
+
       // --- generateOmniHuman — ByteDance OmniHuman v1.5 via fal.ai ---
-      if (method === 'generateOmniHuman') {
         const falKey = process.env.FAL_API_KEY;
         if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
 
