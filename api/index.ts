@@ -1208,85 +1208,110 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
 
         const hedraBase = 'https://api.hedra.com/web-app/public';
-        const hedraHeaders: Record<string, string> = { 'X-API-Key': hedraKey };
+        // Header correto: x-api-key (minúsculo) + Content-Type separado conforme SDK
+        const jsonHeaders: Record<string, string> = { 'x-api-key': hedraKey, 'Content-Type': 'application/json' };
+        const uploadHeaders: Record<string, string> = { 'x-api-key': hedraKey };
 
         console.log(`[Hedra] hasImage=${!!args.imageBase64} hasAudio=${!!args.audioBase64} hasText=${!!args.audioText}`);
 
-        // 1. Upload imagem via POST /assets (multipart)
-        let imageAssetId: string | undefined;
+        // 1a. Criar asset de imagem (POST /assets com JSON)
+        let imageId: string | undefined;
         if (args.imageBase64) {
+          const createImgR = await fetch(`${hedraBase}/assets`, {
+            method: 'POST', headers: jsonHeaders,
+            body: JSON.stringify({ name: 'portrait.jpg', type: 'image' })
+          });
+          const createImgT = await createImgR.text();
+          console.log(`[Hedra] Create image asset HTTP ${createImgR.status}: ${createImgT.substring(0, 200)}`);
+          if (!createImgR.ok) { let e: any = {}; try { e = JSON.parse(createImgT); } catch {} return res.status(createImgR.status).json({ error: e?.message || e?.detail || `Hedra create image HTTP ${createImgR.status}` }); }
+          imageId = JSON.parse(createImgT)?.id;
+
+          // 1b. Upload binário da imagem (POST /assets/{id}/upload com multipart)
           const imgBuf = Buffer.from(args.imageBase64, 'base64');
           const imgMime = args.imageMimeType || 'image/jpeg';
-          const imgExt = imgMime.includes('png') ? 'png' : 'jpg';
-          const form = new FormData();
-          form.append('file', new Blob([imgBuf], { type: imgMime }), `portrait.${imgExt}`);
-          form.append('name', `portrait_${Date.now()}`);
-          form.append('type', 'image');
+          const imgForm = new FormData();
+          imgForm.append('file', new Blob([imgBuf], { type: imgMime }), 'portrait.jpg');
 
-          const r = await fetch(`${hedraBase}/assets`, { method: 'POST', headers: hedraHeaders, body: form });
-          const t = await r.text();
-          console.log(`[Hedra] Image asset HTTP ${r.status}: ${t.substring(0, 200)}`);
-          if (!r.ok) { let e: any = {}; try { e = JSON.parse(t); } catch {} return res.status(r.status).json({ error: e?.message || e?.detail || `Hedra image upload HTTP ${r.status}` }); }
-          const d = JSON.parse(t);
-          imageAssetId = d?.id || d?.assetId;
-          console.log(`[Hedra] Image assetId: ${imageAssetId}`);
+          const uploadImgR = await fetch(`${hedraBase}/assets/${imageId}/upload`, {
+            method: 'POST', headers: uploadHeaders, body: imgForm
+          });
+          const uploadImgT = await uploadImgR.text();
+          console.log(`[Hedra] Upload image HTTP ${uploadImgR.status}: ${uploadImgT.substring(0, 200)}`);
+          if (!uploadImgR.ok) { let e: any = {}; try { e = JSON.parse(uploadImgT); } catch {} return res.status(uploadImgR.status).json({ error: e?.message || e?.detail || `Hedra upload image HTTP ${uploadImgR.status}` }); }
+          console.log(`[Hedra] Image asset ID: ${imageId}`);
         }
 
-        // 2. Upload áudio via POST /assets (multipart)
-        let audioAssetId: string | undefined;
+        // 2a. Criar asset de áudio (POST /assets com JSON)
+        let audioId: string | undefined;
         if (args.audioBase64) {
+          const createAudR = await fetch(`${hedraBase}/assets`, {
+            method: 'POST', headers: jsonHeaders,
+            body: JSON.stringify({ name: 'audio.wav', type: 'audio' })
+          });
+          const createAudT = await createAudR.text();
+          console.log(`[Hedra] Create audio asset HTTP ${createAudR.status}: ${createAudT.substring(0, 200)}`);
+          if (!createAudR.ok) { let e: any = {}; try { e = JSON.parse(createAudT); } catch {} return res.status(createAudR.status).json({ error: e?.message || e?.detail || `Hedra create audio HTTP ${createAudR.status}` }); }
+          audioId = JSON.parse(createAudT)?.id;
+
+          // 2b. Upload binário do áudio
           const audBuf = Buffer.from(args.audioBase64, 'base64');
           const audMime = args.audioMimeType || 'audio/mpeg';
-          const audExt = audMime.includes('wav') ? 'wav' : 'mp3';
-          const form = new FormData();
-          form.append('file', new Blob([audBuf], { type: audMime }), `audio.${audExt}`);
-          form.append('name', `audio_${Date.now()}`);
-          form.append('type', 'audio');
+          const audForm = new FormData();
+          audForm.append('file', new Blob([audBuf], { type: audMime }), 'audio.wav');
 
-          const r = await fetch(`${hedraBase}/assets`, { method: 'POST', headers: hedraHeaders, body: form });
-          const t = await r.text();
-          console.log(`[Hedra] Audio asset HTTP ${r.status}: ${t.substring(0, 200)}`);
-          if (!r.ok) { let e: any = {}; try { e = JSON.parse(t); } catch {} return res.status(r.status).json({ error: e?.message || e?.detail || `Hedra audio upload HTTP ${r.status}` }); }
-          const d = JSON.parse(t);
-          audioAssetId = d?.id || d?.assetId;
-          console.log(`[Hedra] Audio assetId: ${audioAssetId}`);
+          const uploadAudR = await fetch(`${hedraBase}/assets/${audioId}/upload`, {
+            method: 'POST', headers: uploadHeaders, body: audForm
+          });
+          const uploadAudT = await uploadAudR.text();
+          console.log(`[Hedra] Upload audio HTTP ${uploadAudR.status}: ${uploadAudT.substring(0, 200)}`);
+          if (!uploadAudR.ok) { let e: any = {}; try { e = JSON.parse(uploadAudT); } catch {} return res.status(uploadAudR.status).json({ error: e?.message || e?.detail || `Hedra upload audio HTTP ${uploadAudR.status}` }); }
+          console.log(`[Hedra] Audio asset ID: ${audioId}`);
         }
 
-        // 3. Criar geração via POST /generations
+        // 3. Buscar model ID disponível
+        const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
+        let modelId = 'hedra_character_3';
+        if (modelsR.ok) {
+          const models = await modelsR.json().catch(() => []);
+          if (Array.isArray(models) && models.length > 0) {
+            modelId = models[0]?.id || modelId;
+            console.log(`[Hedra] Model ID: ${modelId}`);
+          }
+        }
+
+        // 4. Criar geração (POST /generations)
         const genBody: any = {
-          ai_model_id: 'hedra_character_3',
-          aspect_ratio: args.aspectRatio || '9:16',
-          resolution: args.resolution || '720p',
+          type: 'video',
+          ai_model_id: modelId,
+          start_keyframe_id: imageId,
+          generated_video_inputs: {
+            text_prompt: args.textPrompt || 'Generate a talking avatar',
+            resolution: args.resolution || '720p',
+            aspect_ratio: args.aspectRatio || '9:16',
+          }
         };
-        if (imageAssetId) genBody.start_keyframe_id = imageAssetId;
-        if (audioAssetId) {
-          genBody.audio_id = audioAssetId;
-          genBody.audio_source = 'audio';
-        } else if (args.audioText) {
-          genBody.text = args.audioText;
-          genBody.audio_source = 'tts';
+        if (audioId) genBody.audio_id = audioId;
+        if (args.audioText && !audioId) {
+          genBody.generated_video_inputs.voice_text = args.audioText;
+          genBody.generated_video_inputs.audio_source = 'tts';
         }
-        if (args.textPrompt) genBody.text_prompt = args.textPrompt;
 
         console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
-
         const genR = await fetch(`${hedraBase}/generations`, {
-          method: 'POST',
-          headers: { ...hedraHeaders, 'Content-Type': 'application/json' },
-          body: JSON.stringify(genBody)
+          method: 'POST', headers: jsonHeaders, body: JSON.stringify(genBody)
         });
         const genT = await genR.text();
         console.log(`[Hedra] Generations HTTP ${genR.status}: ${genT.substring(0, 300)}`);
         let genD: any = {};
         try { genD = JSON.parse(genT); } catch {}
-        if (!genR.ok) return res.status(genR.status).json({ error: genD?.message || genD?.detail || `Hedra generations HTTP ${genR.status}` });
+        if (!genR.ok) return res.status(genR.status).json({ error: genD?.message || genD?.detail || `Hedra generations HTTP ${genR.status}: ${genT.substring(0, 100)}` });
 
-        const genId = genD?.id || genD?.jobId || genD?.generation_id;
+        const genId = genD?.id;
         console.log(`[Hedra] Geração iniciada: ${genId}`);
         return res.json({ generationId: genId, status: 'pending' });
       }
 
-      // --- getHedraStatus — polling via GET /generations/{id} ---
+      // --- getHedraStatus — polling via GET /generations/{id}/status ---
       if (method === 'getHedraStatus') {
         const hedraKey = process.env.HEDRA_API_KEY;
         if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
@@ -1295,8 +1320,9 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         if (!genId) return res.status(400).json({ error: 'generationId obrigatório.' });
 
         const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 15000));
-        const req = fetch(`https://api.hedra.com/web-app/public/generations/${genId}`, {
-          headers: { 'X-API-Key': hedraKey }
+        // Endpoint correto de status: /generations/{id}/status
+        const req = fetch(`https://api.hedra.com/web-app/public/generations/${genId}/status`, {
+          headers: { 'x-api-key': hedraKey, 'Content-Type': 'application/json' }
         }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
           .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
 
@@ -1308,13 +1334,12 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         try { data = JSON.parse(text); } catch {}
         if (status !== 200) { console.error(`[Hedra Poll] HTTP ${status}: ${text?.substring(0, 200)}`); return res.status(status).json(data); }
 
-        const jobStatus = data?.status || data?.state;
-        const videoUrl = data?.videoUrl || data?.video_url || data?.asset?.url || data?.output_url;
-        console.log(`[Hedra Poll] id=${genId} status=${jobStatus} hasVideo=${!!videoUrl}`);
-        console.log(`[Hedra Poll] raw: ${JSON.stringify(data).substring(0, 300)}`);
+        const jobStatus = data?.status;
+        const videoUrl = data?.url || data?.videoUrl || data?.video_url;
+        console.log(`[Hedra Poll] id=${genId} status=${jobStatus} hasVideo=${!!videoUrl} raw=${JSON.stringify(data).substring(0, 200)}`);
 
-        if ((jobStatus === 'Completed' || jobStatus === 'complete' || jobStatus === 'completed') && videoUrl) return res.json({ status: 'complete', videoUrl, generationId: genId });
-        if (jobStatus === 'Failed' || jobStatus === 'failed' || jobStatus === 'error') return res.json({ status: 'failed', error: data?.errorMessage || data?.error || 'Hedra: geração falhou', generationId: genId });
+        if (jobStatus === 'complete' && videoUrl) return res.json({ status: 'complete', videoUrl, generationId: genId });
+        if (jobStatus === 'error') return res.json({ status: 'failed', error: data?.error_message || 'Hedra: geração falhou', generationId: genId });
         return res.json({ status: 'pending', progress: data?.progress || 0, generationId: genId });
       }
 
