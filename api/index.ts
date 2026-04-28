@@ -1500,9 +1500,6 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
 
       // --- getVideosOperation (polling Veo) ---
       } else if (method === 'getVideosOperation') {
-
-      // --- getVideosOperation (polling) ---
-      } else if (method === 'getVideosOperation') {
         const opName = args.operation?.name || args.operation;
         console.log(`[Veo Polling] Operation: ${opName}`);
 
