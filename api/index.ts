@@ -1283,63 +1283,42 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           }
         };
 
-        // TTS correto: buscar voice_id em português dinamicamente
+        // Definir áudio: upload direto ou TTS gerado
         if (audioId) {
           genBody.audio_id = audioId;
         } else if (ttsText) {
-          // Buscar voices para pegar um voice_id válido em português
+          // 1. Buscar voz PT-BR
           let voiceId: string | undefined;
           try {
             const voicesR = await fetch(`${hedraBase}/voices`, { headers: jsonHeaders });
             if (voicesR.ok) {
               const voices = await voicesR.json();
               if (Array.isArray(voices) && voices.length > 0) {
-                // Preferir voz em português, senão pegar a primeira
                 const ptVoice = voices.find((v: any) =>
+                  v.name?.toLowerCase().includes('isadora') ||
                   v.name?.toLowerCase().includes('port') ||
-                  v.name?.toLowerCase().includes('brasil') ||
-                  v.name?.toLowerCase().includes('pt') ||
-                  v.description?.toLowerCase().includes('portuguese')
+                  v.name?.toLowerCase().includes('brasil')
                 );
                 voiceId = ptVoice?.id || voices[0]?.id;
-                console.log(`[Hedra] Voice selecionada: ${voiceId} (${ptVoice?.name || voices[0]?.name})`);
+                console.log(`[Hedra] Voice: ${voiceId} (${ptVoice?.name || voices[0]?.name})`);
               }
             }
-          } catch (e) {
-            console.warn('[Hedra] Falha ao buscar voices:', e);
-          }
+          } catch (e) { console.warn('[Hedra] Erro ao buscar voices:', e); }
 
-          if (!voiceId) {
-            return res.status(503).json({ error: 'Hedra: nenhuma voz disponível na conta. Adicione uma voz no painel Hedra.' });
-          }
+          if (!voiceId) return res.status(503).json({ error: 'Hedra: nenhuma voz disponível.' });
 
-        // TTS: gerar áudio separado ANTES do vídeo (conforme doc oficial)
-        if (audioId) {
-          genBody.audio_id = audioId;
-        } else if (ttsText) {
-          console.log(`[Hedra] Gerando TTS separado com voz ${voiceId}...`);
+          // 2. Gerar TTS separado
+          console.log(`[Hedra] Gerando TTS com voz ${voiceId}...`);
           const ttsRes = await fetch(`${hedraBase}/generations`, {
-            method: 'POST',
-            headers: jsonHeaders,
-            body: JSON.stringify({
-              type: 'text_to_speech',
-              voice_id: voiceId,
-              text: ttsText,
-              language: 'Portuguese',
-              speed: 1.0,
-              stability: 0.5,
-            })
+            method: 'POST', headers: jsonHeaders,
+            body: JSON.stringify({ type: 'text_to_speech', voice_id: voiceId, text: ttsText, language: 'Portuguese', speed: 1.0, stability: 0.5 })
           });
-          const ttsText2 = await ttsRes.text();
-          console.log(`[Hedra] TTS HTTP ${ttsRes.status}: ${ttsText2.substring(0, 200)}`);
-          if (!ttsRes.ok) {
-            let e: any = {}; try { e = JSON.parse(ttsText2); } catch {}
-            return res.status(ttsRes.status).json({ error: e?.messages?.[0] || `Hedra TTS HTTP ${ttsRes.status}` });
-          }
-          const ttsData = JSON.parse(ttsText2);
-          const ttsGenId = ttsData?.id;
+          const ttsRaw = await ttsRes.text();
+          console.log(`[Hedra] TTS HTTP ${ttsRes.status}: ${ttsRaw.substring(0, 200)}`);
+          if (!ttsRes.ok) { let e: any = {}; try { e = JSON.parse(ttsRaw); } catch {} return res.status(ttsRes.status).json({ error: e?.messages?.[0] || `Hedra TTS HTTP ${ttsRes.status}` }); }
+          const ttsGenId = JSON.parse(ttsRaw)?.id;
 
-          // Polling do TTS (até 60s)
+          // 3. Polling TTS (até 60s)
           let ttsAssetId: string | undefined;
           for (let i = 0; i < 12; i++) {
             await new Promise(r => setTimeout(r, 5000));
@@ -1348,13 +1327,12 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
               const pd = await pollR.json();
               console.log(`[Hedra TTS Poll] status=${pd?.status} asset_id=${pd?.asset_id}`);
               if (pd?.status === 'complete' && pd?.asset_id) { ttsAssetId = pd.asset_id; break; }
-              if (pd?.status === 'error') { return res.status(500).json({ error: 'Hedra TTS falhou.' }); }
+              if (pd?.status === 'error') return res.status(500).json({ error: 'Hedra TTS falhou.' });
             }
           }
           if (!ttsAssetId) return res.status(504).json({ error: 'Hedra TTS timeout.' });
           genBody.audio_id = ttsAssetId;
           console.log(`[Hedra] TTS asset_id: ${ttsAssetId}`);
-        }
         }
 
         console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
@@ -1396,8 +1374,23 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         if (status !== 200) { console.error(`[Hedra Poll] HTTP ${status}: ${text?.substring(0, 200)}`); return res.status(status).json(data); }
 
         const jobStatus = data?.status;
-        const videoUrl = data?.url || data?.videoUrl || data?.video_url;
-        console.log(`[Hedra Poll] id=${genId} status=${jobStatus} hasVideo=${!!videoUrl} raw=${JSON.stringify(data).substring(0, 200)}`);
+        let videoUrl = data?.url || data?.videoUrl || data?.video_url;
+
+        // Se complete/finalizing mas sem URL direta, buscar via asset_id
+        if ((jobStatus === 'complete' || jobStatus === 'finalizing') && !videoUrl && data?.asset_id) {
+          try {
+            const assetR = await fetch(`https://api.hedra.com/web-app/public/assets/${data.asset_id}`, {
+              headers: { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' }
+            });
+            if (assetR.ok) {
+              const assetD = await assetR.json();
+              videoUrl = assetD?.asset?.url || assetD?.url;
+              console.log(`[Hedra Poll] Asset URL via asset_id: ${videoUrl?.substring(0, 80)}`);
+            }
+          } catch(e) { console.warn('[Hedra Poll] Falha ao buscar asset URL:', e); }
+        }
+
+        console.log(`[Hedra Poll] id=${genId} status=${jobStatus} hasVideo=${!!videoUrl}`);
 
         if (jobStatus === 'complete' && videoUrl) return res.json({ status: 'complete', videoUrl, generationId: genId });
         if (jobStatus === 'error') return res.json({ status: 'failed', error: data?.error_message || 'Hedra: geração falhou', generationId: genId });
