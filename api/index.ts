@@ -1271,6 +1271,15 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         // Character-3 ID fixo — não usar GET /models que retorna Kling por padrão
         const CHARACTER_3_ID = '297540e4-1a90-4f78-9e57-8160d324377c';
 
+        // Log temporário: listar modelos disponíveis para debug
+        try {
+          const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
+          if (modelsR.ok) {
+            const models = await modelsR.json();
+            console.log(`[Hedra] Modelos disponíveis: ${JSON.stringify(models).substring(0, 500)}`);
+          }
+        } catch(e) { console.warn('[Hedra] Erro ao listar modelos:', e); }
+
         const ttsText = args.audioText || '';
         const genBody: any = {
           type: 'video',
