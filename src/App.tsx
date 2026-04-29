@@ -2561,7 +2561,7 @@ function AppContent() {
               const hedraGenId = falData.generationId;
               console.log(`[Hedra] Polling id=${hedraGenId}`);
               let hedraVideoUrl: string | undefined;
-              const maxPolls = 40;
+              const maxPolls = 72; // 72 × 10s = 720s máx
               for (let poll = 0; poll < maxPolls; poll++) {
                 await new Promise(r => setTimeout(r, 10000));
                 const pollRes = await fetch('/api/gemini', {
@@ -2572,10 +2572,12 @@ function AppContent() {
                 if (!pollRes.ok) continue;
                 const pollData = await pollRes.json();
                 const prog = Math.min(30 + Math.floor((poll / maxPolls) * 65), 94);
-                await updateDoc(doc(db, itemPath), { progress: prog, status: 'processing' });
+                // finalizing = quase pronto, manter 94%
+                const displayProg = (pollData?.status === 'finalizing') ? 94 : prog;
+                await updateDoc(doc(db, itemPath), { progress: displayProg, status: 'processing' });
                 if (pollData?.status === 'complete' && pollData?.videoUrl) { hedraVideoUrl = pollData.videoUrl; break; }
                 if (pollData?.status === 'failed') throw new Error(pollData?.error || 'Hedra: geração falhou');
-                console.log(`[Hedra Poll] ${poll+1}/${maxPolls} status=${pollData?.status}`);
+                console.log(`[Hedra Poll] ${poll+1}/${maxPolls} status=${pollData?.status} videoUrl=${pollData?.videoUrl}`);
               }
               if (!hedraVideoUrl) throw new Error('Hedra: timeout sem resposta.');
               await updateDoc(doc(db, itemPath), { status: 'completed', progress: 100, videoUrl: hedraVideoUrl, previewUrl: hedraVideoUrl });
