@@ -2567,7 +2567,7 @@ function AppContent() {
                 const pollRes = await fetch('/api/gemini', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ method: 'getHedraStatus', args: { generationId: hedraGenId } })
+                  body: JSON.stringify({ method: 'getHedraStatus', args: { generationId: hedraGenId, userId: currentUser?.uid } })
                 });
                 if (!pollRes.ok) continue;
                 const pollData = await pollRes.json();
