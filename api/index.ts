@@ -21,6 +21,7 @@ const __dirname = path.dirname(__filename);
 
 // Initialize Firebase Admin
 let dbAdmin: any = null;
+let adminStorage: any = null;
 let serviceAccountCredentials: any = null;
 
 try {
@@ -37,10 +38,12 @@ try {
       credential: serviceAccount
         ? admin.credential.cert(serviceAccount)
         : admin.credential.applicationDefault(),
-      projectId: process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0723352507'
+      projectId: process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0723352507',
+      storageBucket: `${process.env.FIREBASE_PROJECT_ID || 'gen-lang-client-0723352507'}.firebasestorage.app`
     });
   }
   dbAdmin = admin.firestore();
+  adminStorage = admin.storage();
 } catch (e) {
   console.error("[Startup] Firebase Admin failed to initialize:", e);
 }
@@ -1269,34 +1272,37 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         }
 
         // Character-3 ID fixo — não usar GET /models que retorna Kling por padrão
-        const CHARACTER_3_ID = '297540e4-1a90-4f78-9e57-8160d324377c';
-
-        // Log temporário: listar modelos disponíveis para debug
-        try {
-          const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
-          if (modelsR.ok) {
-            const models = await modelsR.json();
-            console.log(`[Hedra] Modelos disponíveis: ${JSON.stringify(models).substring(0, 500)}`);
-          }
-        } catch(e) { console.warn('[Hedra] Erro ao listar modelos:', e); }
+        // Não enviar ai_model_id — Hedra escolhe automaticamente Character-3
+        // quando recebe start_keyframe_id (imagem) + audio_id
+        // IDs oficiais da documentação Hedra
+        const HEDRA_AVATAR_ID = '26f0fc66-152b-40ab-abed-76c43df99bc8'; // LipSync até 10min
+        const HEDRA_OMNIA_ID  = 'ab372b84-432f-44f5-bacc-c2542465f712'; // Full-body até 8s
+        const modelId = args.useOmnia ? HEDRA_OMNIA_ID : HEDRA_AVATAR_ID;
 
         const ttsText = args.audioText || '';
+
+        // Estimar duração baseada no texto (~150ms por caractere)
+        const estimatedDurationMs = ttsText
+          ? Math.min(Math.max(Math.ceil(ttsText.length / 15) * 1000, 5000), 600000)
+          : 10000;
+
         const genBody: any = {
           type: 'video',
-          ai_model_id: CHARACTER_3_ID,
+          ai_model_id: modelId,
           start_keyframe_id: imageId,
           generated_video_inputs: {
-            text_prompt: ttsText || 'Person speaking naturally to camera',
-            resolution: args.resolution || '720p',
+            text_prompt: 'A person speaking naturally to the camera',
             aspect_ratio: args.aspectRatio || '9:16',
+            resolution: args.resolution || '720p',
+            duration_ms: estimatedDurationMs,
           }
         };
 
-        // Definir áudio: upload direto ou TTS gerado
+        // Áudio: upload direto OU TTS inline (conforme doc oficial)
         if (audioId) {
           genBody.audio_id = audioId;
         } else if (ttsText) {
-          // 1. Buscar voz PT-BR
+          // Buscar voice_id PT-BR
           let voiceId: string | undefined;
           try {
             const voicesR = await fetch(`${hedraBase}/voices`, { headers: jsonHeaders });
@@ -1316,32 +1322,15 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
 
           if (!voiceId) return res.status(503).json({ error: 'Hedra: nenhuma voz disponível.' });
 
-          // 2. Gerar TTS separado
-          console.log(`[Hedra] Gerando TTS com voz ${voiceId}...`);
-          const ttsRes = await fetch(`${hedraBase}/generations`, {
-            method: 'POST', headers: jsonHeaders,
-            body: JSON.stringify({ type: 'text_to_speech', voice_id: voiceId, text: ttsText, language: 'Portuguese', speed: 1.0, stability: 0.5 })
-          });
-          const ttsRaw = await ttsRes.text();
-          console.log(`[Hedra] TTS HTTP ${ttsRes.status}: ${ttsRaw.substring(0, 200)}`);
-          if (!ttsRes.ok) { let e: any = {}; try { e = JSON.parse(ttsRaw); } catch {} return res.status(ttsRes.status).json({ error: e?.messages?.[0] || `Hedra TTS HTTP ${ttsRes.status}` }); }
-          const ttsGenId = JSON.parse(ttsRaw)?.id;
-
-          // 3. Polling TTS (até 60s)
-          let ttsAssetId: string | undefined;
-          for (let i = 0; i < 12; i++) {
-            await new Promise(r => setTimeout(r, 5000));
-            const pollR = await fetch(`${hedraBase}/generations/${ttsGenId}/status`, { headers: jsonHeaders });
-            if (pollR.ok) {
-              const pd = await pollR.json();
-              console.log(`[Hedra TTS Poll] status=${pd?.status} asset_id=${pd?.asset_id}`);
-              if (pd?.status === 'complete' && pd?.asset_id) { ttsAssetId = pd.asset_id; break; }
-              if (pd?.status === 'error') return res.status(500).json({ error: 'Hedra TTS falhou.' });
-            }
-          }
-          if (!ttsAssetId) return res.status(504).json({ error: 'Hedra TTS timeout.' });
-          genBody.audio_id = ttsAssetId;
-          console.log(`[Hedra] TTS asset_id: ${ttsAssetId}`);
+          // TTS inline — documentação oficial recomenda audio_generation
+          genBody.audio_generation = {
+            type: 'text_to_speech',
+            voice_id: voiceId,
+            text: ttsText,
+            language: 'Portuguese',
+            speed: 1.0,
+          };
+          console.log(`[Hedra] TTS inline: voice=${voiceId} chars=${ttsText.length} duration_ms=${estimatedDurationMs}`);
         }
 
         console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
