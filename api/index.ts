@@ -1313,32 +1313,48 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
             return res.status(503).json({ error: 'Hedra: nenhuma voz disponível na conta. Adicione uma voz no painel Hedra.' });
           }
 
-          // Buscar model_id para TTS
-          let ttsModelId: string | undefined;
-          try {
-            const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
-            if (modelsR.ok) {
-              const models = await modelsR.json();
-              if (Array.isArray(models)) {
-                const ttsModel = models.find((m: any) =>
-                  m.type === 'text_to_speech' ||
-                  m.name?.toLowerCase().includes('elevenlabs') ||
-                  m.name?.toLowerCase().includes('tts')
-                );
-                ttsModelId = ttsModel?.id;
-                console.log(`[Hedra] TTS model: ${ttsModelId} (${ttsModel?.name})`);
-              }
-            }
-          } catch (e) { console.warn('[Hedra] Falha ao buscar TTS model:', e); }
+        // TTS: gerar áudio separado ANTES do vídeo (conforme doc oficial)
+        if (audioId) {
+          genBody.audio_id = audioId;
+        } else if (ttsText) {
+          console.log(`[Hedra] Gerando TTS separado com voz ${voiceId}...`);
+          const ttsRes = await fetch(`${hedraBase}/generations`, {
+            method: 'POST',
+            headers: jsonHeaders,
+            body: JSON.stringify({
+              type: 'text_to_speech',
+              voice_id: voiceId,
+              text: ttsText,
+              language: 'Portuguese',
+              speed: 1.0,
+              stability: 0.5,
+            })
+          });
+          const ttsText2 = await ttsRes.text();
+          console.log(`[Hedra] TTS HTTP ${ttsRes.status}: ${ttsText2.substring(0, 200)}`);
+          if (!ttsRes.ok) {
+            let e: any = {}; try { e = JSON.parse(ttsText2); } catch {}
+            return res.status(ttsRes.status).json({ error: e?.messages?.[0] || `Hedra TTS HTTP ${ttsRes.status}` });
+          }
+          const ttsData = JSON.parse(ttsText2);
+          const ttsGenId = ttsData?.id;
 
-          genBody.audio_generation = {
-            type: 'text_to_speech',
-            text: ttsText,
-            voice_id: voiceId,
-            language: 'Portuguese',
-            speed: 1,
-            ...(ttsModelId ? { model_id: ttsModelId } : {})
-          };
+          // Polling do TTS (até 60s)
+          let ttsAssetId: string | undefined;
+          for (let i = 0; i < 12; i++) {
+            await new Promise(r => setTimeout(r, 5000));
+            const pollR = await fetch(`${hedraBase}/generations/${ttsGenId}/status`, { headers: jsonHeaders });
+            if (pollR.ok) {
+              const pd = await pollR.json();
+              console.log(`[Hedra TTS Poll] status=${pd?.status} asset_id=${pd?.asset_id}`);
+              if (pd?.status === 'complete' && pd?.asset_id) { ttsAssetId = pd.asset_id; break; }
+              if (pd?.status === 'error') { return res.status(500).json({ error: 'Hedra TTS falhou.' }); }
+            }
+          }
+          if (!ttsAssetId) return res.status(504).json({ error: 'Hedra TTS timeout.' });
+          genBody.audio_id = ttsAssetId;
+          console.log(`[Hedra] TTS asset_id: ${ttsAssetId}`);
+        }
         }
 
         console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
