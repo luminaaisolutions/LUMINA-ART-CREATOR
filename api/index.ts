@@ -1356,10 +1356,10 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
 
         const genId = args.generationId;
+        const userId = args.userId; // uid do usuário Lumina para path no Firebase Storage
         if (!genId) return res.status(400).json({ error: 'generationId obrigatório.' });
 
         const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 15000));
-        // Endpoint correto de status: /generations/{id}/status
         const req = fetch(`https://api.hedra.com/web-app/public/generations/${genId}/status`, {
           headers: { 'x-api-key': hedraKey, 'Content-Type': 'application/json' }
         }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
@@ -1374,25 +1374,68 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         if (status !== 200) { console.error(`[Hedra Poll] HTTP ${status}: ${text?.substring(0, 200)}`); return res.status(status).json(data); }
 
         const jobStatus = data?.status;
-        let videoUrl = data?.url || data?.videoUrl || data?.video_url;
+        let hedraVideoUrl = data?.url || data?.videoUrl || data?.video_url;
+        const hedraAssetId = data?.asset_id;
 
-        // Se complete/finalizing mas sem URL direta, buscar via asset_id
-        if ((jobStatus === 'complete' || jobStatus === 'finalizing') && !videoUrl && data?.asset_id) {
+        // Buscar URL via asset_id se não veio direta
+        if ((jobStatus === 'complete' || jobStatus === 'finalizing') && !hedraVideoUrl && hedraAssetId) {
           try {
-            const assetR = await fetch(`https://api.hedra.com/web-app/public/assets/${data.asset_id}`, {
-              headers: { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' }
+            const assetR = await fetch(`https://api.hedra.com/web-app/public/assets/${hedraAssetId}`, {
+              headers: { 'x-api-key': hedraKey, 'Content-Type': 'application/json' }
             });
             if (assetR.ok) {
               const assetD = await assetR.json();
-              videoUrl = assetD?.asset?.url || assetD?.url;
-              console.log(`[Hedra Poll] Asset URL via asset_id: ${videoUrl?.substring(0, 80)}`);
+              hedraVideoUrl = assetD?.asset?.url || assetD?.url;
+              console.log(`[Hedra Poll] URL via asset: ${hedraVideoUrl?.substring(0, 80)}`);
             }
           } catch(e) { console.warn('[Hedra Poll] Falha ao buscar asset URL:', e); }
         }
 
-        console.log(`[Hedra Poll] id=${genId} status=${jobStatus} hasVideo=${!!videoUrl}`);
+        console.log(`[Hedra Poll] id=${genId} status=${jobStatus} hasVideo=${!!hedraVideoUrl}`);
 
-        if (jobStatus === 'complete' && videoUrl) return res.json({ status: 'complete', videoUrl, generationId: genId });
+        if (jobStatus === 'complete' && hedraVideoUrl) {
+          // ── Download para Firebase Storage + delete no Hedra ──
+          let finalVideoUrl = hedraVideoUrl;
+          try {
+            // 1. Baixar o vídeo do Hedra
+            const videoBuffer = await fetch(hedraVideoUrl).then(r => r.arrayBuffer());
+            const videoBytes = Buffer.from(videoBuffer);
+            const fileName = `lipsync_${genId}_${Date.now()}.mp4`;
+            const storagePath = userId
+              ? `users/${userId}/lipsync/${fileName}`
+              : `lipsync/${fileName}`;
+
+            // 2. Upload para Firebase Storage via Admin SDK
+            const bucket = adminStorage.bucket();
+            const file = bucket.file(storagePath);
+            await file.save(videoBytes, {
+              metadata: { contentType: 'video/mp4' },
+              public: true
+            });
+            const [signedUrl] = await file.getSignedUrl({
+              action: 'read',
+              expires: '03-01-2030'
+            });
+            finalVideoUrl = signedUrl;
+            console.log(`[Hedra] Vídeo salvo no Firebase: ${storagePath}`);
+
+            // 3. Deletar assets do Hedra (vídeo + áudio TTS)
+            if (hedraAssetId) {
+              await fetch(`https://api.hedra.com/web-app/public/assets/${hedraAssetId}`, {
+                method: 'DELETE',
+                headers: { 'x-api-key': hedraKey }
+              });
+              console.log(`[Hedra] Asset ${hedraAssetId} deletado do Hedra`);
+            }
+          } catch (uploadErr: any) {
+            // Se falhar o upload, retorna URL do Hedra mesmo (não quebra o fluxo)
+            console.error('[Hedra] Falha no upload Firebase, usando URL Hedra:', uploadErr.message);
+            finalVideoUrl = hedraVideoUrl;
+          }
+
+          return res.json({ status: 'complete', videoUrl: finalVideoUrl, generationId: genId });
+        }
+
         if (jobStatus === 'error') return res.json({ status: 'failed', error: data?.error_message || 'Hedra: geração falhou', generationId: genId });
         return res.json({ status: 'pending', progress: data?.progress || 0, generationId: genId });
       }
