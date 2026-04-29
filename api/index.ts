@@ -1313,12 +1313,31 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
             return res.status(503).json({ error: 'Hedra: nenhuma voz disponível na conta. Adicione uma voz no painel Hedra.' });
           }
 
+          // Buscar model_id para TTS
+          let ttsModelId: string | undefined;
+          try {
+            const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
+            if (modelsR.ok) {
+              const models = await modelsR.json();
+              if (Array.isArray(models)) {
+                const ttsModel = models.find((m: any) =>
+                  m.type === 'text_to_speech' ||
+                  m.name?.toLowerCase().includes('elevenlabs') ||
+                  m.name?.toLowerCase().includes('tts')
+                );
+                ttsModelId = ttsModel?.id;
+                console.log(`[Hedra] TTS model: ${ttsModelId} (${ttsModel?.name})`);
+              }
+            }
+          } catch (e) { console.warn('[Hedra] Falha ao buscar TTS model:', e); }
+
           genBody.audio_generation = {
             type: 'text_to_speech',
             text: ttsText,
             voice_id: voiceId,
             language: 'Portuguese',
             speed: 1,
+            ...(ttsModelId ? { model_id: ttsModelId } : {})
           };
         }
 
