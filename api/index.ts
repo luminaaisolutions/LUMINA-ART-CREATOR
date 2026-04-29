@@ -1268,34 +1268,31 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           console.log(`[Hedra] Audio asset ID: ${audioId}`);
         }
 
-        // 3. Buscar model ID disponível
-        const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
-        let modelId = 'hedra_character_3';
-        if (modelsR.ok) {
-          const models = await modelsR.json().catch(() => []);
-          if (Array.isArray(models) && models.length > 0) {
-            modelId = models[0]?.id || modelId;
-            console.log(`[Hedra] Model ID: ${modelId}`);
-          }
-        }
+        // Character-3 ID fixo — não usar GET /models que retorna Kling por padrão
+        const CHARACTER_3_ID = '297540e4-1a90-4f78-9e57-8160d324377c';
 
-        // 4. Criar geração (POST /generations)
         const ttsText = args.audioText || '';
         const genBody: any = {
           type: 'video',
-          ai_model_id: modelId,
+          ai_model_id: CHARACTER_3_ID,
           start_keyframe_id: imageId,
           generated_video_inputs: {
-            text_prompt: ttsText || 'A person talking naturally to camera',
+            text_prompt: ttsText || 'Person speaking naturally to camera',
             resolution: args.resolution || '720p',
             aspect_ratio: args.aspectRatio || '9:16',
           }
         };
+
+        // TTS correto: objeto audio_generation no body principal
         if (audioId) {
           genBody.audio_id = audioId;
         } else if (ttsText) {
-          genBody.generated_video_inputs.voice_text = ttsText;
-          genBody.generated_video_inputs.audio_source = 'tts';
+          genBody.audio_generation = {
+            type: 'text_to_speech',
+            text: ttsText,
+            language: 'pt',
+            speed: 1,
+          };
         }
 
         console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
