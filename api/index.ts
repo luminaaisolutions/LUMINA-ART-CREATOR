@@ -1283,14 +1283,41 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           }
         };
 
-        // TTS correto: objeto audio_generation no body principal
+        // TTS correto: buscar voice_id em português dinamicamente
         if (audioId) {
           genBody.audio_id = audioId;
         } else if (ttsText) {
+          // Buscar voices para pegar um voice_id válido em português
+          let voiceId: string | undefined;
+          try {
+            const voicesR = await fetch(`${hedraBase}/voices`, { headers: jsonHeaders });
+            if (voicesR.ok) {
+              const voices = await voicesR.json();
+              if (Array.isArray(voices) && voices.length > 0) {
+                // Preferir voz em português, senão pegar a primeira
+                const ptVoice = voices.find((v: any) =>
+                  v.name?.toLowerCase().includes('port') ||
+                  v.name?.toLowerCase().includes('brasil') ||
+                  v.name?.toLowerCase().includes('pt') ||
+                  v.description?.toLowerCase().includes('portuguese')
+                );
+                voiceId = ptVoice?.id || voices[0]?.id;
+                console.log(`[Hedra] Voice selecionada: ${voiceId} (${ptVoice?.name || voices[0]?.name})`);
+              }
+            }
+          } catch (e) {
+            console.warn('[Hedra] Falha ao buscar voices:', e);
+          }
+
+          if (!voiceId) {
+            return res.status(503).json({ error: 'Hedra: nenhuma voz disponível na conta. Adicione uma voz no painel Hedra.' });
+          }
+
           genBody.audio_generation = {
             type: 'text_to_speech',
             text: ttsText,
-            language: 'pt',
+            voice_id: voiceId,
+            language: 'Portuguese',
             speed: 1,
           };
         }
