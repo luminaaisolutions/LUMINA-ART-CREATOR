@@ -1322,13 +1322,31 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
 
           if (!voiceId) return res.status(503).json({ error: 'Hedra: nenhuma voz disponível.' });
 
-          // TTS inline — conforme documentação oficial (sem campos extras)
-          genBody.audio_generation = {
-            type: 'text_to_speech',
-            voice_id: voiceId,
-            text: ttsText,
-          };
-          console.log(`[Hedra] TTS inline: voice=${voiceId} chars=${ttsText.length}`);
+          // TTS separado — único método que funciona com Hedra Avatar
+          console.log(`[Hedra] Gerando TTS separado voz=${voiceId} chars=${ttsText.length}`);
+          const ttsRes = await fetch(`${hedraBase}/generations`, {
+            method: 'POST', headers: jsonHeaders,
+            body: JSON.stringify({ type: 'text_to_speech', voice_id: voiceId, text: ttsText })
+          });
+          const ttsRaw = await ttsRes.text();
+          console.log(`[Hedra] TTS HTTP ${ttsRes.status}: ${ttsRaw.substring(0, 150)}`);
+          if (!ttsRes.ok) { let e:any={}; try{e=JSON.parse(ttsRaw);}catch{} return res.status(ttsRes.status).json({error:e?.messages?.[0]||`TTS HTTP ${ttsRes.status}`}); }
+          const ttsGenId = JSON.parse(ttsRaw)?.id;
+
+          let ttsAssetId: string | undefined;
+          for (let i = 0; i < 12; i++) {
+            await new Promise(r => setTimeout(r, 5000));
+            const pr = await fetch(`${hedraBase}/generations/${ttsGenId}/status`, { headers: jsonHeaders });
+            if (pr.ok) {
+              const pd = await pr.json();
+              console.log(`[Hedra TTS Poll] status=${pd?.status} asset_id=${pd?.asset_id}`);
+              if (pd?.status === 'complete' && pd?.asset_id) { ttsAssetId = pd.asset_id; break; }
+              if (pd?.status === 'error') return res.status(500).json({ error: 'Hedra TTS falhou.' });
+            }
+          }
+          if (!ttsAssetId) return res.status(504).json({ error: 'Hedra TTS timeout.' });
+          genBody.audio_id = ttsAssetId;
+          console.log(`[Hedra] TTS asset_id: ${ttsAssetId}`);
         }
 
         console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
