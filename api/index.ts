@@ -1322,15 +1322,13 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
 
           if (!voiceId) return res.status(503).json({ error: 'Hedra: nenhuma voz disponível.' });
 
-          // TTS inline — documentação oficial recomenda audio_generation
+          // TTS inline — conforme documentação oficial (sem campos extras)
           genBody.audio_generation = {
             type: 'text_to_speech',
             voice_id: voiceId,
             text: ttsText,
-            language: 'Portuguese',
-            speed: 1.0,
           };
-          console.log(`[Hedra] TTS inline: voice=${voiceId} chars=${ttsText.length} duration_ms=${estimatedDurationMs}`);
+          console.log(`[Hedra] TTS inline: voice=${voiceId} chars=${ttsText.length}`);
         }
 
         console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
