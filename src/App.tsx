@@ -1823,6 +1823,11 @@ function AppContent() {
     }
     
     const finalPrompts = rawPrompts.slice(0, 20);
+
+    // Hedra Image: sempre 1 item por vez — evitar cobranças múltiplas
+    if (modelType === 'hedraImage') {
+      currentQuantity = 1;
+    }
     const totalCost = costPerItem * currentQuantity * finalPrompts.length;
     console.log(`[DEBUG-1] rawPrompts=${rawPrompts.length} finalPrompts=${finalPrompts.length} totalCost=${totalCost} credits=${userData?.credits} isCreativeActive=${isCreativeActive} activePrompt="${(activeCreativePrompt||'').substring(0,40)}"`);
 
