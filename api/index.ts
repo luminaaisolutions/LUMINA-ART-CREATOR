@@ -1205,6 +1205,18 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
       }
 
 
+      // --- getHedraVoices — listar vozes disponíveis ---
+      if (method === 'getHedraVoices') {
+        const hedraKey = process.env.HEDRA_API_KEY;
+        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
+        const r = await fetch('https://api.hedra.com/web-app/public/voices', {
+          headers: { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' }
+        });
+        const t = await r.text();
+        if (!r.ok) return res.status(r.status).json({ error: 'Erro ao buscar vozes Hedra' });
+        return res.json(JSON.parse(t));
+      }
+
       // --- generateHedraImage — Inicia geração (polling no frontend) ---
       if (method === 'generateHedraImage') {
         const hedraKey = process.env.HEDRA_API_KEY;
@@ -1214,17 +1226,28 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         const jsonHeaders: Record<string, string> = { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' };
 
         // Buscar modelo de imagem disponível
-        let modelId = 'ae01e1fd-5917-4e79-a65c-983b322bc5ce'; // Nano Banana T2I
+        // Modelos conhecidos: Nano Banana T2I = ae01e1fd, Flux 2 Pro = buscar via GET /models
+        let modelId = 'ae01e1fd-5917-4e79-a65c-983b322bc5ce'; // Nano Banana T2I default
+        const motorKey = args.motorKey || 'nanoBananaPro';
         try {
           const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
           if (modelsR.ok) {
             const models = await modelsR.json();
             if (Array.isArray(models)) {
-              const imgModel = models.find((m: any) => m.type === 'image');
-              if (imgModel) { modelId = imgModel.id; console.log(`[Hedra Image] Modelo: ${modelId} (${imgModel.name})`); }
+              let targetModel;
+              if (motorKey === 'flux2pro') {
+                targetModel = models.find((m: any) =>
+                  m.type === 'image' && (m.name?.toLowerCase().includes('flux') || m.name?.toLowerCase().includes('flux 2'))
+                );
+              } else {
+                targetModel = models.find((m: any) =>
+                  m.type === 'image' && m.name?.toLowerCase().includes('nano banana')
+                ) || models.find((m: any) => m.type === 'image');
+              }
+              if (targetModel) { modelId = targetModel.id; console.log(`[Hedra Image] Modelo: ${modelId} (${targetModel.name})`); }
             }
           }
-        } catch(e) {}
+        } catch(e) { console.warn('[Hedra Image] Erro ao listar modelos:', e); }
 
         const genBody: any = {
           type: 'image',
@@ -1298,7 +1321,7 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         return res.json({ status: jobStatus || 'pending' });
       }
 
-      // --- generateHedraVideo — Vídeo (T2V ou I2V) via Hedra ---
+      // --- generateHedraVideo — Vídeo (T2V, I2V, Veo 3.1) via Hedra ---
       if (method === 'generateHedraVideo') {
         const hedraKey = process.env.HEDRA_API_KEY;
         if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
@@ -1307,26 +1330,51 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         const jsonHeaders: Record<string, string> = { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' };
         const uploadHeaders: Record<string, string> = { 'X-API-Key': hedraKey };
 
-        // Modelos: T2V = 827122cd, I2V = 0435547d
-        const hasImage = !!args.imageBase64;
-        const modelId = args.modelId || (hasImage ? '0435547d-1b30-41ad-bf66-ca476ff0564e' : '827122cd-5fdd-4412-86f2-554f7bb8eef9');
+        // IDs oficiais — documentação Hedra
+        const MODEL_IDS: Record<string, string> = {
+          't2v':      '827122cd-5fdd-4412-86f2-554f7bb8eef9', // Grok Video T2V
+          'i2v':      '0435547d-1b30-41ad-bf66-ca476ff0564e', // Grok Video I2V
+          'veo31':    'a0e2c60c-3d82-4818-a23f-7a5a2af05bab', // Veo 3.1
+          'veo31fast':'c7ebf820-9aa8-4e2f-a94d-4ab1fe7bb1e0', // Veo 3.1 Fast
+        };
 
-        console.log(`[Hedra Video] model=${modelId} hasImage=${hasImage}`);
+        const motorKey = args.motorKey || (args.imageBase64 ? 'i2v' : 't2v');
+        let modelId = MODEL_IDS[motorKey] || MODEL_IDS['t2v'];
+
+        // Buscar ID real do Veo 3.1 via GET /models se necessário
+        if (motorKey === 'veo31' || motorKey === 'veo31fast') {
+          try {
+            const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
+            if (modelsR.ok) {
+              const models = await modelsR.json();
+              if (Array.isArray(models)) {
+                const veoFast = models.find((m: any) =>
+                  m.name?.toLowerCase().includes('veo') &&
+                  (motorKey === 'veo31fast' ? m.name?.toLowerCase().includes('fast') : !m.name?.toLowerCase().includes('fast'))
+                );
+                if (veoFast) { modelId = veoFast.id; console.log(`[Hedra Video] Veo model: ${modelId} (${veoFast.name})`); }
+              }
+            }
+          } catch(e) {}
+        }
+
+        console.log(`[Hedra Video] motor=${motorKey} model=${modelId} hasImage=${!!args.imageBase64}`);
 
         // Upload imagem se I2V
         let imageAssetId: string | undefined;
-        if (hasImage) {
+        if (args.imageBase64) {
           const imgBuf = Buffer.from(args.imageBase64, 'base64');
           const imgMime = args.imageMimeType || 'image/jpeg';
           const cR = await fetch(`${hedraBase}/assets`, {
             method: 'POST', headers: jsonHeaders,
             body: JSON.stringify({ name: 'frame.jpg', type: 'image' })
           });
-          if (!cR.ok) return res.status(cR.status).json({ error: 'Hedra Video: erro criar asset imagem' });
+          if (!cR.ok) return res.status(cR.status).json({ error: 'Hedra Video: erro criar asset' });
           imageAssetId = (await cR.json())?.id;
+          const form = new FormData();
+          form.append('file', new Blob([imgBuf], { type: imgMime }), 'frame.jpg');
           const uR = await fetch(`${hedraBase}/assets/${imageAssetId}/upload`, {
-            method: 'POST', headers: uploadHeaders,
-            body: (() => { const f = new FormData(); f.append('file', new Blob([imgBuf], { type: imgMime }), 'frame.jpg'); return f; })()
+            method: 'POST', headers: uploadHeaders, body: form
           });
           if (!uR.ok) return res.status(uR.status).json({ error: 'Hedra Video: erro upload imagem' });
           console.log(`[Hedra Video] Image asset: ${imageAssetId}`);
@@ -1344,7 +1392,7 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         };
         if (imageAssetId) genBody.start_keyframe_id = imageAssetId;
 
-        console.log(`[Hedra Video] POST /generations: ${JSON.stringify(genBody)}`);
+        console.log(`[Hedra Video] POST /generations: ${JSON.stringify(genBody).substring(0, 200)}`);
         const genR = await fetch(`${hedraBase}/generations`, {
           method: 'POST', headers: jsonHeaders, body: JSON.stringify(genBody)
         });
@@ -1494,23 +1542,27 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         if (audioId) {
           genBody.audio_id = audioId;
         } else if (ttsText) {
-          // Buscar voice_id PT-BR
-          let voiceId: string | undefined;
-          try {
-            const voicesR = await fetch(`${hedraBase}/voices`, { headers: jsonHeaders });
-            if (voicesR.ok) {
-              const voices = await voicesR.json();
-              if (Array.isArray(voices) && voices.length > 0) {
-                const ptVoice = voices.find((v: any) =>
-                  v.name?.toLowerCase().includes('isadora') ||
-                  v.name?.toLowerCase().includes('port') ||
-                  v.name?.toLowerCase().includes('brasil')
-                );
-                voiceId = ptVoice?.id || voices[0]?.id;
-                console.log(`[Hedra] Voice: ${voiceId} (${ptVoice?.name || voices[0]?.name})`);
+          // Usar voiceId do frontend ou buscar Isadora como fallback
+          let voiceId: string | undefined = args.voiceId;
+          if (!voiceId) {
+            try {
+              const voicesR = await fetch(`${hedraBase}/voices`, { headers: jsonHeaders });
+              if (voicesR.ok) {
+                const voices = await voicesR.json();
+                if (Array.isArray(voices) && voices.length > 0) {
+                  const ptVoice = voices.find((v: any) =>
+                    v.name?.toLowerCase().includes('isadora') ||
+                    v.name?.toLowerCase().includes('port') ||
+                    v.name?.toLowerCase().includes('brasil')
+                  );
+                  voiceId = ptVoice?.id || voices[0]?.id;
+                  console.log(`[Hedra] Voice auto: ${voiceId} (${ptVoice?.name || voices[0]?.name})`);
+                }
               }
-            }
-          } catch (e) { console.warn('[Hedra] Erro ao buscar voices:', e); }
+            } catch (e) { console.warn('[Hedra] Erro ao buscar voices:', e); }
+          } else {
+            console.log(`[Hedra] Voice selecionada: ${voiceId}`);
+          }
 
           if (!voiceId) return res.status(503).json({ error: 'Hedra: nenhuma voz disponível.' });
 
