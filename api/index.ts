@@ -1205,7 +1205,7 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
       }
 
 
-      // --- generateHedraImage — Imagem via Hedra ---
+      // --- generateHedraImage — Inicia geração (polling no frontend) ---
       if (method === 'generateHedraImage') {
         const hedraKey = process.env.HEDRA_API_KEY;
         if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
@@ -1214,20 +1214,17 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         const jsonHeaders: Record<string, string> = { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' };
 
         // Buscar modelo de imagem disponível
-        let modelId = 'a66300b4-f76e-4c4a-ac41-b31694ff585e'; // Nano Banana Pro default
+        let modelId = 'ae01e1fd-5917-4e79-a65c-983b322bc5ce'; // Nano Banana T2I
         try {
           const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
           if (modelsR.ok) {
             const models = await modelsR.json();
             if (Array.isArray(models)) {
               const imgModel = models.find((m: any) => m.type === 'image');
-              if (imgModel) {
-                modelId = imgModel.id;
-                console.log(`[Hedra Image] Modelo: ${modelId} (${imgModel.name})`);
-              }
+              if (imgModel) { modelId = imgModel.id; console.log(`[Hedra Image] Modelo: ${modelId} (${imgModel.name})`); }
             }
           }
-        } catch(e) { console.warn('[Hedra Image] Erro ao listar modelos:', e); }
+        } catch(e) {}
 
         const genBody: any = {
           type: 'image',
@@ -1235,56 +1232,70 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           ai_model_id: modelId,
           aspect_ratio: args.aspectRatio || '1:1',
           resolution: args.resolution || '1080p',
-          batch_size: 1, // sempre 1 — evitar cobrança múltipla
-          enhance_prompt: args.enhancePrompt || false,
+          batch_size: 1,
         };
 
-        console.log(`[Hedra Image] POST /generations model=${modelId} res=${genBody.resolution} aspect=${genBody.aspect_ratio}`);
+        console.log(`[Hedra Image] POST /generations model=${modelId}`);
         const genR = await fetch(`${hedraBase}/generations`, {
           method: 'POST', headers: jsonHeaders, body: JSON.stringify(genBody)
         });
         const genT = await genR.text();
         let genD: any = {};
         try { genD = JSON.parse(genT); } catch {}
-        console.log(`[Hedra Image] HTTP ${genR.status}: ${genT.substring(0, 200)}`);
+        console.log(`[Hedra Image] HTTP ${genR.status}: ${genT.substring(0, 150)}`);
         if (!genR.ok) return res.status(genR.status).json({ error: genD?.messages?.[0] || `Hedra Image HTTP ${genR.status}` });
 
         const genId = genD?.id;
-        if (!genId) return res.status(500).json({ error: 'Hedra Image: sem ID de geração.' });
-        console.log(`[Hedra Image] Geração iniciada: ${genId}`);
+        const assetId = genD?.asset_id;
+        console.log(`[Hedra Image] Geração iniciada: ${genId} asset=${assetId}`);
+        return res.json({ generationId: genId, assetId });
+      }
 
-        // Polling até complete (imagens ~30-60s)
-        for (let i = 0; i < 60; i++) {
-          await new Promise(r => setTimeout(r, 3000));
-          const pr = await fetch(`${hedraBase}/generations/${genId}/status`, { headers: jsonHeaders });
-          if (!pr.ok) continue;
-          const pd = await pr.json();
-          const jobStatus = pd?.status;
-          console.log(`[Hedra Image Poll] status=${jobStatus} asset_id=${pd?.asset_id}`);
+      // --- getHedraImageStatus — polling de imagem (chamado pelo frontend) ---
+      if (method === 'getHedraImageStatus') {
+        const hedraKey = process.env.HEDRA_API_KEY;
+        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
 
-          if (jobStatus === 'complete') {
-            console.log(`[Hedra Image] Status: ${JSON.stringify(pd).substring(0, 200)}`);
-            try {
-              const listR = await fetch(`${hedraBase}/assets`, { headers: jsonHeaders });
-              if (listR.ok) {
-                const listT = await listR.text();
-                console.log(`[Hedra Image] Assets: ${listT.substring(0, 500)}`);
-                const listD = JSON.parse(listT);
-                const assets = Array.isArray(listD) ? listD : listD?.assets || [];
-                const target = assets.find((a: any) => a.id === pd?.asset_id) || assets[0];
-                const imageUrl = target?.url || target?.download_url || target?.thumbnail_url;
-                if (imageUrl) {
-                  console.log(`[Hedra Image] ✅ URL: ${imageUrl.substring(0, 80)}`);
-                  return res.json({ imageUrl });
-                }
+        const genId = args.generationId;
+        const hedraBase = 'https://api.hedra.com/web-app/public';
+        const jsonHeaders: Record<string, string> = { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' };
+
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`${hedraBase}/generations/${genId}/status`, { headers: jsonHeaders })
+          .then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ status: 'pending' });
+
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let pd: any = {};
+        try { pd = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(pd);
+
+        const jobStatus = pd?.status;
+        console.log(`[Hedra Image Poll] status=${jobStatus} asset_id=${pd?.asset_id}`);
+
+        if (jobStatus === 'complete') {
+          // Buscar URL via List Assets
+          try {
+            const listR = await fetch(`${hedraBase}/assets`, { headers: jsonHeaders });
+            if (listR.ok) {
+              const listD = await listR.json();
+              const assets = Array.isArray(listD) ? listD : listD?.assets || [];
+              const target = assets.find((a: any) => a.id === pd?.asset_id) || assets[0];
+              console.log(`[Hedra Image] Asset: ${JSON.stringify(target).substring(0, 200)}`);
+              const imageUrl = target?.url || target?.download_url || target?.thumbnail_url;
+              if (imageUrl) {
+                console.log(`[Hedra Image] ✅ URL: ${imageUrl.substring(0, 80)}`);
+                return res.json({ status: 'complete', imageUrl });
               }
-            } catch(e) { console.warn('[Hedra Image] Erro list assets:', e); }
-            return res.status(500).json({ error: 'Hedra Image: geração completa mas URL não encontrada.' });
-          }
-          if (jobStatus === 'finalizing') continue;
-          if (jobStatus === 'error') return res.status(500).json({ error: 'Hedra Image falhou.' });
+            }
+          } catch(e) { console.warn('[Hedra Image] Erro list:', e); }
+          return res.json({ status: 'complete', imageUrl: null });
         }
-        return res.status(504).json({ error: 'Hedra Image timeout.' });
+        if (jobStatus === 'error') return res.json({ status: 'error', error: pd?.error_message || 'Hedra Image falhou' });
+        return res.json({ status: jobStatus || 'pending' });
       }
 
       // --- generateHedraVideo — Vídeo (T2V ou I2V) via Hedra ---
