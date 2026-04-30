@@ -1263,37 +1263,39 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           console.log(`[Hedra Image Poll] status=${jobStatus} asset_id=${pd?.asset_id}`);
 
           if (jobStatus === 'complete') {
-            // URL vem diretamente no status da geração, não no endpoint /assets/{id}
-            const imageUrl = pd?.url
-              || pd?.image_url
-              || pd?.output_url
-              || pd?.asset?.url
-              || pd?.result?.url;
+            console.log(`[Hedra Image] Status: ${JSON.stringify(pd).substring(0, 300)}`);
 
-            console.log(`[Hedra Image] Status completo: ${JSON.stringify(pd).substring(0, 400)}`);
-
-            if (imageUrl) {
-              console.log(`[Hedra Image] ✅ URL: ${imageUrl.substring(0, 80)}`);
-              return res.json({ imageUrl });
-            }
-
-            // Fallback: listar assets e pegar o mais recente
+            // URL não vem no status — buscar via List Assets filtrando pelo asset_id
             try {
-              const listR = await fetch(`${hedraBase}/assets?type=image&limit=1`, { headers: jsonHeaders });
+              const listR = await fetch(`${hedraBase}/assets`, { headers: jsonHeaders });
               if (listR.ok) {
                 const listD = await listR.json();
-                const latestUrl = listD?.[0]?.url || listD?.assets?.[0]?.url;
-                if (latestUrl) {
-                  console.log(`[Hedra Image] ✅ URL via list: ${latestUrl.substring(0, 80)}`);
-                  return res.json({ imageUrl: latestUrl });
+                const assets = Array.isArray(listD) ? listD : listD?.assets || [];
+                // Buscar asset pelo ID conhecido
+                const targetAsset = assets.find((a: any) => a.id === pd?.asset_id) || assets[0];
+                console.log(`[Hedra Image] Target asset: ${JSON.stringify(targetAsset).substring(0, 300)}`);
+                const imageUrl = targetAsset?.url
+                  || targetAsset?.download_url
+                  || targetAsset?.original_url
+                  || targetAsset?.full_url;
+                if (imageUrl) {
+                  console.log(`[Hedra Image] ✅ URL: ${imageUrl.substring(0, 80)}`);
+                  return res.json({ imageUrl });
                 }
-                console.log(`[Hedra Image] List assets: ${JSON.stringify(listD).substring(0, 300)}`);
+                // thumbnail_url como fallback — é a única URL disponível
+                const thumbUrl = targetAsset?.thumbnail_url;
+                if (thumbUrl) {
+                  // Converter thumbnail para original removendo /thumbnail do path
+                  const originalUrl = thumbUrl.replace('/thumbnail?', '/public?').split('?')[0];
+                  console.log(`[Hedra Image] ✅ URL via thumbnail: ${originalUrl.substring(0, 80)}`);
+                  return res.json({ imageUrl: thumbUrl }); // usar thumbnail diretamente
+                }
               }
             } catch(e) { console.warn('[Hedra Image] Erro ao listar assets:', e); }
 
-            return res.status(500).json({ error: `Hedra Image complete mas sem URL. Status: ${JSON.stringify(pd).substring(0, 200)}` });
+            return res.status(500).json({ error: 'Hedra Image: geração completa mas URL não encontrada.' });
           }
-          if (jobStatus === 'finalizing') continue; // aguardar complete
+          if (jobStatus === 'finalizing') continue;
           if (jobStatus === 'error') return res.status(500).json({ error: 'Hedra Image falhou.' });
         }
         return res.status(504).json({ error: 'Hedra Image timeout.' });
