@@ -1988,7 +1988,7 @@ function AppContent() {
           
           let enhancedPrompt = itemPrompt;
           let faceDescription = '';
-          if (!fastMode) {
+          if (!fastMode && currentModelType !== 'hedraImage') {
             try {
               const hasRef = currentRefAsset && currentRefAsset.type === 'image';
               const hasProduct = currentProductAsset && currentProductAsset.type === 'image';
