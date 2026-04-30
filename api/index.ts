@@ -1263,20 +1263,25 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           console.log(`[Hedra Image Poll] status=${jobStatus} asset_id=${pd?.asset_id}`);
 
           if ((jobStatus === 'complete' || jobStatus === 'finalizing') && pd?.asset_id) {
-            // Buscar URL via asset_id
             const assetR = await fetch(`${hedraBase}/assets/${pd.asset_id}`, { headers: jsonHeaders });
+            const assetT = await assetR.text();
+            console.log(`[Hedra Image] Asset response: ${assetT.substring(0, 400)}`);
             if (assetR.ok) {
-              const assetD = await assetR.json();
-              const imageUrl = assetD?.asset?.url || assetD?.url || assetD?.download_url;
+              const assetD = JSON.parse(assetT);
+              const imageUrl = assetD?.asset?.url
+                || assetD?.url
+                || assetD?.download_url
+                || assetD?.asset?.download_url
+                || assetD?.asset?.asset?.url;
               if (imageUrl) {
-                console.log(`[Hedra Image] URL: ${imageUrl.substring(0, 80)}`);
+                console.log(`[Hedra Image] ✅ URL: ${imageUrl.substring(0, 80)}`);
                 return res.json({ imageUrl });
               }
-            }
-            if (jobStatus === 'complete') {
-              // Tentar pegar URL direto do status
-              const directUrl = pd?.url || pd?.image_url;
-              if (directUrl) return res.json({ imageUrl: directUrl });
+              // Se complete mas sem URL, retornar o JSON completo para debug
+              if (jobStatus === 'complete') {
+                console.error(`[Hedra Image] complete mas sem URL. Asset JSON: ${assetT.substring(0, 500)}`);
+                return res.status(500).json({ error: `Hedra Image: sem URL. Asset: ${assetT.substring(0, 200)}` });
+              }
             }
           }
           if (jobStatus === 'error') return res.status(500).json({ error: 'Hedra Image falhou.' });
