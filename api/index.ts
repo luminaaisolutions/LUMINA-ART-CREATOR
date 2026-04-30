@@ -1263,36 +1263,22 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           console.log(`[Hedra Image Poll] status=${jobStatus} asset_id=${pd?.asset_id}`);
 
           if (jobStatus === 'complete') {
-            console.log(`[Hedra Image] Status: ${JSON.stringify(pd).substring(0, 300)}`);
-
-            // URL não vem no status — buscar via List Assets filtrando pelo asset_id
+            console.log(`[Hedra Image] Status: ${JSON.stringify(pd).substring(0, 200)}`);
             try {
               const listR = await fetch(`${hedraBase}/assets`, { headers: jsonHeaders });
               if (listR.ok) {
-                const listD = await listR.json();
+                const listT = await listR.text();
+                console.log(`[Hedra Image] Assets: ${listT.substring(0, 500)}`);
+                const listD = JSON.parse(listT);
                 const assets = Array.isArray(listD) ? listD : listD?.assets || [];
-                // Buscar asset pelo ID conhecido
-                const targetAsset = assets.find((a: any) => a.id === pd?.asset_id) || assets[0];
-                console.log(`[Hedra Image] Target asset: ${JSON.stringify(targetAsset).substring(0, 300)}`);
-                const imageUrl = targetAsset?.url
-                  || targetAsset?.download_url
-                  || targetAsset?.original_url
-                  || targetAsset?.full_url;
+                const target = assets.find((a: any) => a.id === pd?.asset_id) || assets[0];
+                const imageUrl = target?.url || target?.download_url || target?.thumbnail_url;
                 if (imageUrl) {
                   console.log(`[Hedra Image] ✅ URL: ${imageUrl.substring(0, 80)}`);
                   return res.json({ imageUrl });
                 }
-                // thumbnail_url como fallback — é a única URL disponível
-                const thumbUrl = targetAsset?.thumbnail_url;
-                if (thumbUrl) {
-                  // Converter thumbnail para original removendo /thumbnail do path
-                  const originalUrl = thumbUrl.replace('/thumbnail?', '/public?').split('?')[0];
-                  console.log(`[Hedra Image] ✅ URL via thumbnail: ${originalUrl.substring(0, 80)}`);
-                  return res.json({ imageUrl: thumbUrl }); // usar thumbnail diretamente
-                }
               }
-            } catch(e) { console.warn('[Hedra Image] Erro ao listar assets:', e); }
-
+            } catch(e) { console.warn('[Hedra Image] Erro list assets:', e); }
             return res.status(500).json({ error: 'Hedra Image: geração completa mas URL não encontrada.' });
           }
           if (jobStatus === 'finalizing') continue;
