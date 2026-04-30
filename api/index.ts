@@ -1253,8 +1253,8 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         if (!genId) return res.status(500).json({ error: 'Hedra Image: sem ID de geração.' });
         console.log(`[Hedra Image] Geração iniciada: ${genId}`);
 
-        // Polling até complete (imagens ~15-30s)
-        for (let i = 0; i < 30; i++) {
+        // Polling até complete (imagens ~30-60s)
+        for (let i = 0; i < 60; i++) {
           await new Promise(r => setTimeout(r, 3000));
           const pr = await fetch(`${hedraBase}/generations/${genId}/status`, { headers: jsonHeaders });
           if (!pr.ok) continue;
