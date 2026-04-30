@@ -1822,16 +1822,14 @@ function AppContent() {
       }
     }
     
-    const finalPrompts = rawPrompts.slice(0, 20);
-
     // Hedra Image: sempre 1 item — evitar cobranças múltiplas
     if (modelType === 'hedraImage') {
       currentQuantity = 1;
-      // Juntar todos os prompts em 1 único prompt
-      if (finalPrompts.length > 1) {
-        finalPrompts.splice(0, finalPrompts.length, finalPrompts.join(' '));
-      }
+      // Pegar apenas a primeira linha como prompt único
+      rawPrompts.splice(0, rawPrompts.length, rawPrompts[0] || '');
     }
+
+    const finalPrompts = rawPrompts.slice(0, 20);
     const totalCost = costPerItem * currentQuantity * finalPrompts.length;
     console.log(`[DEBUG-1] rawPrompts=${rawPrompts.length} finalPrompts=${finalPrompts.length} totalCost=${totalCost} credits=${userData?.credits} isCreativeActive=${isCreativeActive} activePrompt="${(activeCreativePrompt||'').substring(0,40)}"`);
 
