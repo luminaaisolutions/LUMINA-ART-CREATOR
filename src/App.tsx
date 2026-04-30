@@ -3108,8 +3108,8 @@ if (referenceImages.length > 0) {
         const itemPrompt = finalPrompts[pIndex];
         let expandedPrompts = Array(currentQuantity).fill(itemPrompt);
 
-        // If quantity > 1, expand the prompt to ensure diversity as requested by the user
-        if (currentQuantity > 1 && currentType === 'image' && !fastMode) {
+        // Hedra Image: sem expansão de prompts — Hedra tem enhance nativo
+        if (currentModelType !== 'hedraImage' && currentQuantity > 1 && currentType === 'image' && !fastMode) {
           try {
             const expansionRes = await callGeminiAPI({
               model: 'gemini-2.5-flash',
@@ -3139,7 +3139,7 @@ if (referenceImages.length > 0) {
           itemId: generationIds[pIndex * currentQuantity + i]
         }));
 
-        const concurrencyLimit = 3;
+        const concurrencyLimit = currentModelType === 'hedraImage' ? 1 : 3;
         let taskIdx = 0;
         const processQueue = async (): Promise<void> => {
           if (taskIdx >= tasks.length) return;
