@@ -719,13 +719,13 @@ function AppContent() {
   // Form State
   const [prompt, setPrompt] = useState('');
   const [type, setType] = useState<'video' | 'image'>('video');
-  const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance'>('veo');
+  const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance' | 'hedraT2V' | 'hedraI2V'>('kling');
   const [videoTier, setVideoTier] = useState<'standard' | 'pro' | 'fast'>('standard');
   const [showCreditFlyer, setShowCreditFlyer] = useState(false);
   const creditFlyerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ao trocar motor, ajusta duração para o valor padrão do motor
-  const handleVideoEngineChange = (engine: 'veo' | 'kling' | 'seedance', tier: 'standard' | 'pro' | 'fast' = 'standard') => {
+  const handleVideoEngineChange = (engine: 'veo' | 'kling' | 'seedance' | 'hedraT2V' | 'hedraI2V', tier: 'standard' | 'pro' | 'fast' = 'standard') => {
     setVideoEngine(engine);
     setVideoTier(tier);
     setVideoDuration(engine === 'veo' ? 4 : 5);
@@ -737,11 +737,11 @@ function AppContent() {
   };
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [resolution, setResolution] = useState('1080p');
-  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage'>('nano');
+  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage' | 'hedraImage'>('nano');
   const [quantity, setQuantity] = useState(1);
   const [videoDuration, setVideoDuration] = useState(4); // Default 4s
   const [lipsyncDuration, setLipsyncDuration] = useState(4);
-  const [lipsyncEngine, setLipsyncEngine] = useState<'hedra' | 'veo' | 'omnihuman' | 'aurora' | 'sync' | 'syncpro'>('hedra');
+  const [lipsyncEngine, setLipsyncEngine] = useState<'hedra' | 'hedraOmnia' | 'veo' | 'omnihuman' | 'aurora' | 'sync' | 'syncpro'>('hedra');
   const [syncMode, setSyncMode] = useState<'cut_off' | 'loop' | 'bounce' | 'remap'>('cut_off');
   const [showLipsyncCreditFlyer, setShowLipsyncCreditFlyer] = useState(false);
   const lipsyncFlyerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2186,6 +2186,8 @@ function AppContent() {
                 ? 'generateNanoBanana'
                 : currentModelType === 'gptImage'
                 ? 'generateGptImage'
+                : currentModelType === 'hedraImage'
+                ? 'generateHedraImage'
                 : 'generateContent';
               
               // Se tem template selecionado, usa o backgroundPrompt do template
@@ -2295,6 +2297,39 @@ function AppContent() {
                 if (lastPart.text) {
                   lastPart.text = `IDENTITY LOCK: The person in the FIRST image is the character reference. The SECOND image shows the same person isolated. Use BOTH images to ensure the character in the final scene has the EXACT SAME face, skin tone, hair, and identity.\n\n${lastPart.text}`;
                 }
+              }
+
+              // Hedra Image — rota separada antes do callGeminiAPI
+              if (currentModelType === 'hedraImage') {
+                const hedraImgRes = await fetch('/api/gemini', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    method: 'generateHedraImage',
+                    args: {
+                      prompt: promptText,
+                      aspectRatio: currentAspectRatio,
+                      resolution: currentResolution === '2K' ? '1440p (2K QHD)' : currentResolution === '4K' ? '2160p (4K UHD)' : '1080p',
+                      enhancePrompt: true,
+                    }
+                  })
+                });
+                if (!hedraImgRes.ok) {
+                  const e = await hedraImgRes.json().catch(() => ({}));
+                  throw new Error(e.error || 'Hedra Image falhou');
+                }
+                const hedraImgData = await hedraImgRes.json();
+                const hedraImgUrl = hedraImgData?.imageUrl;
+                if (!hedraImgUrl) throw new Error('Hedra Image: sem URL retornada');
+
+                // Salvar no Firestore como URL externa
+                await updateDoc(doc(db, itemPath), {
+                  status: 'completed', progress: 100,
+                  imageUrl: hedraImgUrl, previewUrl: hedraImgUrl,
+                  type: 'image'
+                });
+                setSessionPreviews(prev => ({ ...prev, [itemId]: hedraImgUrl }));
+                return;
               }
 
               const response = await callGeminiAPI({
@@ -2529,13 +2564,14 @@ function AppContent() {
             await updateDoc(doc(db, itemPath), { progress: 20, status: 'processing' });
 
             // Hedra não precisa de upload prévio — usa base64 direto
-            if (currentLipsyncEngine === 'hedra') {
+            if (currentLipsyncEngine === 'hedra' || currentLipsyncEngine === 'hedraOmnia') {
               if (!activeAsset?.data) throw new Error('Imagem do personagem obrigatória para o Hedra.');
               if (!currentLipsyncAudio?.data && !currentLipsyncAudioPrompt.trim()) throw new Error('Áudio ou texto necessário para o Hedra.');
               await updateDoc(doc(db, itemPath), { progress: 30, status: 'processing' });
               const falMethod = 'generateHedra';
               const falArgs: any = {
                 modelId: 'hedra_character_3',
+                useOmnia: currentLipsyncEngine === 'hedraOmnia',
                 imageBase64: activeAsset.data,
                 imageMimeType: activeAsset.mimeType,
                 audioBase64: currentLipsyncAudio?.data,
@@ -2755,6 +2791,56 @@ if (referenceImages.length > 0) {
 
           // Use server-side proxy for video generation
           // Kling e Seedance usam fal.ai (síncrono), Veo usa Vertex AI (assíncrono/polling)
+          if (!isLipsyncJob && (currentVideoEngine === 'hedraT2V' || currentVideoEngine === 'hedraI2V')) {
+            await updateDoc(doc(db, itemPath), { progress: 20, status: 'processing' });
+
+            const hedraRes = await fetch('/api/gemini', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                method: 'generateHedraVideo',
+                args: {
+                  prompt: enhancedPrompt,
+                  imageBase64: currentVideoEngine === 'hedraI2V' && activeAsset?.data ? activeAsset.data : undefined,
+                  imageMimeType: activeAsset?.mimeType,
+                  aspectRatio: currentAspectRatio,
+                  resolution: currentResolution || '720p',
+                  durationSeconds: currentVideoDuration || 5,
+                }
+              })
+            });
+
+            if (!hedraRes.ok) {
+              const e = await hedraRes.json().catch(() => ({}));
+              throw new Error(e.error || 'Erro no Hedra Video');
+            }
+
+            const { generationId } = await hedraRes.json();
+            await updateDoc(doc(db, itemPath), { progress: 30, status: 'processing' });
+
+            // Polling Hedra Video
+            const maxPolls = 60;
+            for (let poll = 0; poll < maxPolls; poll++) {
+              await new Promise(r => setTimeout(r, 10000));
+              const pollRes = await fetch('/api/gemini', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ method: 'getHedraVideoStatus', args: { generationId } })
+              });
+              if (!pollRes.ok) continue;
+              const pollData = await pollRes.json();
+              const prog = Math.min(30 + Math.floor((poll / maxPolls) * 65), 94);
+              await updateDoc(doc(db, itemPath), { progress: prog, status: 'processing' });
+              if (pollData?.done && pollData?.videoUrl) {
+                await updateDoc(doc(db, itemPath), { status: 'completed', progress: 100, videoUrl: pollData.videoUrl, previewUrl: pollData.videoUrl });
+                setSessionPreviews(prev => ({ ...prev, [itemId]: pollData.videoUrl }));
+                return;
+              }
+              if (pollData?.done && pollData?.error) throw new Error(pollData.error);
+            }
+            throw new Error('Hedra Video: timeout.');
+          }
+
           if (!isLipsyncJob && (currentVideoEngine === 'kling' || currentVideoEngine === 'seedance')) {
             // Upload da imagem de referência para fal.ai se houver
             let imageUrl: string | undefined;
@@ -5047,6 +5133,42 @@ const handleBatchDownload = async (ids: string[]) => {
                                       </div>
                                     )}
                                   </button>
+
+                                  {/* Grok Video T2V — Hedra */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVideoEngineChange('hedraT2V')}
+                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'hedraT2V' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-base">🌀</span>
+                                        <div>
+                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'hedraT2V' ? 'text-[#d4af37]' : 'text-white'}`}>Grok Video T2V</div>
+                                          <div className="text-[11px] text-gray-500">Hedra · Texto para vídeo</div>
+                                        </div>
+                                      </div>
+                                      <span className="text-[10px] font-black text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">HEDRA</span>
+                                    </div>
+                                  </button>
+
+                                  {/* Grok Video I2V — Hedra */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVideoEngineChange('hedraI2V')}
+                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'hedraI2V' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-base">🖼️</span>
+                                        <div>
+                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'hedraI2V' ? 'text-[#d4af37]' : 'text-white'}`}>Grok Video I2V</div>
+                                          <div className="text-[11px] text-gray-500">Hedra · Imagem para vídeo</div>
+                                        </div>
+                                      </div>
+                                      <span className="text-[10px] font-black text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">HEDRA</span>
+                                    </div>
+                                  </button>
                                 </div>
 
                                 {/* Flyer animado de créditos — aparece 3s ao trocar motor/duração/tier */}
@@ -5192,11 +5314,12 @@ const handleBatchDownload = async (ids: string[]) => {
                   </label>
                   <div className={`grid grid-cols-3 gap-1 transition-all ${type === 'video' ? 'opacity-30 pointer-events-none select-none' : ''}`}>
                     {[
-                      { id: 'nano',       label: '⚡ Gemini',       desc: 'Rápido e versátil' },
-                      { id: 'nanoBanana', label: '🍌 Nano Banana 2', desc: 'Alta fidelidade' },
-                      { id: 'gptImage',   label: '🤖 GPT Image 2',  desc: 'Máxima qualidade' },
-                      { id: 'imagen',     label: '🎨 Imagen 4',     desc: 'Fotorrealismo' },
-                      { id: 'ideogram',   label: '✍️ Ideogram',     desc: 'Texto e tipografia' }
+                      { id: 'nano',       label: '⚡ Gemini',           desc: 'Rápido e versátil' },
+                      { id: 'nanoBanana', label: '🍌 Nano Banana 2',    desc: 'Alta fidelidade' },
+                      { id: 'gptImage',   label: '🤖 GPT Image 2',      desc: 'Máxima qualidade' },
+                      { id: 'hedraImage', label: '✦ Nano Banana Pro',   desc: 'Premium · Hedra' },
+                      { id: 'imagen',     label: '🎨 Imagen 4',         desc: 'Fotorrealismo' },
+                      { id: 'ideogram',   label: '✍️ Ideogram',         desc: 'Texto e tipografia' }
                     ].map(m => (
                       <button
                         type="button"
@@ -5512,7 +5635,8 @@ const handleBatchDownload = async (ids: string[]) => {
                         <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">🎭 Criar avatar falante</span>
                         <div className="space-y-1.5">
                           {([
-                            { id: 'hedra',     icon: '⚡', label: 'Hedra Character-3', sub: 'Melhor lip-sync · Omnimodal' },
+                            { id: 'hedra',     icon: '⚡', label: 'Hedra Avatar',     sub: 'LipSync PT-BR · Até 10min' },
+                            { id: 'hedraOmnia', icon: '🌟', label: 'Hedra Omnia',      sub: 'Full-body · Até 8s · Premium' },
                             { id: 'veo',       icon: '🎬', label: 'Veo 3.0',           sub: 'Google DeepMind · LipSync nativo' },
                             { id: 'omnihuman', icon: '🧠', label: 'OmniHuman v1.5',    sub: 'ByteDance · Melhor emoção e expressão' },
                             { id: 'aurora',    icon: '✨', label: 'Aurora',             sub: 'Creatify · Máxima qualidade de avatar' },
