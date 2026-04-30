@@ -719,13 +719,13 @@ function AppContent() {
   // Form State
   const [prompt, setPrompt] = useState('');
   const [type, setType] = useState<'video' | 'image'>('video');
-  const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance' | 'hedraT2V' | 'hedraI2V'>('kling');
+  const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance' | 'hedraT2V' | 'hedraI2V' | 'veo31' | 'veo31fast'>('kling');
   const [videoTier, setVideoTier] = useState<'standard' | 'pro' | 'fast'>('standard');
   const [showCreditFlyer, setShowCreditFlyer] = useState(false);
   const creditFlyerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ao trocar motor, ajusta duração para o valor padrão do motor
-  const handleVideoEngineChange = (engine: 'veo' | 'kling' | 'seedance' | 'hedraT2V' | 'hedraI2V', tier: 'standard' | 'pro' | 'fast' = 'standard') => {
+  const handleVideoEngineChange = (engine: 'veo' | 'kling' | 'seedance' | 'hedraT2V' | 'hedraI2V' | 'veo31' | 'veo31fast', tier: 'standard' | 'pro' | 'fast' = 'standard') => {
     setVideoEngine(engine);
     setVideoTier(tier);
     setVideoDuration(engine === 'veo' ? 4 : 5);
@@ -737,7 +737,7 @@ function AppContent() {
   };
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [resolution, setResolution] = useState('1080p');
-  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage' | 'hedraImage'>('nano');
+  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage' | 'hedraImage' | 'flux2pro'>('nano');
   const [quantity, setQuantity] = useState(1);
   const [videoDuration, setVideoDuration] = useState(4); // Default 4s
   const [lipsyncDuration, setLipsyncDuration] = useState(4);
@@ -1010,6 +1010,8 @@ function AppContent() {
   const [lipsyncProductAsset, setLipsyncProductAsset] = useState<{ data: string, mimeType: string, type: 'image' } | null>(null);
   const [lipsyncAudio, setLipsyncAudio] = useState<{ data: string, mimeType: string } | null>(null);
   const [lipsyncAudioPrompt, setLipsyncAudioPrompt] = useState('');
+  const [hedraVoiceId, setHedraVoiceId] = useState<string>('363163e6-4426-4b28-a20e-58e5b572b2be'); // Isadora default
+  const [hedraVoices, setHedraVoices] = useState<{id: string, name: string}[]>([]);
   const [audioStart, setAudioStart] = useState(0);
   const [audioEnd, setAudioEnd] = useState(30);
   const [audioDuration, setAudioDuration] = useState(0);
@@ -1822,8 +1824,8 @@ function AppContent() {
       }
     }
     
-    // Hedra Image: sempre 1 item — evitar cobranças múltiplas
-    if (modelType === 'hedraImage') {
+    // Hedra Image / Flux 2 Pro: sempre 1 item — evitar cobranças múltiplas
+    if (modelType === 'hedraImage' || modelType === 'flux2pro') {
       currentQuantity = 1;
       // Pegar apenas a primeira linha como prompt único
       rawPrompts.splice(0, rawPrompts.length, rawPrompts[0] || '');
@@ -1888,6 +1890,7 @@ function AppContent() {
     const currentLipsyncAudioPrompt = lipsyncAudioPrompt;
     const currentUseLipsync = isLipsyncActive;
     const currentLipsyncEngineCapture = lipsyncEngine;
+    const currentHedraVoiceId = hedraVoiceId;
     const currentAudioStart = audioStart;
     const currentLowPriority = isLipsyncActive ? lipsyncLowPriority : lowPriority;
     const currentVideoDuration = isLipsyncActive ? lipsyncDuration : videoDuration;
@@ -1990,7 +1993,7 @@ function AppContent() {
           
           let enhancedPrompt = itemPrompt;
           let faceDescription = '';
-          if (!fastMode && currentModelType !== 'hedraImage') {
+          if (!fastMode && currentModelType !== 'hedraImage' && currentModelType !== 'flux2pro') {
             try {
               const hasRef = currentRefAsset && currentRefAsset.type === 'image';
               const hasProduct = currentProductAsset && currentProductAsset.type === 'image';
@@ -2307,7 +2310,7 @@ function AppContent() {
               }
 
               // Hedra Image — rota separada antes do callGeminiAPI
-              if (currentModelType === 'hedraImage') {
+              if (currentModelType === 'hedraImage' || currentModelType === 'flux2pro') {
                 const hedraImgRes = await fetch('/api/gemini', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -2315,6 +2318,7 @@ function AppContent() {
                     method: 'generateHedraImage',
                     args: {
                       prompt: promptText,
+                      motorKey: currentModelType === 'flux2pro' ? 'flux2pro' : 'nanoBananaPro',
                       aspectRatio: currentAspectRatio,
                       resolution: currentResolution === '2K' ? '1440p (2K QHD)' : currentResolution === '4K' ? '2160p (4K UHD)' : '1080p',
                     }
@@ -2602,6 +2606,7 @@ function AppContent() {
               const falArgs: any = {
                 modelId: 'hedra_character_3',
                 useOmnia: currentLipsyncEngine === 'hedraOmnia',
+                voiceId: currentHedraVoiceId,
                 imageBase64: activeAsset.data,
                 imageMimeType: activeAsset.mimeType,
                 audioBase64: currentLipsyncAudio?.data,
@@ -2821,8 +2826,13 @@ if (referenceImages.length > 0) {
 
           // Use server-side proxy for video generation
           // Kling e Seedance usam fal.ai (síncrono), Veo usa Vertex AI (assíncrono/polling)
-          if (!isLipsyncJob && (currentVideoEngine === 'hedraT2V' || currentVideoEngine === 'hedraI2V')) {
+          if (!isLipsyncJob && (currentVideoEngine === 'hedraT2V' || currentVideoEngine === 'hedraI2V' || currentVideoEngine === 'veo31' || currentVideoEngine === 'veo31fast')) {
             await updateDoc(doc(db, itemPath), { progress: 20, status: 'processing' });
+
+            const motorKey = currentVideoEngine === 'hedraT2V' ? 't2v'
+              : currentVideoEngine === 'hedraI2V' ? 'i2v'
+              : currentVideoEngine === 'veo31fast' ? 'veo31fast'
+              : 'veo31';
 
             const hedraRes = await fetch('/api/gemini', {
               method: 'POST',
@@ -2830,8 +2840,9 @@ if (referenceImages.length > 0) {
               body: JSON.stringify({
                 method: 'generateHedraVideo',
                 args: {
+                  motorKey,
                   prompt: enhancedPrompt,
-                  imageBase64: currentVideoEngine === 'hedraI2V' && activeAsset?.data ? activeAsset.data : undefined,
+                  imageBase64: (currentVideoEngine === 'hedraI2V') && activeAsset?.data ? activeAsset.data : undefined,
                   imageMimeType: activeAsset?.mimeType,
                   aspectRatio: currentAspectRatio,
                   resolution: currentResolution || '720p',
@@ -5182,18 +5193,36 @@ const handleBatchDownload = async (ids: string[]) => {
                                     </div>
                                   </button>
 
-                                  {/* Grok Video I2V — Hedra */}
+                                  {/* Veo 3.1 Fast — Hedra */}
                                   <button
                                     type="button"
-                                    onClick={() => handleVideoEngineChange('hedraI2V')}
-                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'hedraI2V' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
+                                    onClick={() => handleVideoEngineChange('veo31fast')}
+                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'veo31fast' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
                                   >
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-2">
-                                        <span className="text-base">🖼️</span>
+                                        <span className="text-base">⚡</span>
                                         <div>
-                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'hedraI2V' ? 'text-[#d4af37]' : 'text-white'}`}>Grok Video I2V</div>
-                                          <div className="text-[11px] text-gray-500">Hedra · Imagem para vídeo</div>
+                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'veo31fast' ? 'text-[#d4af37]' : 'text-white'}`}>Veo 3.1 Fast</div>
+                                          <div className="text-[11px] text-gray-500">Google · Via Hedra · Rápido</div>
+                                        </div>
+                                      </div>
+                                      <span className="text-[10px] font-black text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">HEDRA</span>
+                                    </div>
+                                  </button>
+
+                                  {/* Veo 3.1 — Hedra */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleVideoEngineChange('veo31')}
+                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'veo31' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-base">🎬</span>
+                                        <div>
+                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'veo31' ? 'text-[#d4af37]' : 'text-white'}`}>Veo 3.1</div>
+                                          <div className="text-[11px] text-gray-500">Google · Via Hedra · Alta qualidade</div>
                                         </div>
                                       </div>
                                       <span className="text-[10px] font-black text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">HEDRA</span>
@@ -5348,6 +5377,7 @@ const handleBatchDownload = async (ids: string[]) => {
                       { id: 'nanoBanana', label: '🍌 Nano Banana 2',    desc: 'Alta fidelidade' },
                       { id: 'gptImage',   label: '🤖 GPT Image 2',      desc: 'Máxima qualidade' },
                       { id: 'hedraImage', label: '✦ Nano Banana Pro',   desc: 'Premium · Hedra' },
+                      { id: 'flux2pro',   label: '🌊 Flux 2 Pro',       desc: 'Alta resolução · Hedra' },
                       { id: 'imagen',     label: '🎨 Imagen 4',         desc: 'Fotorrealismo' },
                       { id: 'ideogram',   label: '✍️ Ideogram',         desc: 'Texto e tipografia' }
                     ].map(m => (
@@ -5883,6 +5913,50 @@ const handleBatchDownload = async (ids: string[]) => {
                           )}
                         </div>
                       </div>
+
+                      {/* Seletor de Voz — apenas motores Hedra */}
+                      {(lipsyncEngine === 'hedra' || lipsyncEngine === 'hedraOmnia') && (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-sm font-bold text-gray-400 uppercase tracking-widest">Voz</label>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                const res = await fetch('/api/gemini', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ method: 'getHedraVoices', args: {} })
+                                });
+                                if (res.ok) {
+                                  const voices = await res.json();
+                                  if (Array.isArray(voices)) setHedraVoices(voices);
+                                }
+                              }}
+                              className="text-[11px] text-[#d4af37] hover:underline"
+                            >
+                              🔄 Atualizar vozes
+                            </button>
+                          </div>
+                          {hedraVoices.length === 0 ? (
+                            <div className="text-[12px] text-gray-600 bg-[#1a1a1a] rounded-xl p-3 border border-[#222]">
+                              Isadora 🇧🇷 (padrão PT-BR) — clique em "Atualizar vozes" para ver todas disponíveis
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto">
+                              {hedraVoices.map((v) => (
+                                <button
+                                  key={v.id}
+                                  type="button"
+                                  onClick={() => setHedraVoiceId(v.id)}
+                                  className={`p-2 rounded-lg border text-left text-[11px] transition-all ${hedraVoiceId === v.id ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-400 hover:border-[#444]'}`}
+                                >
+                                  {v.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Texto para Voz */}
                       <div>
