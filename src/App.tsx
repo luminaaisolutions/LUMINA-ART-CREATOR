@@ -2319,25 +2319,48 @@ function AppContent() {
                       prompt: promptText,
                       aspectRatio: currentAspectRatio,
                       resolution: currentResolution === '2K' ? '1440p (2K QHD)' : currentResolution === '4K' ? '2160p (4K UHD)' : '1080p',
-                      enhancePrompt: true,
                     }
                   })
                 });
                 if (!hedraImgRes.ok) {
                   const e = await hedraImgRes.json().catch(() => ({}));
-                  throw new Error(e.error || 'Hedra Image falhou');
+                  throw new Error(e.error || 'Hedra Image: erro ao iniciar');
                 }
-                const hedraImgData = await hedraImgRes.json();
-                const hedraImgUrl = hedraImgData?.imageUrl;
-                if (!hedraImgUrl) throw new Error('Hedra Image: sem URL retornada');
+                const { generationId: hedraGenId } = await hedraImgRes.json();
+                if (!hedraGenId) throw new Error('Hedra Image: sem generationId');
 
-                // Salvar no Firestore como URL externa
+                await updateDoc(doc(db, itemPath), { progress: 30, status: 'processing' });
+
+                // Polling no frontend — evita timeout do Vercel
+                let hedraImgUrl: string | undefined;
+                const maxPolls = 40;
+                for (let poll = 0; poll < maxPolls; poll++) {
+                  await new Promise(r => setTimeout(r, 5000));
+                  const pollRes = await fetch('/api/gemini', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ method: 'getHedraImageStatus', args: { generationId: hedraGenId } })
+                  });
+                  if (!pollRes.ok) continue;
+                  const pollData = await pollRes.json();
+                  const prog = Math.min(30 + Math.floor((poll / maxPolls) * 65), 94);
+                  await updateDoc(doc(db, itemPath), { progress: prog, status: 'processing' });
+
+                  if (pollData?.status === 'complete') {
+                    hedraImgUrl = pollData?.imageUrl;
+                    break;
+                  }
+                  if (pollData?.status === 'error') throw new Error(pollData?.error || 'Hedra Image falhou');
+                  console.log(`[Hedra Image Poll] ${poll+1}/${maxPolls} status=${pollData?.status}`);
+                }
+
+                if (!hedraImgUrl) throw new Error('Hedra Image: timeout ou URL não encontrada');
+
                 await updateDoc(doc(db, itemPath), {
                   status: 'completed', progress: 100,
-                  imageUrl: hedraImgUrl, previewUrl: hedraImgUrl,
-                  type: 'image'
+                  imageUrl: hedraImgUrl, previewUrl: hedraImgUrl, type: 'image'
                 });
-                setSessionPreviews(prev => ({ ...prev, [itemId]: hedraImgUrl }));
+                setSessionPreviews(prev => ({ ...prev, [itemId]: hedraImgUrl! }));
                 return;
               }
 
