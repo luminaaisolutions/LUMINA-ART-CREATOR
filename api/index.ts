@@ -1707,7 +1707,254 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         return res.json({ done: false, status: d?.status });
       }
 
-      // --- generateSora2 — Sora 2 Pro T2V e I2V via fal.ai ---
+      // =====================================================================
+      // LUMINA MKT ADS — Handlers para geração de vídeos de marketing
+      // =====================================================================
+
+      // --- extractProductInfo — Extrai info do produto via URL ou descrição ---
+      if (method === 'extractProductInfo') {
+        // Usa Claude Sonnet para analisar URL ou texto do produto
+        const productInput = args.url || args.description || '';
+        const isUrl = productInput.startsWith('http');
+
+        let productContext = productInput;
+        if (isUrl) {
+          // Tentar fetch da URL para extrair conteúdo
+          try {
+            const pageRes = await fetch(productInput, {
+              headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LuminaBot/1.0)' }
+            });
+            if (pageRes.ok) {
+              const html = await pageRes.text();
+              // Extrair texto básico removendo HTML
+              productContext = html
+                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                .replace(/<[^>]+>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .substring(0, 3000);
+            }
+          } catch(e) {
+            productContext = `URL do produto: ${productInput}`;
+          }
+        }
+
+        const prompt = `Analise as informações do produto abaixo e extraia um briefing estruturado para criação de um vídeo de marketing.
+
+PRODUTO/URL: ${productContext}
+
+Retorne APENAS um JSON válido com esta estrutura:
+{
+  "productName": "nome do produto",
+  "productCategory": "categoria (ex: beleza, tecnologia, moda, alimentos, etc)",
+  "targetAudience": "público-alvo principal",
+  "mainBenefit": "principal benefício/diferencial do produto",
+  "tone": "tom sugerido (urgente/elegante/divertido/profissional/emocional)",
+  "keyFeatures": ["feature 1", "feature 2", "feature 3"],
+  "suggestedHashtags": ["#hashtag1", "#hashtag2", "#hashtag3"],
+  "callToAction": "CTA sugerido",
+  "platforms": ["TikTok", "Instagram", "YouTube"]
+}`;
+
+        const geminiKey = process.env.GEMINI_API_KEY;
+        if (!geminiKey) return res.status(503).json({ error: 'GEMINI_API_KEY não configurada.' });
+
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+          })
+        });
+
+        const geminiData = await geminiRes.json();
+        const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const cleanJson = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+        try {
+          const productInfo = JSON.parse(cleanJson);
+          console.log(`[MktAds] Produto extraído: ${productInfo.productName}`);
+          return res.json({ success: true, productInfo });
+        } catch(e) {
+          return res.json({ success: false, productInfo: {
+            productName: 'Produto', productCategory: 'geral', targetAudience: 'Público geral',
+            mainBenefit: productContext.substring(0, 100), tone: 'profissional',
+            keyFeatures: [], suggestedHashtags: [], callToAction: 'Saiba mais', platforms: ['Instagram', 'TikTok']
+          }});
+        }
+      }
+
+      // --- generateMktAdsScript — Gera script completo para o vídeo de marketing ---
+      if (method === 'generateMktAdsScript') {
+        const geminiKey = process.env.GEMINI_API_KEY;
+        if (!geminiKey) return res.status(503).json({ error: 'GEMINI_API_KEY não configurada.' });
+
+        const { productInfo, format, platform, duration, language } = args;
+        const lang = language || 'pt-BR';
+        const dur = duration || 30;
+
+        const formatDescriptions: Record<string, string> = {
+          ugc: 'UGC (User Generated Content) — pessoa real falando para câmera, tom autêntico e casual, como uma recomendação de amigo',
+          unboxing: 'Unboxing — abertura de caixa mostrando o produto pela primeira vez, reação genuína e empolgada',
+          review: 'Review/Avaliação — análise hands-on do produto, mostrando funcionalidades, prós e contras',
+          tutorial: 'Tutorial — passo a passo ensinando como usar o produto, tom educativo e claro',
+          tvspot: 'TV Spot — comercial cinematográfico profissional, narrativa criativa e impactante',
+          wildcard: 'Wild Card — formato criativo e surpreendente, a IA decide a melhor abordagem para viralizar',
+        };
+
+        const platformSpecs: Record<string, string> = {
+          tiktok: 'TikTok (9:16 vertical, 15-60s, jovem, dinâmico, trending)',
+          instagram_reels: 'Instagram Reels (9:16 vertical, até 90s, visual bonito, lifestyle)',
+          instagram_feed: 'Instagram Feed (1:1 quadrado, visual premium)',
+          youtube_shorts: 'YouTube Shorts (9:16 vertical, até 60s)',
+          youtube: 'YouTube (16:9 horizontal, até 3min, mais profissional)',
+        };
+
+        const prompt = `Você é um diretor criativo especialista em vídeos virais de marketing digital para o mercado brasileiro.
+
+PRODUTO: ${productInfo.productName}
+CATEGORIA: ${productInfo.productCategory}
+PÚBLICO-ALVO: ${productInfo.targetAudience}
+BENEFÍCIO PRINCIPAL: ${productInfo.mainBenefit}
+TOM: ${productInfo.tone}
+FORMATO DO VÍDEO: ${formatDescriptions[format] || format}
+PLATAFORMA: ${platformSpecs[platform] || platform}
+DURAÇÃO: ${dur} segundos
+IDIOMA: ${lang}
+
+Crie um script completo e um prompt de geração de vídeo. Retorne APENAS JSON válido:
+{
+  "title": "título chamativo para o criativo",
+  "hook": "frase de abertura (primeiros 3 segundos, DEVE parar o scroll)",
+  "script": "roteiro completo do que o avatar deve falar (${dur} segundos de fala natural)",
+  "visualDirection": "descrição visual detalhada: cenário, iluminação, roupas do avatar, ângulo de câmera",
+  "avatarPrompt": "prompt em inglês para gerar o avatar ideal para este produto e formato (pessoa descrita detalhadamente)",
+  "videoPrompt": "prompt técnico em inglês para o motor de vídeo (Seedance 2.0) descrever exatamente o vídeo gerado",
+  "callToAction": "CTA final do vídeo",
+  "caption": "legenda completa para postagem com hashtags em ${lang}",
+  "estimatedEngagement": "estimativa de engajamento (baixo/médio/alto/viral)"
+}`;
+
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.9, maxOutputTokens: 2048 }
+          })
+        });
+
+        const geminiData = await geminiRes.json();
+        const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const cleanJson = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+        try {
+          const scriptData = JSON.parse(cleanJson);
+          console.log(`[MktAds] Script gerado: ${scriptData.title}`);
+          return res.json({ success: true, scriptData });
+        } catch(e) {
+          return res.status(500).json({ error: 'Erro ao gerar script. Tente novamente.' });
+        }
+      }
+
+      // --- generateMktAdsAvatar — Gera imagem do avatar para o ad ---
+      if (method === 'generateMktAdsAvatar') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+
+        const prompt = args.avatarPrompt || 'Professional person, studio lighting, clean background, friendly smile';
+        const aspectRatio = args.platform === 'tiktok' || args.platform === 'instagram_reels' ? 'portrait_4_3' : 'square';
+
+        console.log(`[MktAds] Gerando avatar: ${prompt.substring(0, 80)}`);
+
+        // Usa GPT Image 2 para gerar avatar de alta qualidade
+        const r = await fetch('https://fal.run/openai/gpt-image-2', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: `${prompt}, professional photography, 8K, photorealistic, perfect for marketing video`,
+            image_size: aspectRatio,
+            quality: 'high',
+            n: 1,
+          })
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `Avatar HTTP ${r.status}` });
+        const imageUrl = d?.images?.[0]?.url || d?.data?.[0]?.url;
+        if (!imageUrl) return res.status(500).json({ error: 'Avatar: sem URL retornada' });
+        return res.json({ imageUrl });
+      }
+
+      // --- generateMktAdsVideo — Gera vídeo final do ad com Seedance 2.0 ---
+      if (method === 'generateMktAdsVideo') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+
+        const hasImage = !!args.avatarImageUrl;
+        const endpoint = hasImage
+          ? 'fal-ai/bytedance/seedance-2.0/image-to-video'
+          : 'fal-ai/bytedance/seedance-2.0/text-to-video';
+
+        const platformAspect: Record<string, string> = {
+          tiktok: '9:16', instagram_reels: '9:16', youtube_shorts: '9:16',
+          instagram_feed: '1:1', youtube: '16:9',
+        };
+        const aspect = platformAspect[args.platform] || '9:16';
+
+        const body: any = {
+          prompt: args.videoPrompt,
+          aspect_ratio: aspect,
+          duration: Math.min(args.duration || 5, 15),
+          resolution: '720p',
+          motion_strength: 0.7,
+        };
+        if (args.avatarImageUrl) body.image_url = args.avatarImageUrl;
+
+        console.log(`[MktAds Video] endpoint=${endpoint} aspect=${aspect}`);
+        const r = await fetch(`https://queue.fal.run/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `MktAds Video HTTP ${r.status}` });
+        return res.json({ requestId: d?.request_id, status: 'pending', endpoint });
+      }
+
+      // --- getMktAdsVideoStatus — polling Seedance 2.0 para MktAds ---
+      if (method === 'getMktAdsVideoStatus') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`https://queue.fal.run/${args.endpoint}/requests/${args.requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let d: any = {}; try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const rR = await fetch(`https://queue.fal.run/${args.endpoint}/requests/${args.requestId}`, {
+            headers: { 'Authorization': `Key ${falKey}` }
+          });
+          if (rR.ok) {
+            const rd = await rR.json();
+            const videoUrl = rd?.video?.url || rd?.videos?.[0]?.url;
+            if (videoUrl) return res.json({ done: true, videoUrl });
+          }
+        }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: 'Geração falhou.' });
+        return res.json({ done: false, status: d?.status, progress: d?.progress });
+      }
+
+      // =====================================================================
+      // FIM — LUMINA MKT ADS
+      // =====================================================================
       if (method === 'generateSora2') {
         const falKey = process.env.FAL_API_KEY;
         if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
