@@ -719,13 +719,13 @@ function AppContent() {
   // Form State
   const [prompt, setPrompt] = useState('');
   const [type, setType] = useState<'video' | 'image'>('video');
-  const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance' | 'veo31' | 'veo31fast' | 'pixverse'>('kling');
+  const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance' | 'veo31' | 'veo31fast' | 'pixverse' | 'sora2' | 'happyHorse'>('kling');
   const [videoTier, setVideoTier] = useState<'standard' | 'pro' | 'fast'>('standard');
   const [showCreditFlyer, setShowCreditFlyer] = useState(false);
   const creditFlyerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ao trocar motor, ajusta duração para o valor padrão do motor
-  const handleVideoEngineChange = (engine: 'veo' | 'kling' | 'seedance' | 'veo31' | 'veo31fast' | 'pixverse', tier: 'standard' | 'pro' | 'fast' = 'standard') => {
+  const handleVideoEngineChange = (engine: 'veo' | 'kling' | 'seedance' | 'veo31' | 'veo31fast' | 'pixverse' | 'sora2' | 'happyHorse', tier: 'standard' | 'pro' | 'fast' = 'standard') => {
     setVideoEngine(engine);
     setVideoTier(tier);
     setVideoDuration(engine === 'veo' ? 4 : 5);
@@ -737,11 +737,11 @@ function AppContent() {
   };
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [resolution, setResolution] = useState('1080p');
-  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage' | 'fluxKontext' | 'seedream'>('nano');
+  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage' | 'fluxKontext' | 'fluxKontextMax' | 'flux2max' | 'nanaBananaEdit' | 'seedream'>('nano');
   const [quantity, setQuantity] = useState(1);
   const [videoDuration, setVideoDuration] = useState(4); // Default 4s
   const [lipsyncDuration, setLipsyncDuration] = useState(4);
-  const [lipsyncEngine, setLipsyncEngine] = useState<'klingAvatar' | 'latentSync' | 'omnihuman' | 'aurora' | 'sync' | 'syncpro'>('omnihuman');
+  const [lipsyncEngine, setLipsyncEngine] = useState<'klingAvatar' | 'heygen' | 'omnihuman' | 'aurora' | 'syncV3' | 'syncpro' | 'sync' | 'latentSync'>('omnihuman');
   const [syncMode, setSyncMode] = useState<'cut_off' | 'loop' | 'bounce' | 'remap'>('cut_off');
   const [showLipsyncCreditFlyer, setShowLipsyncCreditFlyer] = useState(false);
   const lipsyncFlyerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1823,7 +1823,7 @@ function AppContent() {
     }
     
     // Hedra Image / Flux 2 Pro: sempre 1 item — evitar cobranças múltiplas
-    if (modelType === 'fluxKontext' || modelType === 'seedream') {
+    if (modelType === 'fluxKontext' || modelType === 'fluxKontextMax' || modelType === 'flux2max' || modelType === 'nanaBananaEdit' || modelType === 'seedream') {
       currentQuantity = 1;
       rawPrompts.splice(0, rawPrompts.length, rawPrompts[0] || '');
     }
@@ -1989,7 +1989,7 @@ function AppContent() {
           
           let enhancedPrompt = itemPrompt;
           let faceDescription = '';
-          if (!fastMode && currentModelType !== 'fluxKontext' && currentModelType !== 'seedream') {
+          if (!fastMode && currentModelType !== 'fluxKontext' && currentModelType !== 'fluxKontextMax' && currentModelType !== 'flux2max' && currentModelType !== 'nanaBananaEdit' && currentModelType !== 'seedream') {
             try {
               const hasRef = currentRefAsset && currentRefAsset.type === 'image';
               const hasProduct = currentProductAsset && currentProductAsset.type === 'image';
@@ -2304,8 +2304,19 @@ function AppContent() {
               }
 
               // Hedra Image — rota separada antes do callGeminiAPI
-              if (currentModelType === 'fluxKontext' || currentModelType === 'seedream') {
-                const methodName = currentModelType === 'fluxKontext' ? 'generateFluxKontext' : 'generateSeedream';
+              if (['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream'].includes(currentModelType)) {
+                const methodMap: Record<string, string> = {
+                  fluxKontext: 'generateFluxKontext',
+                  fluxKontextMax: 'generateFluxKontext',
+                  flux2max: 'generateFlux2Max',
+                  nanaBananaEdit: 'generateNanaBananaEdit',
+                  seedream: 'generateSeedream',
+                };
+                const methodName = methodMap[currentModelType];
+                const extraArgs: Record<string, any> = {
+                  fluxKontextMax: { useMax: true },
+                  nanaBananaEdit: { usePro: true },
+                };
                 const hedraImgRes = await fetch('/api/gemini', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -2314,7 +2325,8 @@ function AppContent() {
                     args: {
                       prompt: promptText,
                       aspectRatio: currentAspectRatio,
-                      imageUrl: currentRefAsset?.url, // para edição (opcional)
+                      imageUrl: currentRefAsset?.url,
+                      ...(extraArgs[currentModelType] || {})
                     }
                   })
                 });
@@ -2731,15 +2743,18 @@ function AppContent() {
             let falMethod = '';
             let falArgs: any = {};
 
-            if (currentLipsyncEngine === 'sync' || currentLipsyncEngine === 'syncpro') {
+            if (currentLipsyncEngine === 'sync' || currentLipsyncEngine === 'syncpro' || currentLipsyncEngine === 'syncV3') {
               falMethod = 'generateSyncLipsync';
               falArgs = {
                 videoUrl: mediaUrl,
                 audioUrl,
-                tier: currentLipsyncEngine === 'syncpro' ? 'pro' : 'standard',
+                tier: currentLipsyncEngine === 'syncV3' ? 'v3' : currentLipsyncEngine === 'syncpro' ? 'pro' : 'standard',
                 syncMode,
                 occlusionDetection: true
               };
+            } else if (currentLipsyncEngine === 'heygen') {
+              falMethod = 'generateHeyGen';
+              falArgs = { imageUrl: mediaUrl, audioUrl };
             } else if (currentLipsyncEngine === 'omnihuman') {
               falMethod = 'generateOmniHuman';
               falArgs = {
@@ -2782,6 +2797,36 @@ function AppContent() {
               setSessionPreviews(prev => ({ ...prev, [itemId]: falData.videoUrl }));
               return;
             }
+
+            // Motores assíncronos com polling (syncV3, HeyGen)
+            if (falData?.requestId) {
+              const pollMethodMap: Record<string, string> = {
+                syncV3: 'getSyncV3Status',
+                heygen: 'getHeyGenStatus',
+              };
+              const pollMethod = pollMethodMap[currentLipsyncEngine];
+              if (!pollMethod) throw new Error('Motor sem polling definido.');
+              let resultUrl: string | undefined;
+              const maxPolls = 40;
+              for (let poll = 0; poll < maxPolls; poll++) {
+                await new Promise(r => setTimeout(r, 8000));
+                const pollRes = await fetch('/api/gemini', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ method: pollMethod, args: { requestId: falData.requestId } })
+                });
+                if (!pollRes.ok) continue;
+                const pd = await pollRes.json();
+                const prog = Math.min(30 + Math.floor((poll / maxPolls) * 65), 94);
+                await updateDoc(doc(db, itemPath), { progress: prog, status: 'processing' });
+                if (pd?.done && pd?.videoUrl) { resultUrl = pd.videoUrl; break; }
+                if (pd?.done && pd?.error) throw new Error(pd.error);
+              }
+              if (!resultUrl) throw new Error(`${currentLipsyncEngine}: timeout.`);
+              await updateDoc(doc(db, itemPath), { status: 'completed', progress: 100, videoUrl: resultUrl, previewUrl: resultUrl });
+              setSessionPreviews(prev => ({ ...prev, [itemId]: resultUrl! }));
+              return;
+            }
+
             throw new Error('Motor de LipSync não retornou vídeo.');
           }
           
@@ -2859,11 +2904,13 @@ if (referenceImages.length > 0) {
 
           // Use server-side proxy for video generation
           // Kling e Seedance usam fal.ai (síncrono), Veo usa Vertex AI (assíncrono/polling)
-          if (!isLipsyncJob && (currentVideoEngine === 'veo31' || currentVideoEngine === 'veo31fast' || currentVideoEngine === 'pixverse')) {
+          if (!isLipsyncJob && ['veo31','veo31fast','pixverse','sora2','happyHorse'].includes(currentVideoEngine)) {
             await updateDoc(doc(db, itemPath), { progress: 20, status: 'processing' });
 
             const isPixVerse = currentVideoEngine === 'pixverse';
-            const method = isPixVerse ? 'generatePixVerse' : 'generateVeo31';
+            const isSora2 = currentVideoEngine === 'sora2';
+            const isHappyHorse = currentVideoEngine === 'happyHorse';
+            const method = isPixVerse ? 'generatePixVerse' : isSora2 ? 'generateSora2' : isHappyHorse ? 'generateHappyHorse' : 'generateVeo31';
             const hedraRes = await fetch('/api/gemini', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -2888,10 +2935,10 @@ if (referenceImages.length > 0) {
 
             const videoInitData = await hedraRes.json();
             const videoRequestId = videoInitData?.requestId || videoInitData?.generationId;
-            const videoEndpoint = videoInitData?.endpoint || (currentVideoEngine.startsWith('veo') ? 'fal-ai/veo3.1' : 'fal-ai/pixverse/v6/text-to-video');
+            const videoEndpoint = videoInitData?.endpoint || (currentVideoEngine.startsWith('veo') ? 'fal-ai/veo3.1' : isPixVerse ? 'fal-ai/pixverse/v6/text-to-video' : isSora2 ? 'fal-ai/sora-2/text-to-video/pro' : 'fal-ai/alibaba/happy-horse/text-to-video');
             await updateDoc(doc(db, itemPath), { progress: 30, status: 'processing' });
 
-            const pollMethod = isPixVerse ? 'getPixVerseStatus' : 'getVeo31Status';
+            const pollMethod = isPixVerse ? 'getPixVerseStatus' : isSora2 ? 'getSora2Status' : isHappyHorse ? 'getHappyHorseStatus' : 'getVeo31Status';
             const maxPolls = 60;
             for (let poll = 0; poll < maxPolls; poll++) {
               await new Promise(r => setTimeout(r, 10000));
@@ -3177,7 +3224,7 @@ if (referenceImages.length > 0) {
         let expandedPrompts = Array(currentQuantity).fill(itemPrompt);
 
         // Hedra Image: sem expansão de prompts — Hedra tem enhance nativo
-        if (currentModelType !== 'fluxKontext' && currentModelType !== 'seedream' && currentQuantity > 1 && currentType === 'image' && !fastMode) {
+        if (!['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream'].includes(currentModelType) && currentQuantity > 1 && currentType === 'image' && !fastMode) {
           try {
             const expansionRes = await callGeminiAPI({
               model: 'gemini-2.5-flash',
@@ -3207,7 +3254,7 @@ if (referenceImages.length > 0) {
           itemId: generationIds[pIndex * currentQuantity + i]
         }));
 
-        const concurrencyLimit = (currentModelType === 'fluxKontext' || currentModelType === 'seedream') ? 1 : 3;
+        const concurrencyLimit = ['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream'].includes(currentModelType) ? 1 : 3;
         let taskIdx = 0;
         const processQueue = async (): Promise<void> => {
           if (taskIdx >= tasks.length) return;
@@ -5207,59 +5254,27 @@ const handleBatchDownload = async (ids: string[]) => {
                                     )}
                                   </button>
 
-                                  {/* Veo 3.1 Fast — via fal.ai */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleVideoEngineChange('veo31fast')}
-                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'veo31fast' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-base">⚡</span>
-                                        <div>
-                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'veo31fast' ? 'text-[#d4af37]' : 'text-white'}`}>Veo 3.1 Fast</div>
-                                          <div className="text-[11px] text-gray-500">Google DeepMind · Rápido · Áudio nativo</div>
+                                  {/* Grid 2 colunas — motores compactos */}
+                                  {([
+                                    { id: 'veo31fast',  icon: '⚡', label: 'Veo 3.1 Fast',  sub: 'Google · Rápido',       badge: 'NOVO', color: 'green' },
+                                    { id: 'veo31',      icon: '🎬', label: 'Veo 3.1',        sub: 'Google · 4K · Áudio',   badge: 'NOVO', color: 'green' },
+                                    { id: 'sora2',      icon: '🌐', label: 'Sora 2 Pro',     sub: 'OpenAI · 25s',          badge: 'PRO',  color: 'blue' },
+                                    { id: 'happyHorse', icon: '🐴', label: 'Happy Horse',    sub: 'Alibaba · 1080p',       badge: 'NOVO', color: 'green' },
+                                  ] as const).map(m => (
+                                    <button key={m.id} type="button" onClick={() => handleVideoEngineChange(m.id)}
+                                      className={`w-full p-2 rounded-xl border text-left transition-all ${videoEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
+                                      <div className="flex items-center justify-between gap-1">
+                                        <div className="flex items-center gap-1.5 min-w-0">
+                                          <span className="text-sm shrink-0">{m.icon}</span>
+                                          <div className="min-w-0">
+                                            <div className={`text-[11px] font-black leading-tight truncate ${videoEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                            <div className="text-[9px] text-gray-500 truncate">{m.sub}</div>
+                                          </div>
                                         </div>
+                                        <span className={`text-[8px] font-black shrink-0 px-1 py-0.5 rounded-full ${m.color === 'blue' ? 'text-blue-400 bg-blue-500/10' : 'text-green-400 bg-green-500/10'}`}>{m.badge}</span>
                                       </div>
-                                      <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">NOVO</span>
-                                    </div>
-                                  </button>
-
-                                  {/* Veo 3.1 — via fal.ai */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleVideoEngineChange('veo31')}
-                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'veo31' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-base">🎬</span>
-                                        <div>
-                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'veo31' ? 'text-[#d4af37]' : 'text-white'}`}>Veo 3.1</div>
-                                          <div className="text-[11px] text-gray-500">Google DeepMind · 4K · Melhor LipSync</div>
-                                        </div>
-                                      </div>
-                                      <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">NOVO</span>
-                                    </div>
-                                  </button>
-
-                                  {/* PixVerse V6 — via fal.ai */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleVideoEngineChange('pixverse')}
-                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'pixverse' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-base">🌀</span>
-                                        <div>
-                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'pixverse' ? 'text-[#d4af37]' : 'text-white'}`}>PixVerse V6</div>
-                                          <div className="text-[11px] text-gray-500">Física realista · Produto · Custo-benefício</div>
-                                        </div>
-                                      </div>
-                                      <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">NOVO</span>
-                                    </div>
-                                  </button>
+                                    </button>
+                                  ))}
                                 </div>
 
                                 {/* Flyer animado de créditos — aparece 3s ao trocar motor/duração/tier */}
@@ -5405,13 +5420,14 @@ const handleBatchDownload = async (ids: string[]) => {
                   </label>
                   <div className={`grid grid-cols-3 gap-1 transition-all ${type === 'video' ? 'opacity-30 pointer-events-none select-none' : ''}`}>
                     {[
-                      { id: 'nano',       label: '⚡ Gemini',           desc: 'Rápido e versátil' },
-                      { id: 'nanoBanana', label: '🍌 Nano Banana 2',    desc: 'Alta fidelidade' },
-                      { id: 'gptImage',   label: '🤖 GPT Image 2',      desc: 'Máxima qualidade' },
-                      { id: 'fluxKontext', label: '🌊 Flux Kontext Pro', desc: 'Edição por prompt' },
-                      { id: 'seedream',    label: '🌱 Seedream 5.0',     desc: 'ByteDance · 3K resolução' },
-                      { id: 'imagen',     label: '🎨 Imagen 4',         desc: 'Fotorrealismo' },
-                      { id: 'ideogram',   label: '✍️ Ideogram',         desc: 'Texto e tipografia' }
+                      { id: 'nano',           label: '⚡ Gemini Flash',      desc: 'Rápido e versátil' },
+                      { id: 'nanoBanana',     label: '🍌 Nano Banana 2',      desc: 'Google · Geração rápida' },
+                      { id: 'nanaBananaEdit', label: '🍌+ Nano Banana Pro',   desc: 'Google · Edição premium' },
+                      { id: 'gptImage',       label: '🤖 GPT Image 2',        desc: 'OpenAI · Melhor texto' },
+                      { id: 'flux2max',       label: '⚫ Flux 2 Max',         desc: 'BFL · Fotorrealismo max' },
+                      { id: 'fluxKontextMax', label: '🌊 Flux Kontext Max',   desc: 'BFL · Edição precisa' },
+                      { id: 'seedream',       label: '🌱 Seedream 5.0',       desc: 'ByteDance · 3K res.' },
+                      { id: 'ideogram',       label: '✍️ Ideogram',           desc: 'Texto em imagem' }
                     ].map(m => (
                       <button
                         type="button"
@@ -5722,62 +5738,58 @@ const handleBatchDownload = async (ids: string[]) => {
                         <h3 className="font-bold text-xl">LipSync Studio</h3>
                       </div>
 
-                      {/* Categoria 1: Avatar falante */}
-                      <div className="space-y-2">
-                        <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">🎭 Criar avatar falante</span>
-                        <div className="space-y-1.5">
+                      {/* Categoria 1: Avatar falante — grid 2 colunas */}
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">🎭 Avatar falante (imagem + áudio)</span>
+                        <div className="grid grid-cols-2 gap-1.5">
                           {([
-                            { id: 'klingAvatar', icon: '🔥', label: 'Kling AI Avatar Pro', sub: 'Humanos, animais, cartoon · Premium' },
-                            { id: 'omnihuman',   icon: '🧠', label: 'OmniHuman v1.5',      sub: 'ByteDance · Corpo inteiro · Emoções' },
-                            { id: 'aurora',      icon: '✨', label: 'Aurora',               sub: 'Creatify · Máxima qualidade visual' },
+                            { id: 'klingAvatar', icon: '🔥', label: 'Kling Avatar Pro', sub: 'Humanos/cartoon' },
+                            { id: 'heygen',      icon: '🎭', label: 'HeyGen Avatar 4',  sub: 'Comercial premium' },
+                            { id: 'omnihuman',   icon: '🧠', label: 'OmniHuman v1.5',   sub: 'Corpo inteiro' },
+                            { id: 'aurora',      icon: '✨', label: 'Aurora',            sub: 'Creatify · HD' },
                           ] as const).map(m => (
-                            <button key={m.id} type="button"
-                              onClick={() => handleLipsyncEngineChange(m.id)}
-                              className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <span className="text-base">{m.icon}</span>
+                            <button key={m.id} type="button" onClick={() => handleLipsyncEngineChange(m.id)}
+                              className={`p-2 rounded-xl border text-left transition-all ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm">{m.icon}</span>
                                 <div>
-                                  <div className={`text-sm font-black leading-tight ${lipsyncEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
-                                  <div className="text-[11px] text-gray-500">{m.sub}</div>
+                                  <div className={`text-[10px] font-black leading-tight ${lipsyncEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                  <div className="text-[9px] text-gray-500">{m.sub}</div>
                                 </div>
                               </div>
-                              {lipsyncEngine === m.id && <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-full shrink-0">ATIVO</span>}
                             </button>
                           ))}
                         </div>
                       </div>
 
-                      {/* Categoria 2: Sincronizar vídeo */}
-                      <div className="space-y-2">
-                        <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">👄 Sincronizar vídeo existente</span>
-                        <div className="space-y-1.5">
+                      {/* Categoria 2: Sincronizar vídeo — grid 2 colunas */}
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">👄 Sincronizar vídeo existente</span>
+                        <div className="grid grid-cols-2 gap-1.5">
                           {([
-                            { id: 'latentSync', icon: '🎯', label: 'LatentSync',  sub: 'ByteDance · Open source', badge: 'NOVO' },
-                            { id: 'sync',    icon: '🔄', label: 'Sync.so v2',  sub: 'Dubbing geral',    badge: '' },
-                            { id: 'syncpro', icon: '💎', label: 'Sync.so Pro', sub: 'Close-up premium', badge: 'PRO' },
+                            { id: 'syncV3',     icon: '💫', label: 'Sync.so v3',  sub: 'Melhor qualidade', badge: 'TOP' },
+                            { id: 'syncpro',    icon: '💎', label: 'Sync.so Pro', sub: 'Close-up HD',      badge: 'PRO' },
+                            { id: 'sync',       icon: '🔄', label: 'Sync.so v2',  sub: 'Dubbing geral',    badge: '' },
+                            { id: 'latentSync', icon: '🎯', label: 'LatentSync',  sub: 'ByteDance open',   badge: 'OS' },
                           ] as const).map(m => (
-                            <button key={m.id} type="button"
-                              onClick={() => handleLipsyncEngineChange(m.id)}
-                              className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <span className="text-base">{m.icon}</span>
-                                <div>
-                                  <div className={`text-sm font-black leading-tight ${lipsyncEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
-                                  <div className="text-[11px] text-gray-500">{m.sub}</div>
+                            <button key={m.id} type="button" onClick={() => handleLipsyncEngineChange(m.id)}
+                              className={`p-2 rounded-xl border text-left transition-all ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-sm">{m.icon}</span>
+                                  <div>
+                                    <div className={`text-[10px] font-black leading-tight ${lipsyncEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                    <div className="text-[9px] text-gray-500">{m.sub}</div>
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                {m.badge && <span className="text-[10px] font-black text-purple-400 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded-full">{m.badge}</span>}
-                                {lipsyncEngine === m.id && <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-full">ATIVO</span>}
+                                {m.badge && <span className="text-[8px] font-black text-[#d4af37] bg-[#d4af37]/10 px-1 py-0.5 rounded-full shrink-0">{m.badge}</span>}
                               </div>
                             </button>
                           ))}
                         </div>
 
                         {/* Sync mode */}
-                        {(lipsyncEngine === 'sync' || lipsyncEngine === 'syncpro') && (
+                        {(['sync','syncpro','syncV3'].includes(lipsyncEngine)) && (
                           <div className="space-y-1.5 pt-1">
                             <span className="text-[11px] font-black text-gray-600 uppercase tracking-widest">Modo de sync</span>
                             <div className="grid grid-cols-2 gap-1">
