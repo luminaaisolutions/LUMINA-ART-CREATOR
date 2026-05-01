@@ -1376,24 +1376,69 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
       if (method === 'generateFluxKontext') {
         const falKey = process.env.FAL_API_KEY;
         if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const useMax = args.useMax === true;
+        const endpoint = useMax ? 'fal-ai/flux-pro/kontext/max' : 'fal-ai/flux/kontext/pro';
         const body: any = {
           prompt: args.prompt,
           image_url: args.imageUrl,
           aspect_ratio: args.aspectRatio || '1:1',
           output_format: 'jpeg',
         };
-        console.log(`[FluxKontext] prompt=${args.prompt?.substring(0,60)}`);
-        const r = await fetch('https://fal.run/fal-ai/flux/kontext/pro', {
+        console.log(`[FluxKontext] endpoint=${endpoint}`);
+        const r = await fetch(`https://fal.run/${endpoint}`, {
           method: 'POST',
           headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         });
         const t = await r.text();
-        let d: any = {};
-        try { d = JSON.parse(t); } catch {}
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
         if (!r.ok) return res.status(r.status).json({ error: d?.detail || `FluxKontext HTTP ${r.status}` });
         const imageUrl = d?.images?.[0]?.url || d?.image?.url;
         if (!imageUrl) return res.status(500).json({ error: 'FluxKontext: sem URL retornada' });
+        return res.json({ imageUrl });
+      }
+
+      // --- generateFlux2Max — Flux 2 Max Edit via fal.ai ---
+      if (method === 'generateFlux2Max') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body: any = {
+          prompt: args.prompt,
+          image_size: args.aspectRatio === '9:16' ? 'portrait_16_9' : args.aspectRatio === '16:9' ? 'landscape_16_9' : 'square_hd',
+        };
+        if (args.imageUrl) body.image_url = args.imageUrl;
+        const endpoint = args.imageUrl ? 'fal-ai/flux-2-max/edit' : 'fal-ai/flux-2-pro/edit';
+        const r = await fetch(`https://fal.run/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `Flux2Max HTTP ${r.status}` });
+        const imageUrl = d?.images?.[0]?.url || d?.image?.url;
+        if (!imageUrl) return res.status(500).json({ error: 'Flux2Max: sem URL retornada' });
+        return res.json({ imageUrl });
+      }
+
+      // --- generateNanaBananaEdit — Nano Banana Pro/2 Edit via fal.ai ---
+      if (method === 'generateNanaBananaEdit') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const usePro = args.usePro !== false;
+        const endpoint = usePro ? 'fal-ai/nano-banana-pro/edit' : 'fal-ai/nano-banana-2/edit';
+        const body: any = { prompt: args.prompt };
+        if (args.imageUrl) body.image_url = args.imageUrl;
+        const r = await fetch(`https://fal.run/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `NanaBananaEdit HTTP ${r.status}` });
+        const imageUrl = d?.images?.[0]?.url || d?.image?.url;
+        if (!imageUrl) return res.status(500).json({ error: 'NanaBananaEdit: sem URL retornada' });
         return res.json({ imageUrl });
       }
 
@@ -1542,13 +1587,15 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         return res.status(500).json({ error: 'Aurora não retornou vídeo.' });
       }
 
-      // --- generateSyncLipsync — Sync.so lipsync-2 / lipsync-2-pro via fal.ai ---
+      // --- generateSyncLipsync — Sync.so v3 / v2-pro / v2 via fal.ai ---
       if (method === 'generateSyncLipsync') {
         const falKey = process.env.FAL_API_KEY;
         if (!falKey) return res.status(503).json({ error: "FAL_API_KEY não configurada." });
 
-        const tier = args.tier || 'standard'; // 'standard' | 'pro'
-        const endpoint = tier === 'pro'
+        const tier = args.tier || 'standard'; // 'v3' | 'pro' | 'standard'
+        const endpoint = tier === 'v3'
+          ? 'https://queue.fal.run/fal-ai/sync-lipsync/v3'
+          : tier === 'pro'
           ? 'https://fal.run/fal-ai/sync-lipsync/v2/pro'
           : 'https://fal.run/fal-ai/sync-lipsync/v2';
 
@@ -1556,19 +1603,32 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
           video_url: args.videoUrl,
           audio_url: args.audioUrl,
           sync_mode: args.syncMode || 'cut_off',
-          model: tier === 'pro' ? 'lipsync-2-pro' : 'lipsync-2',
         };
+        if (tier !== 'v3') {
+          syncBody.model = tier === 'pro' ? 'lipsync-2-pro' : 'lipsync-2';
+        }
         if (args.occlusionDetection) syncBody.occlusion_detection_enabled = true;
 
-        console.log(`[SyncLipsync] tier=${tier} video=${args.videoUrl?.substring(0,60)} audio=${args.audioUrl?.substring(0,60)}`);
+        console.log(`[SyncLipsync] tier=${tier} video=${args.videoUrl?.substring(0,60)}`);
 
-        const res4 = await withRetry(
-          () => fetch(endpoint, {
+        // v3 usa queue (assíncrono), v2 é síncrono
+        if (tier === 'v3') {
+          const r = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(syncBody)
-          }), 3, 5000, 'generateSyncLipsync'
-        );
+          });
+          const t = await r.text();
+          let d: any = {}; try { d = JSON.parse(t); } catch {}
+          if (!r.ok) return res.status(r.status).json({ error: d?.detail || `Sync v3 HTTP ${r.status}` });
+          return res.json({ requestId: d?.request_id, done: false, tier: 'v3' });
+        }
+
+        const res4 = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(syncBody)
+        });
         if (!res4.ok) {
           const err = await res4.json().catch(() => ({}));
           return res.status(res4.status).json({ error: err?.detail || err?.error || 'Sync Lipsync failed' });
@@ -1577,6 +1637,270 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
         const url4 = data4?.video?.url || data4?.url;
         if (url4) return res.json({ videoUrl: url4, done: true });
         return res.status(500).json({ error: 'Sync Lipsync não retornou vídeo.' });
+      }
+
+      // --- getSyncV3Status — polling Sync.so v3 ---
+      if (method === 'getSyncV3Status') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`https://queue.fal.run/fal-ai/sync-lipsync/v3/requests/${args.requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let d: any = {}; try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const resultR = await fetch(`https://queue.fal.run/fal-ai/sync-lipsync/v3/requests/${args.requestId}`, {
+            headers: { 'Authorization': `Key ${falKey}` }
+          });
+          if (resultR.ok) {
+            const rd = await resultR.json();
+            const videoUrl = rd?.video?.url || rd?.url;
+            if (videoUrl) return res.json({ done: true, videoUrl });
+          }
+        }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: 'Sync v3 falhou' });
+        return res.json({ done: false, status: d?.status });
+      }
+
+      // --- generateHeyGen — HeyGen Avatar 4 via fal.ai ---
+      if (method === 'generateHeyGen') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body: any = { image_url: args.imageUrl, audio_url: args.audioUrl };
+        if (args.prompt) body.text = args.prompt;
+        console.log(`[HeyGen] image=${args.imageUrl?.substring(0,60)}`);
+        const r = await fetch('https://queue.fal.run/fal-ai/heygen/avatar4/image-to-video', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `HeyGen HTTP ${r.status}` });
+        return res.json({ requestId: d?.request_id, status: 'pending' });
+      }
+
+      // --- getHeyGenStatus ---
+      if (method === 'getHeyGenStatus') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`https://queue.fal.run/fal-ai/heygen/avatar4/image-to-video/requests/${args.requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let d: any = {}; try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const rR = await fetch(`https://queue.fal.run/fal-ai/heygen/avatar4/image-to-video/requests/${args.requestId}`, { headers: { 'Authorization': `Key ${falKey}` } });
+          if (rR.ok) { const rd = await rR.json(); const v = rd?.video?.url; if (v) return res.json({ done: true, videoUrl: v }); }
+        }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: 'HeyGen falhou' });
+        return res.json({ done: false, status: d?.status });
+      }
+
+      // --- generateSora2 — Sora 2 Pro T2V e I2V via fal.ai ---
+      if (method === 'generateSora2') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const hasImage = !!args.imageUrl;
+        const endpoint = hasImage ? 'fal-ai/sora-2/image-to-video/pro' : 'fal-ai/sora-2/text-to-video/pro';
+        const body: any = {
+          prompt: args.prompt,
+          aspect_ratio: args.aspectRatio || '16:9',
+          duration: args.durationSeconds || 5,
+          generate_audio: args.generateAudio !== false,
+        };
+        if (args.imageUrl) body.image_url = args.imageUrl;
+        console.log(`[Sora2] endpoint=${endpoint} hasImage=${hasImage}`);
+        const r = await fetch(`https://queue.fal.run/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `Sora2 HTTP ${r.status}` });
+        return res.json({ requestId: d?.request_id, status: 'pending', endpoint });
+      }
+
+      // --- getSora2Status ---
+      if (method === 'getSora2Status') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`https://queue.fal.run/${args.endpoint}/requests/${args.requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let d: any = {}; try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const rR = await fetch(`https://queue.fal.run/${args.endpoint}/requests/${args.requestId}`, { headers: { 'Authorization': `Key ${falKey}` } });
+          if (rR.ok) { const rd = await rR.json(); const v = rd?.video?.url || rd?.videos?.[0]?.url; if (v) return res.json({ done: true, videoUrl: v }); }
+        }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: d?.error || 'Sora2 falhou' });
+        return res.json({ done: false, status: d?.status });
+      }
+
+      // --- generateHappyHorse — Alibaba Happy Horse T2V/I2V via fal.ai ---
+      if (method === 'generateHappyHorse') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const hasImage = !!args.imageUrl;
+        const endpoint = hasImage ? 'fal-ai/alibaba/happy-horse/image-to-video' : 'fal-ai/alibaba/happy-horse/text-to-video';
+        const body: any = {
+          prompt: args.prompt,
+          aspect_ratio: args.aspectRatio || '16:9',
+          duration: args.durationSeconds || 5,
+        };
+        if (args.imageUrl) body.image_url = args.imageUrl;
+        const r = await fetch(`https://queue.fal.run/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `HappyHorse HTTP ${r.status}` });
+        return res.json({ requestId: d?.request_id, status: 'pending', endpoint });
+      }
+
+      // --- getHappyHorseStatus ---
+      if (method === 'getHappyHorseStatus') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`https://queue.fal.run/${args.endpoint}/requests/${args.requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let d: any = {}; try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const rR = await fetch(`https://queue.fal.run/${args.endpoint}/requests/${args.requestId}`, { headers: { 'Authorization': `Key ${falKey}` } });
+          if (rR.ok) { const rd = await rR.json(); const v = rd?.video?.url || rd?.videos?.[0]?.url; if (v) return res.json({ done: true, videoUrl: v }); }
+        }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: 'HappyHorse falhou' });
+        return res.json({ done: false, status: d?.status });
+      }
+
+      // --- generateTopazUpscale — Topaz Upscale Image/Video via fal.ai ---
+      if (method === 'generateTopazUpscale') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const isVideo = args.type === 'video';
+        const endpoint = isVideo ? 'https://queue.fal.run/fal-ai/topaz/upscale/video' : 'https://fal.run/fal-ai/topaz/upscale/image';
+        const body: any = isVideo ? { video_url: args.mediaUrl } : { image_url: args.mediaUrl };
+        if (args.scaleFactor) body.scale_factor = args.scaleFactor;
+        console.log(`[Topaz] type=${args.type} url=${args.mediaUrl?.substring(0,60)}`);
+        const r = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `Topaz HTTP ${r.status}` });
+        if (isVideo) return res.json({ requestId: d?.request_id, status: 'pending' });
+        const outputUrl = d?.image?.url || d?.url;
+        if (outputUrl) return res.json({ outputUrl, done: true });
+        return res.status(500).json({ error: 'Topaz: sem URL retornada' });
+      }
+
+      // --- generateBriaRemoveBg — Remoção de fundo via fal.ai ---
+      if (method === 'generateBriaRemoveBg') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const r = await fetch('https://fal.run/fal-ai/bria/background/remove', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image_url: args.imageUrl })
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `BriaRemoveBg HTTP ${r.status}` });
+        const outputUrl = d?.image?.url || d?.url || d?.images?.[0]?.url;
+        if (outputUrl) return res.json({ imageUrl: outputUrl, done: true });
+        return res.status(500).json({ error: 'BriaRemoveBg: sem URL retornada' });
+      }
+
+      // --- generateKlingVideoEdit — Kling O3 Video-to-Video Edit via fal.ai ---
+      if (method === 'generateKlingVideoEdit') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body: any = {
+          prompt: args.prompt,
+          video_url: args.videoUrl,
+          aspect_ratio: args.aspectRatio || '16:9',
+        };
+        const r = await fetch('https://queue.fal.run/fal-ai/kling-video/o3/pro/video-to-video/edit', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `KlingVideoEdit HTTP ${r.status}` });
+        return res.json({ requestId: d?.request_id, status: 'pending' });
+      }
+
+      // --- getKlingVideoEditStatus ---
+      if (method === 'getKlingVideoEditStatus') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`https://queue.fal.run/fal-ai/kling-video/o3/pro/video-to-video/edit/requests/${args.requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let d: any = {}; try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const rR = await fetch(`https://queue.fal.run/fal-ai/kling-video/o3/pro/video-to-video/edit/requests/${args.requestId}`, { headers: { 'Authorization': `Key ${falKey}` } });
+          if (rR.ok) { const rd = await rR.json(); const v = rd?.video?.url; if (v) return res.json({ done: true, videoUrl: v }); }
+        }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: 'KlingVideoEdit falhou' });
+        return res.json({ done: false, status: d?.status });
+      }
+
+      // --- generateElevenLabsTTS — ElevenLabs TTS v3 via fal.ai ---
+      if (method === 'generateElevenLabsTTS') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body: any = {
+          text: args.text,
+          voice_id: args.voiceId || 'JBFqnCBsd6RMkjVDRZzb', // Rachel default
+          model_id: 'eleven_v3',
+        };
+        const r = await fetch('https://fal.run/fal-ai/elevenlabs/tts/eleven-v3', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `ElevenLabs HTTP ${r.status}` });
+        const audioUrl = d?.audio?.url || d?.url;
+        if (audioUrl) return res.json({ audioUrl, done: true });
+        return res.status(500).json({ error: 'ElevenLabs: sem URL retornada' });
       }
 
       // --- generateKling — Kling 3.0 via fal.ai ---
