@@ -1205,497 +1205,276 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
       }
 
 
-      // --- getHedraVoices — listar vozes disponíveis ---
-      if (method === 'getHedraVoices') {
-        const hedraKey = process.env.HEDRA_API_KEY;
-        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
-        const r = await fetch('https://api.hedra.com/web-app/public/voices', {
-          headers: { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' }
+      // --- generateVeo31 — Veo 3.1 / Veo 3.1 Fast via fal.ai ---
+      if (method === 'generateVeo31') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+
+        const isFast = args.fast === true;
+        const hasImage = !!args.imageUrl;
+        let endpoint: string;
+        if (hasImage) {
+          endpoint = isFast ? 'fal-ai/veo3.1/fast/image-to-video' : 'fal-ai/veo3.1/image-to-video';
+        } else {
+          endpoint = isFast ? 'fal-ai/veo3.1/fast' : 'fal-ai/veo3.1';
+        }
+
+        const body: any = {
+          prompt: args.prompt,
+          aspect_ratio: args.aspectRatio || '16:9',
+          duration: args.durationSeconds || 5,
+          generate_audio: args.generateAudio !== false,
+        };
+        if (args.imageUrl) body.image_url = args.imageUrl;
+
+        console.log(`[Veo3.1] endpoint=${endpoint} fast=${isFast} hasImage=${hasImage}`);
+        const r = await fetch(`https://queue.fal.run/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
         });
         const t = await r.text();
-        if (!r.ok) return res.status(r.status).json({ error: 'Erro ao buscar vozes Hedra' });
-        return res.json(JSON.parse(t));
+        let d: any = {};
+        try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `Veo3.1 HTTP ${r.status}` });
+        const requestId = d?.request_id;
+        console.log(`[Veo3.1] request_id=${requestId}`);
+        return res.json({ requestId, status: 'pending', endpoint });
       }
 
-      // --- generateHedraImage — Inicia geração (polling no frontend) ---
-      if (method === 'generateHedraImage') {
-        const hedraKey = process.env.HEDRA_API_KEY;
-        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
-
-        const hedraBase = 'https://api.hedra.com/web-app/public';
-        const jsonHeaders: Record<string, string> = { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' };
-
-        // Buscar modelo de imagem disponível
-        // Modelos conhecidos: Nano Banana T2I = ae01e1fd, Flux 2 Pro = buscar via GET /models
-        let modelId = 'ae01e1fd-5917-4e79-a65c-983b322bc5ce'; // Nano Banana T2I default
-        const motorKey = args.motorKey || 'nanoBananaPro';
-        try {
-          const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
-          if (modelsR.ok) {
-            const models = await modelsR.json();
-            if (Array.isArray(models)) {
-              let targetModel;
-              if (motorKey === 'flux2pro') {
-                targetModel = models.find((m: any) =>
-                  m.type === 'image' && (m.name?.toLowerCase().includes('flux') || m.name?.toLowerCase().includes('flux 2'))
-                );
-              } else {
-                targetModel = models.find((m: any) =>
-                  m.type === 'image' && m.name?.toLowerCase().includes('nano banana')
-                ) || models.find((m: any) => m.type === 'image');
-              }
-              if (targetModel) { modelId = targetModel.id; console.log(`[Hedra Image] Modelo: ${modelId} (${targetModel.name})`); }
-            }
-          }
-        } catch(e) { console.warn('[Hedra Image] Erro ao listar modelos:', e); }
-
-        const genBody: any = {
-          type: 'image',
-          text_prompt: args.prompt,
-          ai_model_id: modelId,
-          aspect_ratio: args.aspectRatio || '1:1',
-          resolution: args.resolution || '1080p',
-          batch_size: 1,
-        };
-
-        console.log(`[Hedra Image] POST /generations model=${modelId}`);
-        const genR = await fetch(`${hedraBase}/generations`, {
-          method: 'POST', headers: jsonHeaders, body: JSON.stringify(genBody)
-        });
-        const genT = await genR.text();
-        let genD: any = {};
-        try { genD = JSON.parse(genT); } catch {}
-        console.log(`[Hedra Image] HTTP ${genR.status}: ${genT.substring(0, 150)}`);
-        if (!genR.ok) return res.status(genR.status).json({ error: genD?.messages?.[0] || `Hedra Image HTTP ${genR.status}` });
-
-        const genId = genD?.id;
-        const assetId = genD?.asset_id;
-        console.log(`[Hedra Image] Geração iniciada: ${genId} asset=${assetId}`);
-        return res.json({ generationId: genId, assetId });
-      }
-
-      // --- getHedraImageStatus — polling de imagem (chamado pelo frontend) ---
-      if (method === 'getHedraImageStatus') {
-        const hedraKey = process.env.HEDRA_API_KEY;
-        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
-
-        const genId = args.generationId;
-        const hedraBase = 'https://api.hedra.com/web-app/public';
-        const jsonHeaders: Record<string, string> = { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' };
-
+      // --- getVeo31Status — polling Veo 3.1 ---
+      if (method === 'getVeo31Status') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const { requestId, endpoint } = args;
         const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
-        const req = fetch(`${hedraBase}/generations/${genId}/status`, { headers: jsonHeaders })
-          .then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
-          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
-
-        const result = await Promise.race([req, timeout]);
-        if ('timedOut' in result && result.timedOut) return res.json({ status: 'pending' });
-
-        const { status, text } = result as { timedOut: false, status: number, text: string };
-        let pd: any = {};
-        try { pd = JSON.parse(text); } catch {}
-        if (status !== 200) return res.status(status).json(pd);
-
-        const jobStatus = pd?.status;
-        console.log(`[Hedra Image Poll] status=${jobStatus} asset_id=${pd?.asset_id}`);
-
-        if (jobStatus === 'complete') {
-          // Buscar URL via List Assets
-          try {
-            const listR = await fetch(`${hedraBase}/assets`, { headers: jsonHeaders });
-            if (listR.ok) {
-              const listD = await listR.json();
-              const assets = Array.isArray(listD) ? listD : listD?.assets || [];
-              const target = assets.find((a: any) => a.id === pd?.asset_id) || assets[0];
-              console.log(`[Hedra Image] Asset: ${JSON.stringify(target).substring(0, 200)}`);
-              const imageUrl = target?.url || target?.download_url || target?.thumbnail_url;
-              if (imageUrl) {
-                console.log(`[Hedra Image] ✅ URL: ${imageUrl.substring(0, 80)}`);
-                return res.json({ status: 'complete', imageUrl });
-              }
-            }
-          } catch(e) { console.warn('[Hedra Image] Erro list:', e); }
-          return res.json({ status: 'complete', imageUrl: null });
-        }
-        if (jobStatus === 'error') return res.json({ status: 'error', error: pd?.error_message || 'Hedra Image falhou' });
-        return res.json({ status: jobStatus || 'pending' });
-      }
-
-      // --- generateHedraVideo — Vídeo (T2V, I2V, Veo 3.1) via Hedra ---
-      if (method === 'generateHedraVideo') {
-        const hedraKey = process.env.HEDRA_API_KEY;
-        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
-
-        const hedraBase = 'https://api.hedra.com/web-app/public';
-        const jsonHeaders: Record<string, string> = { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' };
-        const uploadHeaders: Record<string, string> = { 'X-API-Key': hedraKey };
-
-        // IDs oficiais — documentação Hedra
-        const MODEL_IDS: Record<string, string> = {
-          't2v':      '827122cd-5fdd-4412-86f2-554f7bb8eef9', // Grok Video T2V
-          'i2v':      '0435547d-1b30-41ad-bf66-ca476ff0564e', // Grok Video I2V
-          'veo31':    'a0e2c60c-3d82-4818-a23f-7a5a2af05bab', // Veo 3.1
-          'veo31fast':'c7ebf820-9aa8-4e2f-a94d-4ab1fe7bb1e0', // Veo 3.1 Fast
-        };
-
-        const motorKey = args.motorKey || (args.imageBase64 ? 'i2v' : 't2v');
-        let modelId = MODEL_IDS[motorKey] || MODEL_IDS['t2v'];
-
-        // Buscar ID real do Veo 3.1 via GET /models se necessário
-        if (motorKey === 'veo31' || motorKey === 'veo31fast') {
-          try {
-            const modelsR = await fetch(`${hedraBase}/models`, { headers: jsonHeaders });
-            if (modelsR.ok) {
-              const models = await modelsR.json();
-              if (Array.isArray(models)) {
-                const veoFast = models.find((m: any) =>
-                  m.name?.toLowerCase().includes('veo') &&
-                  (motorKey === 'veo31fast' ? m.name?.toLowerCase().includes('fast') : !m.name?.toLowerCase().includes('fast'))
-                );
-                if (veoFast) { modelId = veoFast.id; console.log(`[Hedra Video] Veo model: ${modelId} (${veoFast.name})`); }
-              }
-            }
-          } catch(e) {}
-        }
-
-        console.log(`[Hedra Video] motor=${motorKey} model=${modelId} hasImage=${!!args.imageBase64}`);
-
-        // Upload imagem se I2V
-        let imageAssetId: string | undefined;
-        if (args.imageBase64) {
-          const imgBuf = Buffer.from(args.imageBase64, 'base64');
-          const imgMime = args.imageMimeType || 'image/jpeg';
-          const cR = await fetch(`${hedraBase}/assets`, {
-            method: 'POST', headers: jsonHeaders,
-            body: JSON.stringify({ name: 'frame.jpg', type: 'image' })
-          });
-          if (!cR.ok) return res.status(cR.status).json({ error: 'Hedra Video: erro criar asset' });
-          imageAssetId = (await cR.json())?.id;
-          const form = new FormData();
-          form.append('file', new Blob([imgBuf], { type: imgMime }), 'frame.jpg');
-          const uR = await fetch(`${hedraBase}/assets/${imageAssetId}/upload`, {
-            method: 'POST', headers: uploadHeaders, body: form
-          });
-          if (!uR.ok) return res.status(uR.status).json({ error: 'Hedra Video: erro upload imagem' });
-          console.log(`[Hedra Video] Image asset: ${imageAssetId}`);
-        }
-
-        const genBody: any = {
-          type: 'video',
-          ai_model_id: modelId,
-          generated_video_inputs: {
-            text_prompt: args.prompt || 'Cinematic video with natural movement',
-            aspect_ratio: args.aspectRatio || '16:9',
-            resolution: args.resolution || '720p',
-            duration_ms: (args.durationSeconds || 5) * 1000,
-          }
-        };
-        if (imageAssetId) genBody.start_keyframe_id = imageAssetId;
-
-        console.log(`[Hedra Video] POST /generations: ${JSON.stringify(genBody).substring(0, 200)}`);
-        const genR = await fetch(`${hedraBase}/generations`, {
-          method: 'POST', headers: jsonHeaders, body: JSON.stringify(genBody)
-        });
-        const genT = await genR.text();
-        let genD: any = {};
-        try { genD = JSON.parse(genT); } catch {}
-        if (!genR.ok) return res.status(genR.status).json({ error: genD?.messages?.[0] || `Hedra Video HTTP ${genR.status}: ${genT.substring(0, 100)}` });
-
-        const genId = genD?.id;
-        console.log(`[Hedra Video] Geração iniciada: ${genId}`);
-        return res.json({ generationId: genId, status: 'pending' });
-      }
-
-      // --- getHedraVideoStatus — polling para Hedra Video ---
-      if (method === 'getHedraVideoStatus') {
-        const hedraKey = process.env.HEDRA_API_KEY;
-        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
-
-        const genId = args.generationId;
-        const hedraBase = 'https://api.hedra.com/web-app/public';
-        const jsonHeaders: Record<string, string> = { 'X-API-Key': hedraKey, 'Content-Type': 'application/json' };
-
-        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 15000));
-        const req = fetch(`${hedraBase}/generations/${genId}/status`, { headers: jsonHeaders })
-          .then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
-          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
-
-        const result = await Promise.race([req, timeout]);
-        if ('timedOut' in result && result.timedOut) return res.json({ done: false, name: genId });
-
-        const { status, text } = result as { timedOut: false, status: number, text: string };
-        let data: any = {};
-        try { data = JSON.parse(text); } catch {}
-        if (status !== 200) return res.status(status).json(data);
-
-        const jobStatus = data?.status;
-        let videoUrl = data?.url || data?.video_url;
-
-        if ((jobStatus === 'complete' || jobStatus === 'finalizing') && !videoUrl && data?.asset_id) {
-          const assetR = await fetch(`${hedraBase}/assets/${data.asset_id}`, { headers: jsonHeaders });
-          if (assetR.ok) {
-            const assetD = await assetR.json();
-            videoUrl = assetD?.asset?.url || assetD?.url;
-          }
-        }
-
-        console.log(`[Hedra Video Poll] status=${jobStatus} hasVideo=${!!videoUrl}`);
-        if (jobStatus === 'complete' && videoUrl) return res.json({ done: true, videoUrl });
-        if (jobStatus === 'error') return res.json({ done: true, error: data?.error_message || 'Hedra Video falhou' });
-        return res.json({ done: false, progress: data?.progress || 0 });
-      }
-
-      // --- generateHedra — Hedra Character-3 via api.hedra.com/web-app/public ---
-      if (method === 'generateHedra') {
-        const hedraKey = process.env.HEDRA_API_KEY;
-        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
-
-        const hedraBase = 'https://api.hedra.com/web-app/public';
-        // Header correto: x-api-key (minúsculo) + Content-Type separado conforme SDK
-        const jsonHeaders: Record<string, string> = { 'x-api-key': hedraKey, 'Content-Type': 'application/json' };
-        const uploadHeaders: Record<string, string> = { 'x-api-key': hedraKey };
-
-        console.log(`[Hedra] hasImage=${!!args.imageBase64} hasAudio=${!!args.audioBase64} hasText=${!!args.audioText}`);
-
-        // 1a. Criar asset de imagem (POST /assets com JSON)
-        let imageId: string | undefined;
-        if (args.imageBase64) {
-          const createImgR = await fetch(`${hedraBase}/assets`, {
-            method: 'POST', headers: jsonHeaders,
-            body: JSON.stringify({ name: 'portrait.jpg', type: 'image' })
-          });
-          const createImgT = await createImgR.text();
-          console.log(`[Hedra] Create image asset HTTP ${createImgR.status}: ${createImgT.substring(0, 200)}`);
-          if (!createImgR.ok) { let e: any = {}; try { e = JSON.parse(createImgT); } catch {} return res.status(createImgR.status).json({ error: e?.message || e?.detail || `Hedra create image HTTP ${createImgR.status}` }); }
-          imageId = JSON.parse(createImgT)?.id;
-
-          // 1b. Upload binário da imagem (POST /assets/{id}/upload com multipart)
-          const imgBuf = Buffer.from(args.imageBase64, 'base64');
-          const imgMime = args.imageMimeType || 'image/jpeg';
-          const imgForm = new FormData();
-          imgForm.append('file', new Blob([imgBuf], { type: imgMime }), 'portrait.jpg');
-
-          const uploadImgR = await fetch(`${hedraBase}/assets/${imageId}/upload`, {
-            method: 'POST', headers: uploadHeaders, body: imgForm
-          });
-          const uploadImgT = await uploadImgR.text();
-          console.log(`[Hedra] Upload image HTTP ${uploadImgR.status}: ${uploadImgT.substring(0, 200)}`);
-          if (!uploadImgR.ok) { let e: any = {}; try { e = JSON.parse(uploadImgT); } catch {} return res.status(uploadImgR.status).json({ error: e?.message || e?.detail || `Hedra upload image HTTP ${uploadImgR.status}` }); }
-          console.log(`[Hedra] Image asset ID: ${imageId}`);
-        }
-
-        // 2a. Criar asset de áudio (POST /assets com JSON)
-        let audioId: string | undefined;
-        if (args.audioBase64) {
-          const createAudR = await fetch(`${hedraBase}/assets`, {
-            method: 'POST', headers: jsonHeaders,
-            body: JSON.stringify({ name: 'audio.wav', type: 'audio' })
-          });
-          const createAudT = await createAudR.text();
-          console.log(`[Hedra] Create audio asset HTTP ${createAudR.status}: ${createAudT.substring(0, 200)}`);
-          if (!createAudR.ok) { let e: any = {}; try { e = JSON.parse(createAudT); } catch {} return res.status(createAudR.status).json({ error: e?.message || e?.detail || `Hedra create audio HTTP ${createAudR.status}` }); }
-          audioId = JSON.parse(createAudT)?.id;
-
-          // 2b. Upload binário do áudio
-          const audBuf = Buffer.from(args.audioBase64, 'base64');
-          const audMime = args.audioMimeType || 'audio/mpeg';
-          const audForm = new FormData();
-          audForm.append('file', new Blob([audBuf], { type: audMime }), 'audio.wav');
-
-          const uploadAudR = await fetch(`${hedraBase}/assets/${audioId}/upload`, {
-            method: 'POST', headers: uploadHeaders, body: audForm
-          });
-          const uploadAudT = await uploadAudR.text();
-          console.log(`[Hedra] Upload audio HTTP ${uploadAudR.status}: ${uploadAudT.substring(0, 200)}`);
-          if (!uploadAudR.ok) { let e: any = {}; try { e = JSON.parse(uploadAudT); } catch {} return res.status(uploadAudR.status).json({ error: e?.message || e?.detail || `Hedra upload audio HTTP ${uploadAudR.status}` }); }
-          console.log(`[Hedra] Audio asset ID: ${audioId}`);
-        }
-
-        // Character-3 ID fixo — não usar GET /models que retorna Kling por padrão
-        // Não enviar ai_model_id — Hedra escolhe automaticamente Character-3
-        // quando recebe start_keyframe_id (imagem) + audio_id
-        // IDs oficiais da documentação Hedra
-        const HEDRA_AVATAR_ID = '26f0fc66-152b-40ab-abed-76c43df99bc8'; // LipSync até 10min
-        const HEDRA_OMNIA_ID  = 'ab372b84-432f-44f5-bacc-c2542465f712'; // Full-body até 8s
-        const modelId = args.useOmnia ? HEDRA_OMNIA_ID : HEDRA_AVATAR_ID;
-
-        const ttsText = args.audioText || '';
-
-        // Estimar duração baseada no texto (~150ms por caractere)
-        const estimatedDurationMs = ttsText
-          ? Math.min(Math.max(Math.ceil(ttsText.length / 15) * 1000, 5000), 600000)
-          : 10000;
-
-        const genBody: any = {
-          type: 'video',
-          ai_model_id: modelId,
-          start_keyframe_id: imageId,
-          generated_video_inputs: {
-            text_prompt: 'A person speaking naturally to the camera',
-            aspect_ratio: args.aspectRatio || '9:16',
-            resolution: args.resolution || '720p',
-            duration_ms: estimatedDurationMs,
-          }
-        };
-
-        // Áudio: upload direto OU TTS inline (conforme doc oficial)
-        if (audioId) {
-          genBody.audio_id = audioId;
-        } else if (ttsText) {
-          // Usar voiceId do frontend ou buscar Isadora como fallback
-          let voiceId: string | undefined = args.voiceId;
-          if (!voiceId) {
-            try {
-              const voicesR = await fetch(`${hedraBase}/voices`, { headers: jsonHeaders });
-              if (voicesR.ok) {
-                const voices = await voicesR.json();
-                if (Array.isArray(voices) && voices.length > 0) {
-                  const ptVoice = voices.find((v: any) =>
-                    v.name?.toLowerCase().includes('isadora') ||
-                    v.name?.toLowerCase().includes('port') ||
-                    v.name?.toLowerCase().includes('brasil')
-                  );
-                  voiceId = ptVoice?.id || voices[0]?.id;
-                  console.log(`[Hedra] Voice auto: ${voiceId} (${ptVoice?.name || voices[0]?.name})`);
-                }
-              }
-            } catch (e) { console.warn('[Hedra] Erro ao buscar voices:', e); }
-          } else {
-            console.log(`[Hedra] Voice selecionada: ${voiceId}`);
-          }
-
-          if (!voiceId) return res.status(503).json({ error: 'Hedra: nenhuma voz disponível.' });
-
-          // TTS separado — único método que funciona com Hedra Avatar
-          console.log(`[Hedra] Gerando TTS separado voz=${voiceId} chars=${ttsText.length}`);
-          const ttsRes = await fetch(`${hedraBase}/generations`, {
-            method: 'POST', headers: jsonHeaders,
-            body: JSON.stringify({ type: 'text_to_speech', voice_id: voiceId, text: ttsText })
-          });
-          const ttsRaw = await ttsRes.text();
-          console.log(`[Hedra] TTS HTTP ${ttsRes.status}: ${ttsRaw.substring(0, 150)}`);
-          if (!ttsRes.ok) { let e:any={}; try{e=JSON.parse(ttsRaw);}catch{} return res.status(ttsRes.status).json({error:e?.messages?.[0]||`TTS HTTP ${ttsRes.status}`}); }
-          const ttsGenId = JSON.parse(ttsRaw)?.id;
-
-          let ttsAssetId: string | undefined;
-          for (let i = 0; i < 12; i++) {
-            await new Promise(r => setTimeout(r, 5000));
-            const pr = await fetch(`${hedraBase}/generations/${ttsGenId}/status`, { headers: jsonHeaders });
-            if (pr.ok) {
-              const pd = await pr.json();
-              console.log(`[Hedra TTS Poll] status=${pd?.status} asset_id=${pd?.asset_id}`);
-              if (pd?.status === 'complete' && pd?.asset_id) { ttsAssetId = pd.asset_id; break; }
-              if (pd?.status === 'error') return res.status(500).json({ error: 'Hedra TTS falhou.' });
-            }
-          }
-          if (!ttsAssetId) return res.status(504).json({ error: 'Hedra TTS timeout.' });
-          genBody.audio_id = ttsAssetId;
-          console.log(`[Hedra] TTS asset_id: ${ttsAssetId}`);
-        }
-
-        console.log(`[Hedra] POST /generations: ${JSON.stringify(genBody)}`);
-        const genR = await fetch(`${hedraBase}/generations`, {
-          method: 'POST', headers: jsonHeaders, body: JSON.stringify(genBody)
-        });
-        const genT = await genR.text();
-        console.log(`[Hedra] Generations HTTP ${genR.status}: ${genT.substring(0, 300)}`);
-        let genD: any = {};
-        try { genD = JSON.parse(genT); } catch {}
-        if (!genR.ok) return res.status(genR.status).json({ error: genD?.message || genD?.detail || `Hedra generations HTTP ${genR.status}: ${genT.substring(0, 100)}` });
-
-        const genId = genD?.id;
-        console.log(`[Hedra] Geração iniciada: ${genId}`);
-        return res.json({ generationId: genId, status: 'pending' });
-      }
-
-      // --- getHedraStatus — polling via GET /generations/{id}/status ---
-      if (method === 'getHedraStatus') {
-        const hedraKey = process.env.HEDRA_API_KEY;
-        if (!hedraKey) return res.status(503).json({ error: 'HEDRA_API_KEY não configurada.' });
-
-        const genId = args.generationId;
-        const userId = args.userId; // uid do usuário Lumina para path no Firebase Storage
-        if (!genId) return res.status(400).json({ error: 'generationId obrigatório.' });
-
-        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 15000));
-        const req = fetch(`https://api.hedra.com/web-app/public/generations/${genId}/status`, {
-          headers: { 'x-api-key': hedraKey, 'Content-Type': 'application/json' }
+        const req = fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
         }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
           .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
-
         const result = await Promise.race([req, timeout]);
-        if ('timedOut' in result && result.timedOut) { console.log('[Hedra Poll] timeout → pending'); return res.json({ status: 'pending', generationId: genId }); }
-
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
         const { status, text } = result as { timedOut: false, status: number, text: string };
-        let data: any = {};
-        try { data = JSON.parse(text); } catch {}
-        if (status !== 200) { console.error(`[Hedra Poll] HTTP ${status}: ${text?.substring(0, 200)}`); return res.status(status).json(data); }
-
-        const jobStatus = data?.status;
-        let hedraVideoUrl = data?.url || data?.videoUrl || data?.video_url;
-        const hedraAssetId = data?.asset_id;
-
-        // Buscar URL via asset_id se não veio direta
-        if ((jobStatus === 'complete' || jobStatus === 'finalizing') && !hedraVideoUrl && hedraAssetId) {
-          try {
-            const assetR = await fetch(`https://api.hedra.com/web-app/public/assets/${hedraAssetId}`, {
-              headers: { 'x-api-key': hedraKey, 'Content-Type': 'application/json' }
-            });
-            if (assetR.ok) {
-              const assetD = await assetR.json();
-              hedraVideoUrl = assetD?.asset?.url || assetD?.url;
-              console.log(`[Hedra Poll] URL via asset: ${hedraVideoUrl?.substring(0, 80)}`);
-            }
-          } catch(e) { console.warn('[Hedra Poll] Falha ao buscar asset URL:', e); }
-        }
-
-        console.log(`[Hedra Poll] id=${genId} status=${jobStatus} hasVideo=${!!hedraVideoUrl}`);
-
-        if (jobStatus === 'complete' && hedraVideoUrl) {
-          // ── Download para Firebase Storage + delete no Hedra ──
-          let finalVideoUrl = hedraVideoUrl;
-          try {
-            // 1. Baixar o vídeo do Hedra
-            const videoBuffer = await fetch(hedraVideoUrl).then(r => r.arrayBuffer());
-            const videoBytes = Buffer.from(videoBuffer);
-            const fileName = `lipsync_${genId}_${Date.now()}.mp4`;
-            const storagePath = userId
-              ? `users/${userId}/lipsync/${fileName}`
-              : `lipsync/${fileName}`;
-
-            // 2. Upload para Firebase Storage via Admin SDK
-            const bucket = adminStorage.bucket();
-            const file = bucket.file(storagePath);
-            await file.save(videoBytes, {
-              metadata: { contentType: 'video/mp4' },
-              public: true
-            });
-            const [signedUrl] = await file.getSignedUrl({
-              action: 'read',
-              expires: '03-01-2030'
-            });
-            finalVideoUrl = signedUrl;
-            console.log(`[Hedra] Vídeo salvo no Firebase: ${storagePath}`);
-
-            // 3. Deletar assets do Hedra (vídeo + áudio TTS)
-            if (hedraAssetId) {
-              await fetch(`https://api.hedra.com/web-app/public/assets/${hedraAssetId}`, {
-                method: 'DELETE',
-                headers: { 'x-api-key': hedraKey }
-              });
-              console.log(`[Hedra] Asset ${hedraAssetId} deletado do Hedra`);
-            }
-          } catch (uploadErr: any) {
-            // Se falhar o upload, retorna URL do Hedra mesmo (não quebra o fluxo)
-            console.error('[Hedra] Falha no upload Firebase, usando URL Hedra:', uploadErr.message);
-            finalVideoUrl = hedraVideoUrl;
+        let d: any = {};
+        try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const resultR = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
+            headers: { 'Authorization': `Key ${falKey}` }
+          });
+          if (resultR.ok) {
+            const rd = await resultR.json();
+            const videoUrl = rd?.video?.url || rd?.videos?.[0]?.url;
+            if (videoUrl) return res.json({ done: true, videoUrl });
           }
-
-          return res.json({ status: 'complete', videoUrl: finalVideoUrl, generationId: genId });
         }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: d?.error || 'Veo3.1 falhou' });
+        return res.json({ done: false, status: d?.status, progress: d?.progress });
+      }
 
-        if (jobStatus === 'error') return res.json({ status: 'failed', error: data?.error_message || 'Hedra: geração falhou', generationId: genId });
-        return res.json({ status: 'pending', progress: data?.progress || 0, generationId: genId });
+      // --- generateKlingAvatar — Kling AI Avatar Pro via fal.ai ---
+      if (method === 'generateKlingAvatar') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body: any = {
+          image_url: args.imageUrl,
+          audio_url: args.audioUrl,
+          duration: args.durationSeconds || 10,
+          aspect_ratio: args.aspectRatio || '9:16',
+        };
+        if (args.prompt) body.prompt = args.prompt;
+        console.log(`[KlingAvatar] image=${args.imageUrl?.substring(0,60)}`);
+        const r = await fetch('https://queue.fal.run/fal-ai/kling-video/v1/pro/avatar', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {};
+        try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `KlingAvatar HTTP ${r.status}` });
+        return res.json({ requestId: d?.request_id, status: 'pending' });
+      }
+
+      // --- getKlingAvatarStatus — polling Kling Avatar ---
+      if (method === 'getKlingAvatarStatus') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`https://queue.fal.run/fal-ai/kling-video/v1/pro/avatar/requests/${args.requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let d: any = {};
+        try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const resultR = await fetch(`https://queue.fal.run/fal-ai/kling-video/v1/pro/avatar/requests/${args.requestId}`, {
+            headers: { 'Authorization': `Key ${falKey}` }
+          });
+          if (resultR.ok) {
+            const rd = await resultR.json();
+            const videoUrl = rd?.video?.url || rd?.videos?.[0]?.url;
+            if (videoUrl) return res.json({ done: true, videoUrl });
+          }
+        }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: 'KlingAvatar falhou' });
+        return res.json({ done: false, status: d?.status });
+      }
+
+      // --- generateLatentSync — LatentSync ByteDance via fal.ai ---
+      if (method === 'generateLatentSync') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body = { video_url: args.videoUrl, audio_url: args.audioUrl };
+        console.log(`[LatentSync] video=${args.videoUrl?.substring(0,60)}`);
+        const r = await fetch('https://queue.fal.run/fal-ai/latentsync', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {};
+        try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `LatentSync HTTP ${r.status}` });
+        return res.json({ requestId: d?.request_id, status: 'pending' });
+      }
+
+      // --- getLatentSyncStatus — polling LatentSync ---
+      if (method === 'getLatentSyncStatus') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`https://queue.fal.run/fal-ai/latentsync/requests/${args.requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let d: any = {};
+        try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const resultR = await fetch(`https://queue.fal.run/fal-ai/latentsync/requests/${args.requestId}`, {
+            headers: { 'Authorization': `Key ${falKey}` }
+          });
+          if (resultR.ok) {
+            const rd = await resultR.json();
+            const videoUrl = rd?.video?.url;
+            if (videoUrl) return res.json({ done: true, videoUrl });
+          }
+        }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: 'LatentSync falhou' });
+        return res.json({ done: false, status: d?.status });
+      }
+
+      // --- generateFluxKontext — Flux Kontext Pro (edição por prompt) via fal.ai ---
+      if (method === 'generateFluxKontext') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body: any = {
+          prompt: args.prompt,
+          image_url: args.imageUrl,
+          aspect_ratio: args.aspectRatio || '1:1',
+          output_format: 'jpeg',
+        };
+        console.log(`[FluxKontext] prompt=${args.prompt?.substring(0,60)}`);
+        const r = await fetch('https://fal.run/fal-ai/flux/kontext/pro', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {};
+        try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `FluxKontext HTTP ${r.status}` });
+        const imageUrl = d?.images?.[0]?.url || d?.image?.url;
+        if (!imageUrl) return res.status(500).json({ error: 'FluxKontext: sem URL retornada' });
+        return res.json({ imageUrl });
+      }
+
+      // --- generateSeedream — Seedream 5.0 Lite Edit via fal.ai ---
+      if (method === 'generateSeedream') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body: any = {
+          prompt: args.prompt,
+          image_size: args.aspectRatio === '9:16' ? 'portrait_16_9' : args.aspectRatio === '16:9' ? 'landscape_16_9' : 'square',
+        };
+        if (args.imageUrl) body.image_url = args.imageUrl; // modo edição
+        console.log(`[Seedream] modo=${args.imageUrl ? 'edição' : 'geração'}`);
+        const endpoint = args.imageUrl ? 'fal-ai/seedream-5-0-lite/edit' : 'fal-ai/seedream-5-0-lite';
+        const r = await fetch(`https://fal.run/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {};
+        try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `Seedream HTTP ${r.status}` });
+        const imageUrl = d?.images?.[0]?.url || d?.image?.url;
+        if (!imageUrl) return res.status(500).json({ error: 'Seedream: sem URL retornada' });
+        return res.json({ imageUrl });
+      }
+
+      // --- generatePixVerse — PixVerse V6 (vídeo) via fal.ai ---
+      if (method === 'generatePixVerse') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const hasImage = !!args.imageUrl;
+        const endpoint = hasImage ? 'fal-ai/pixverse/v6/image-to-video' : 'fal-ai/pixverse/v6/text-to-video';
+        const body: any = {
+          prompt: args.prompt,
+          aspect_ratio: args.aspectRatio || '16:9',
+          resolution: args.resolution || '720p',
+          duration: args.durationSeconds || 5,
+        };
+        if (args.imageUrl) body.image_url = args.imageUrl;
+        console.log(`[PixVerse] endpoint=${endpoint}`);
+        const r = await fetch(`https://queue.fal.run/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {};
+        try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `PixVerse HTTP ${r.status}` });
+        return res.json({ requestId: d?.request_id, status: 'pending', endpoint });
+      }
+
+      // --- getPixVerseStatus — polling PixVerse ---
+      if (method === 'getPixVerseStatus') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`https://queue.fal.run/${args.endpoint}/requests/${args.requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let d: any = {};
+        try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const resultR = await fetch(`https://queue.fal.run/${args.endpoint}/requests/${args.requestId}`, {
+            headers: { 'Authorization': `Key ${falKey}` }
+          });
+          if (resultR.ok) {
+            const rd = await resultR.json();
+            const videoUrl = rd?.video?.url || rd?.videos?.[0]?.url;
+            if (videoUrl) return res.json({ done: true, videoUrl });
+          }
+        }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: 'PixVerse falhou' });
+        return res.json({ done: false, status: d?.status });
       }
 
 
