@@ -1860,31 +1860,60 @@ O JSON deve ter exatamente estas chaves:
           return res.status(500).json({ error: `Gemini erro ${geminiRes.status}: ${geminiData?.error?.message || 'desconhecido'}` });
         }
 
+        // Com responseMimeType: application/json, o texto já é JSON puro
         const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
         console.log(`[MktAds] Raw response (200 chars): ${rawText.substring(0, 200)}`);
 
-        // Limpar JSON de possíveis wrappers
-        const cleanJson = rawText
-          .replace(/^[\s\S]*?(\{)/m, '{')  // remover tudo antes do primeiro {
-          .replace(/\}[\s\S]*$/m, (m: string) => m.charAt(0))  // remover tudo após o último }
-          .trim();
-
+        // Estratégia 1: parse direto (responseMimeType garante JSON puro)
         try {
-          const scriptData = JSON.parse(cleanJson);
+          const scriptData = JSON.parse(rawText);
           console.log(`[MktAds] Script gerado OK: ${scriptData.title}`);
           return res.json({ success: true, scriptData });
-        } catch(parseErr) {
-          console.error(`[MktAds] JSON parse error. Raw: ${rawText.substring(0, 500)}`);
-          // Tentar extrair JSON com regex como fallback
-          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            try {
-              const scriptData = JSON.parse(jsonMatch[0]);
-              return res.json({ success: true, scriptData });
-            } catch(e2) {}
+        } catch(e1) {}
+
+        // Estratégia 2: limpar markdown se vier
+        try {
+          const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+          const scriptData = JSON.parse(cleaned);
+          console.log(`[MktAds] Script gerado (cleaned): ${scriptData.title}`);
+          return res.json({ success: true, scriptData });
+        } catch(e2) {}
+
+        // Estratégia 3: extrair apenas o bloco JSON com regex
+        try {
+          const match = rawText.match(/\{[\s\S]*\}/);
+          if (match) {
+            const scriptData = JSON.parse(match[0]);
+            console.log(`[MktAds] Script gerado (regex): ${scriptData.title}`);
+            return res.json({ success: true, scriptData });
           }
-          return res.status(500).json({ error: 'Erro ao processar resposta da IA. Tente novamente.' });
-        }
+        } catch(e3) {}
+
+        // Estratégia 4: extração campo a campo com regex (fallback final)
+        try {
+          const extract = (key: string) => {
+            const m = rawText.match(new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`));
+            return m ? m[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : '';
+          };
+          const scriptData = {
+            title: extract('title') || 'Ad Criativo',
+            hook: extract('hook') || '',
+            script: extract('script') || '',
+            visualDirection: extract('visualDirection') || '',
+            avatarPrompt: extract('avatarPrompt') || 'Professional person, studio lighting, friendly smile',
+            videoPrompt: extract('videoPrompt') || 'Person speaking to camera, professional setting',
+            callToAction: extract('callToAction') || 'Compre agora!',
+            caption: extract('caption') || '',
+            estimatedEngagement: extract('estimatedEngagement') || 'alto',
+          };
+          if (scriptData.hook || scriptData.script) {
+            console.log(`[MktAds] Script gerado (field extract): ${scriptData.title}`);
+            return res.json({ success: true, scriptData });
+          }
+        } catch(e4) {}
+
+        console.error(`[MktAds] Todas estratégias falharam. Raw: ${rawText.substring(0, 300)}`);
+        return res.status(500).json({ error: 'Erro ao processar resposta da IA. Tente novamente.' });
       }
 
       // --- generateMktAdsAvatar — Gera imagem do avatar para o ad ---
