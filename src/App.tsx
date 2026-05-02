@@ -1033,6 +1033,11 @@ function AppContent() {
   const [mktPlatform, setMktPlatform] = useState<'tiktok'|'instagram_reels'|'instagram_feed'|'youtube_shorts'|'youtube'>('tiktok');
   const [mktDuration, setMktDuration] = useState<15|30|60>(30);
   const [mktScriptData, setMktScriptData] = useState<any>(null);
+  const [mktEditHook, setMktEditHook] = useState('');
+  const [mktEditMainMsg, setMktEditMainMsg] = useState('');
+  const [mktEditScript, setMktEditScript] = useState('');
+  const [mktEditCTA, setMktEditCTA] = useState('');
+  const [mktEditCaption, setMktEditCaption] = useState('');
   const [mktAvatarUrl, setMktAvatarUrl] = useState('');
   const [mktVideoUrl, setMktVideoUrl] = useState('');
   const [mktIsLoading, setMktIsLoading] = useState(false);
@@ -7174,9 +7179,7 @@ const handleBatchDownload = async (ids: string[]) => {
         {/* --- LUMINA MKT ADS Tab --- */}
         {/* ================================================================ */}
         {activeTab === 'mkt_ads' && (
-          <div className="max-w-5xl mx-auto space-y-6">
-
-            {/* Header */}
+          <div className="max-w-6xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black text-white">🎬 Lumina Mkt Ads</h2>
@@ -7457,6 +7460,11 @@ const handleBatchDownload = async (ids: string[]) => {
                       const d = await r.json();
                       if (!d.success) throw new Error(d.error || 'Erro ao gerar script');
                       setMktScriptData(d.scriptData);
+                      setMktEditHook(d.scriptData.hook || '');
+                      setMktEditMainMsg(d.scriptData.mainMessage || '');
+                      setMktEditScript(d.scriptData.script || '');
+                      setMktEditCTA(d.scriptData.callToAction || '');
+                      setMktEditCaption(d.scriptData.caption || '');
                       setMktStep(3);
                     } catch(e: any) {
                       setMktError(e.message || 'Erro ao gerar script.');
@@ -7479,136 +7487,165 @@ const handleBatchDownload = async (ids: string[]) => {
             {/* STEP 3 — SCRIPT + AVATAR */}
             {mktStep === 3 && mktScriptData && (
               <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-black text-white text-base">✍️ Script & Avatar</h3>
+                  <span className={`text-xs font-black px-3 py-1 rounded-full ${mktScriptData.estimatedEngagement === 'viral' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : mktScriptData.estimatedEngagement === 'alto' ? 'bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30' : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'}`}>
+                    {mktScriptData.estimatedEngagement === 'viral' ? '🚀 Potencial VIRAL' : mktScriptData.estimatedEngagement === 'alto' ? '📈 Alto engajamento' : '📊 Bom engajamento'}
+                  </span>
+                </div>
 
-                {/* Script gerado */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Coluna esquerda — Script */}
+                <div className="grid grid-cols-2 gap-6">
+                  {/* COLUNA ESQUERDA — Script editável */}
                   <div className="space-y-4">
+
                     {/* Hook */}
-                    <div className="p-4 bg-gradient-to-br from-[#d4af37]/10 to-transparent border border-[#d4af37]/30 rounded-2xl">
-                      <p className="text-[10px] font-black text-[#d4af37] uppercase tracking-widest mb-2">🎣 Hook (3s)</p>
-                      <p className="text-sm font-bold text-white leading-relaxed">{mktScriptData.hook}</p>
+                    <div className="space-y-1.5">
+                      <label className="flex items-center justify-between text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                        🎣 Hook — Primeiros 3 segundos
+                        <span className="text-[10px] text-gray-600 normal-case font-normal">Para o scroll</span>
+                      </label>
+                      <textarea value={mktEditHook} onChange={e => setMktEditHook(e.target.value)} rows={3}
+                        className="w-full bg-gradient-to-br from-[#d4af37]/10 to-transparent border border-[#d4af37]/40 rounded-xl px-4 py-3 text-sm font-bold text-white placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] resize-none leading-relaxed" />
                     </div>
 
-                    {/* Script completo */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">📝 Roteiro completo</p>
-                        <button onClick={() => {
-                          const newScript = prompt('Edite o roteiro:', mktScriptData.script);
-                          if (newScript) setMktScriptData((p: any) => ({...p, script: newScript}));
-                        }} className="text-[10px] text-gray-600 hover:text-[#d4af37] flex items-center gap-1 transition-all">
-                          <Pencil size={10} /> Editar
-                        </button>
-                      </div>
-                      <div className="p-4 bg-[#1a1a1a] border border-[#222] rounded-2xl max-h-40 overflow-y-auto">
-                        <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{mktScriptData.script}</p>
-                      </div>
+                    {/* Mensagem principal */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">💬 Mensagem Principal</label>
+                      <textarea value={mktEditMainMsg} onChange={e => setMktEditMainMsg(e.target.value)} rows={3}
+                        className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] resize-none leading-relaxed" />
                     </div>
 
-                    {/* CTA + Engagement */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 bg-[#1a1a1a] border border-[#222] rounded-xl">
-                        <p className="text-[9px] font-black text-gray-600 uppercase mb-1">CTA</p>
-                        <p className="text-xs font-bold text-white">{mktScriptData.callToAction}</p>
-                      </div>
-                      <div className="p-3 bg-[#1a1a1a] border border-[#222] rounded-xl">
-                        <p className="text-[9px] font-black text-gray-600 uppercase mb-1">Engajamento estimado</p>
-                        <p className={`text-xs font-black ${mktScriptData.estimatedEngagement === 'viral' ? 'text-green-400' : mktScriptData.estimatedEngagement === 'alto' ? 'text-[#d4af37]' : 'text-gray-400'}`}>
-                          {mktScriptData.estimatedEngagement === 'viral' ? '🚀 VIRAL' : mktScriptData.estimatedEngagement === 'alto' ? '📈 Alto' : mktScriptData.estimatedEngagement === 'médio' ? '📊 Médio' : '📉 Baixo'}
-                        </p>
-                      </div>
+                    {/* Roteiro completo */}
+                    <div className="space-y-1.5">
+                      <label className="flex items-center justify-between text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                        📝 Roteiro Completo
+                        <span className="text-[10px] text-gray-600 normal-case font-normal">{mktDuration}s de fala</span>
+                      </label>
+                      <textarea value={mktEditScript} onChange={e => setMktEditScript(e.target.value)} rows={6}
+                        className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-xs text-gray-300 placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] resize-none leading-relaxed" />
+                    </div>
+
+                    {/* CTA */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">⚡ CTA Final</label>
+                      <input value={mktEditCTA} onChange={e => setMktEditCTA(e.target.value)}
+                        className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-[#d4af37]" />
                     </div>
 
                     {/* Caption */}
-                    <div className="space-y-2">
-                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">📱 Legenda para postagem</p>
-                      <div className="p-3 bg-[#1a1a1a] border border-[#222] rounded-xl">
-                        <p className="text-[10px] text-gray-400 leading-relaxed line-clamp-3">{mktScriptData.caption}</p>
-                        <button onClick={() => navigator.clipboard?.writeText(mktScriptData.caption)}
-                          className="mt-2 flex items-center gap-1 text-[10px] text-gray-600 hover:text-[#d4af37] transition-all">
-                          <Copy size={10} /> Copiar legenda
+                    <div className="space-y-1.5">
+                      <label className="flex items-center justify-between text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                        📱 Legenda para Postagem
+                        <button onClick={() => navigator.clipboard?.writeText(mktEditCaption)}
+                          className="text-[10px] text-gray-600 hover:text-[#d4af37] flex items-center gap-1 normal-case font-normal transition-all">
+                          <Copy size={10} /> Copiar
                         </button>
-                      </div>
+                      </label>
+                      <textarea value={mktEditCaption} onChange={e => setMktEditCaption(e.target.value)} rows={3}
+                        className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-xs text-gray-400 focus:outline-none focus:border-[#d4af37] resize-none leading-relaxed" />
                     </div>
+
+                    {/* Direção visual */}
+                    {mktScriptData.visualDirection && (
+                      <div className="p-3 bg-[#111] border border-[#222] rounded-xl">
+                        <p className="text-[10px] font-black text-gray-500 uppercase mb-1.5">🎬 Direção Visual</p>
+                        <p className="text-[11px] text-gray-400 leading-relaxed">{mktScriptData.visualDirection}</p>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Coluna direita — Avatar */}
+                  {/* COLUNA DIREITA — Avatar */}
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">🎭 Avatar do vídeo</p>
-                    </div>
+                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">🎭 Avatar do Vídeo</p>
 
-                    {/* Preview do avatar */}
-                    <div className={`relative rounded-2xl overflow-hidden border-2 ${mktAvatarUrl ? 'border-[#d4af37]' : 'border-[#333]'} bg-[#111]`}
-                      style={{ aspectRatio: mktPlatform === 'youtube' ? '16/9' : mktPlatform === 'instagram_feed' ? '1/1' : '9/16', maxHeight: '280px' }}>
+                    {/* Preview */}
+                    <div className={`relative rounded-2xl overflow-hidden border-2 ${mktAvatarUrl ? 'border-[#d4af37]' : 'border-[#2a2a2a]'} bg-[#0d0d0d]`}
+                      style={{ aspectRatio: mktPlatform === 'youtube' ? '16/9' : mktPlatform === 'instagram_feed' ? '1/1' : '9/16', maxHeight: '360px' }}>
                       {mktAvatarUrl ? (
                         <img src={mktAvatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
-                          <div className="w-12 h-12 rounded-full bg-[#222] flex items-center justify-center">
-                            <User size={22} className="text-gray-600" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+                          <div className="w-14 h-14 rounded-full bg-[#1a1a1a] border border-[#333] flex items-center justify-center">
+                            <User size={24} className="text-gray-600" />
                           </div>
-                          <p className="text-xs text-gray-600">Avatar será gerado pela IA</p>
-                          <p className="text-[10px] text-gray-700 leading-tight">{mktScriptData.visualDirection?.substring(0, 80)}...</p>
+                          <p className="text-xs text-gray-500 font-bold">Avatar será gerado pela IA</p>
+                          <p className="text-[10px] text-gray-700 leading-tight max-w-[160px]">
+                            {mktScriptData.avatarPrompt?.substring(0, 80)}...
+                          </p>
+                        </div>
+                      )}
+                      {mktIsLoading && mktLoadingMsg.includes('avatar') && (
+                        <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-3">
+                          <div className="w-8 h-8 border-2 border-[#d4af37]/30 border-t-[#d4af37] rounded-full animate-spin" />
+                          <p className="text-xs text-[#d4af37] font-bold">Gerando avatar...</p>
                         </div>
                       )}
                     </div>
 
-                    {/* Gerar avatar */}
-                    <button
-                      onClick={async () => {
+                    {/* Contexto do avatar */}
+                    <div className="p-3 bg-[#111] border border-[#222] rounded-xl">
+                      <p className="text-[10px] font-black text-gray-500 uppercase mb-1.5">👤 Persona do Avatar</p>
+                      <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-3">{mktScriptData.avatarPrompt}</p>
+                    </div>
+
+                    {/* Botões avatar */}
+                    <button onClick={async () => {
                         setMktIsLoading(true);
                         setMktLoadingMsg('🎭 Gerando avatar...');
+                        setMktError('');
                         try {
                           const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ method: 'generateMktAdsAvatar', args: {
                               avatarPrompt: mktScriptData.avatarPrompt,
+                              productCategory: mktProductInfo?.productCategory,
                               platform: mktPlatform
                             }})
                           });
                           const d = await r.json();
                           if (d.imageUrl) setMktAvatarUrl(d.imageUrl);
                           else throw new Error(d.error || 'Erro ao gerar avatar');
-                        } catch(e: any) {
-                          setMktError(e.message);
-                        } finally {
-                          setMktIsLoading(false);
-                        }
+                        } catch(e: any) { setMktError(e.message);
+                        } finally { setMktIsLoading(false); }
                       }}
                       disabled={mktIsLoading}
-                      className="w-full py-3 rounded-xl border border-[#333] text-gray-400 hover:border-[#d4af37] hover:text-[#d4af37] text-xs font-black transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
+                      className="w-full py-3 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#d4af37] text-sm font-black text-gray-300 hover:text-[#d4af37] transition-all disabled:opacity-40 flex items-center justify-center gap-2">
                       {mktIsLoading && mktLoadingMsg.includes('avatar') ? (
-                        <><RefreshCw size={13} className="animate-spin" /> Gerando...</>
+                        <><RefreshCw size={14} className="animate-spin" /> Gerando...</>
                       ) : (
-                        <><Sparkles size={13} /> {mktAvatarUrl ? '🔄 Regenerar Avatar' : '✨ Gerar Avatar com IA'}</>
+                        <><Sparkles size={14} /> {mktAvatarUrl ? '🔄 Novo Avatar' : '✨ Gerar Avatar'}</>
                       )}
                     </button>
 
-                    {/* Upload manual de avatar */}
-                    <label className="flex items-center gap-2 py-2.5 rounded-xl border border-dashed border-[#333] hover:border-[#555] cursor-pointer transition-all text-center justify-center">
+                    <label className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-[#2a2a2a] hover:border-[#444] cursor-pointer transition-all">
                       <input type="file" accept="image/*" className="hidden" onChange={e => {
-                        const f = e.target.files?.[0];
-                        if (!f) return;
+                        const f = e.target.files?.[0]; if (!f) return;
                         const reader = new FileReader();
                         reader.onload = ev => setMktAvatarUrl(ev.target?.result as string);
                         reader.readAsDataURL(f);
                       }} />
-                      <Upload size={12} className="text-gray-600" />
-                      <span className="text-[10px] text-gray-600 font-bold">Ou usar minha própria foto</span>
+                      <Upload size={13} className="text-gray-600" />
+                      <span className="text-xs text-gray-500 font-bold">Usar minha própria foto</span>
                     </label>
                   </div>
                 </div>
 
-                {/* Botão gerar vídeo */}
-                <button
-                  onClick={() => setMktStep(4)}
+                {/* Botão avançar */}
+                <button onClick={() => {
+                  // Atualizar scriptData com valores editados
+                  setMktScriptData((prev: any) => ({
+                    ...prev,
+                    hook: mktEditHook,
+                    mainMessage: mktEditMainMsg,
+                    script: mktEditScript,
+                    callToAction: mktEditCTA,
+                    caption: mktEditCaption,
+                  }));
+                  setMktStep(4);
+                }}
                   disabled={!mktAvatarUrl}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#f0d060] text-black font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#f0d060] text-black font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                   <Rocket size={16} />
-                  {mktAvatarUrl ? 'Gerar Vídeo do Ad →' : 'Gere um avatar primeiro'}
+                  {mktAvatarUrl ? 'Gerar Vídeo do Ad →' : 'Gere um avatar primeiro para continuar'}
                 </button>
               </div>
             )}
