@@ -267,6 +267,47 @@ const CREATIVE_AESTHETICS = [
   { id: 'trendy', name: 'Trendy', description: 'Estética TikTok/K-pop.' }
 ];
 
+// ── RotatingBadge — Badge animado com 4 frases em loop ───────────────────
+function RotatingBadge() {
+  const frases = [
+    'A mais completa plataforma brasileira de criação com IA',
+    'Movido pelos melhores modelos de IA do mundo',
+    'Google · OpenAI · ByteDance · Black Forest Labs',
+    '15+ motores de IA · Qualidade profissional',
+  ];
+  const [idx, setIdx] = useState(0);
+  const [exiting, setExiting] = useState(false);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setExiting(true);
+      setTimeout(() => {
+        setIdx(i => (i + 1) % frases.length);
+        setExiting(false);
+      }, 380);
+    }, 3200);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-[#d4af37]/5 border border-[#d4af37]/20 rounded-full backdrop-blur-sm overflow-hidden"
+      style={{ minWidth: '340px', justifyContent: 'center' }}>
+      {/* Dot pulsante */}
+      <span className="w-2 h-2 rounded-full bg-[#d4af37] shrink-0 animate-pulse"
+        style={{ boxShadow: '0 0 8px #d4af37, 0 0 16px rgba(212,168,67,0.4)' }} />
+      {/* Texto animado */}
+      <span
+        className="text-[10px] font-black uppercase tracking-[2px] text-[#d4af37] whitespace-nowrap transition-all duration-[380ms]"
+        style={{
+          transform: exiting ? 'translateY(-110%)' : 'translateY(0)',
+          opacity: exiting ? 0 : 1,
+        }}>
+        ✦ {frases[idx]}
+      </span>
+    </div>
+  );
+}
+
 // ── ManualCard — Accordion para a aba Aprenda Mais ───────────────────────
 function ManualCard({ manual }: { manual: any }) {
   const [open, setOpen] = useState<string | null>(null);
@@ -4052,38 +4093,31 @@ const handleBatchDownload = async (ids: string[]) => {
           </button>
 
           {/* Nav — scroll horizontal em telas menores */}
-          <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0">
-            <button 
-              onClick={() => setView('landing')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap font-bold text-xs uppercase tracking-widest hover:bg-[#222] text-gray-400 shrink-0"
-              title="Home"
-            >
-              <Home size={14} />
-              <span className="text-[10px]">Home</span>
-            </button>
-            <div className="w-px h-4 bg-[#222] mx-1 shrink-0" />
+          <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide flex-1 min-w-0">
             {[
-              { id: 'dashboard',        label: 'Dashboard',        icon: LayoutDashboard },
-              { id: 'branding',         label: 'L. Marcas',        icon: Palette },
-              { id: 'projects',         label: 'L. ADS',           icon: Briefcase },
-              { id: 'mkt_ads',          label: 'L. UGC',           icon: Megaphone },
-              { id: 'creative_studio',  label: 'L. Estúdio',       icon: Sparkles },
-              { id: 'lipsync',          label: 'L. LipSync',       icon: Mic },
-              { id: 'library',          label: 'Biblioteca',       icon: Library },
-              { id: 'plans',            label: 'Planos',           icon: ShoppingBag },
-              { id: 'learn_more',       label: 'Aprenda Mais',     icon: BookOpen },
+              { id: 'home',             label: 'Home',              icon: Home,            action: () => setView('landing') },
+              { id: 'dashboard',        label: 'Dashboard',         icon: LayoutDashboard, action: null },
+              { id: 'branding',         label: 'Lumina Marcas',     icon: Palette,         action: null },
+              { id: 'projects',         label: 'Lumina ADS',        icon: Briefcase,       action: null },
+              { id: 'mkt_ads',          label: 'Lumina UGC',        icon: Megaphone,       action: null },
+              { id: 'creative_studio',  label: 'Lumina Estúdio',    icon: Sparkles,        action: null },
+              { id: 'lipsync',          label: 'Lumina LipSync',    icon: Mic,             action: null },
+              { id: 'library',          label: 'Biblioteca',        icon: Library,         action: null },
+              { id: 'plans',            label: 'Planos',            icon: ShoppingBag,     action: null },
+              { id: 'learn_more',       label: 'Aprenda Mais',      icon: BookOpen,        action: null },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => {
+                  if (tab.action) { tab.action(); return; }
                   setActiveTab(tab.id as any);
                   if (tab.id === 'projects') { setUseCreativeStudio(true); setUseLipsync(false); }
                   if (tab.id === 'creative_studio') { setUseCreativeStudio(false); setUseLipsync(false); }
                   if (tab.id === 'lipsync') { setUseCreativeStudio(false); setUseLipsync(true); }
                 }}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap font-black text-[10px] uppercase tracking-wide shrink-0 ${activeTab === tab.id ? 'bg-[#d4af37] text-black' : 'hover:bg-[#1a1a1a] text-gray-400'}`}
+                className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all whitespace-nowrap font-black text-[9px] uppercase tracking-wide shrink-0 ${activeTab === tab.id ? 'bg-[#d4af37] text-black' : 'hover:bg-[#1a1a1a] text-gray-400'}`}
               >
-                <tab.icon size={11} />
+                <tab.icon size={10} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -4258,11 +4292,9 @@ const handleBatchDownload = async (ids: string[]) => {
         {activeTab === 'dashboard' && (
           <>
             <div className="space-y-10 py-8">
-            <div className="text-center space-y-3">
-              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                className="inline-flex items-center gap-3 px-4 py-2 bg-[#1a1a1a] border border-[#222] rounded-full text-sm font-bold text-gray-400 uppercase tracking-widest">
-                <Sparkles size={14} className="text-[#d4af37]" />
-                BEM-VINDO AO LUMINA ART CREATOR
+            <div className="text-center space-y-4">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+                <RotatingBadge />
               </motion.div>
               <h2 className="text-xl md:text-2xl font-black tracking-tighter">O QUE VAMOS <span className="text-[#d4af37]">CRIAR HOJE?</span></h2>
               <p className="text-gray-500 text-sm max-w-lg mx-auto">Escolha uma das ferramentas abaixo e comece a criar conteúdo profissional com Inteligência Artificial</p>
@@ -7144,7 +7176,7 @@ const handleBatchDownload = async (ids: string[]) => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black text-white">🎬 Lumina UGC</h2>
-                <p className="text-sm text-gray-500 mt-1">De produto a vídeo UGC viral em minutos — powered by AI</p>
+                <p className="text-sm text-gray-500 mt-1">De produto a vídeo UGC viral em minutos</p>
               </div>
               {mktStep > 1 && (
                 <button onClick={() => { setMktStep(1); setMktScriptData(null); setMktAvatarUrl(''); setMktVideoUrl(''); setMktError(''); }}
