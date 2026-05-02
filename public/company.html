@@ -169,20 +169,24 @@ nav {
 .hero-badge {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   background: rgba(212,168,67,0.06);
   border: 1px solid rgba(212,168,67,0.2);
   border-radius: 100px;
   padding: 8px 22px 8px 16px;
   font-size: 10.5px;
   font-weight: 700;
-  letter-spacing: 2.5px;
+  letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--lumina-gold);
   margin-bottom: 32px;
   font-family: 'Space Grotesk', sans-serif;
   animation: fadeInDown 0.8s ease both;
   backdrop-filter: blur(8px);
+  overflow: hidden;
+  min-width: 420px;
+  max-width: 520px;
+  position: relative;
 }
 
 .hero-badge::before {
@@ -193,6 +197,26 @@ nav {
   box-shadow: 0 0 10px var(--lumina-gold), 0 0 20px rgba(212,168,67,0.4);
   animation: pulse 2s infinite;
   flex-shrink: 0;
+}
+
+.badge-text-wrap {
+  overflow: hidden;
+  height: 16px;
+  flex: 1;
+  position: relative;
+}
+
+.badge-text-inner {
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.badge-text-item {
+  height: 16px;
+  line-height: 16px;
+  white-space: nowrap;
+  opacity: 0.95;
 }
 
 @keyframes pulse {
@@ -1210,8 +1234,16 @@ footer {
 <section class="hero" id="sobre">
   <div class="hero-bg"></div>
 
-  <div class="hero-badge">
-    ✦ A mais completa plataforma brasileira de criação com IA
+  <div class="hero-badge" id="heroBadge">
+    <div class="badge-text-wrap">
+      <div class="badge-text-inner" id="badgeInner">
+        <span class="badge-text-item">✦ A mais completa plataforma brasileira de criação com IA</span>
+        <span class="badge-text-item">✦ Movido pelos melhores modelos de IA do mundo</span>
+        <span class="badge-text-item">✦ Google · OpenAI · ByteDance · Black Forest Labs</span>
+        <span class="badge-text-item">✦ 15+ motores de IA · Qualidade profissional</span>
+        <span class="badge-text-item">✦ A mais completa plataforma brasileira de criação com IA</span>
+      </div>
+    </div>
   </div>
 
   <h1>
@@ -1736,5 +1768,35 @@ function animateCounter(el, target, suffix = '') {
   requestAnimationFrame(step);
 }
 </script>
+<!-- Badge rotativo -->
+<script>
+(function() {
+  const inner = document.getElementById('badgeInner');
+  if (!inner) return;
+
+  const total = 4; // número de frases reais (a 5ª é clone da 1ª para loop suave)
+  let current = 0;
+  const itemH = 16; // height de cada item em px
+  const interval = 3200; // ms entre cada troca
+
+  function next() {
+    current++;
+    inner.style.transition = 'transform 0.65s cubic-bezier(0.4, 0, 0.2, 1)';
+    inner.style.transform = `translateY(-${current * itemH}px)`;
+
+    // Quando chegar no clone (index 4), volta silenciosamente ao index 0
+    if (current >= total) {
+      setTimeout(() => {
+        inner.style.transition = 'none';
+        inner.style.transform = 'translateY(0px)';
+        current = 0;
+      }, 680);
+    }
+  }
+
+  setInterval(next, interval);
+})();
+</script>
+
 </body>
 </html>
