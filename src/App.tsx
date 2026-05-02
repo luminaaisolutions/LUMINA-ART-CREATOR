@@ -5773,8 +5773,8 @@ const handleBatchDownload = async (ids: string[]) => {
 
                       {/* Categoria 1: Avatar falante — grid 2 colunas */}
                       <div className="space-y-1.5">
-                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">🎭 Avatar falante (imagem + áudio)</span>
-                        <div className="grid grid-cols-2 gap-1.5">
+                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">🎭 Avatar falante (imagem + áudio)</span>
+                        <div className="grid grid-cols-2 gap-2">
                           {([
                             { id: 'klingAvatar', icon: '🔥', label: 'Kling Avatar Pro', sub: 'Humanos/cartoon' },
                             { id: 'heygen',      icon: '🎭', label: 'HeyGen Avatar 4',  sub: 'Comercial premium' },
@@ -5782,12 +5782,12 @@ const handleBatchDownload = async (ids: string[]) => {
                             { id: 'aurora',      icon: '✨', label: 'Aurora',            sub: 'Creatify · HD' },
                           ] as const).map(m => (
                             <button key={m.id} type="button" onClick={() => handleLipsyncEngineChange(m.id)}
-                              className={`p-2 rounded-xl border text-left transition-all ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-sm">{m.icon}</span>
+                              className={`p-3 rounded-xl border text-left transition-all ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/10' : 'border-[#2a2a2a] bg-[#161616] hover:border-[#444]'}`}>
+                              <div className="flex items-center gap-2">
+                                <span className="text-base">{m.icon}</span>
                                 <div>
-                                  <div className={`text-[10px] font-black leading-tight ${lipsyncEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
-                                  <div className="text-[9px] text-gray-500">{m.sub}</div>
+                                  <div className={`text-xs font-black leading-tight ${lipsyncEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                  <div className="text-[11px] text-gray-400 mt-0.5">{m.sub}</div>
                                 </div>
                               </div>
                             </button>
@@ -5797,8 +5797,8 @@ const handleBatchDownload = async (ids: string[]) => {
 
                       {/* Categoria 2: Sincronizar vídeo — grid 2 colunas */}
                       <div className="space-y-1.5">
-                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">👄 Sincronizar vídeo existente</span>
-                        <div className="grid grid-cols-2 gap-1.5">
+                        <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">👄 Sincronizar vídeo existente</span>
+                        <div className="grid grid-cols-2 gap-2">
                           {([
                             { id: 'syncV3',     icon: '💫', label: 'Sync.so v3',  sub: 'Melhor qualidade', badge: 'TOP' },
                             { id: 'syncpro',    icon: '💎', label: 'Sync.so Pro', sub: 'Close-up HD',      badge: 'PRO' },
@@ -5806,16 +5806,16 @@ const handleBatchDownload = async (ids: string[]) => {
                             { id: 'latentSync', icon: '🎯', label: 'LatentSync',  sub: 'ByteDance open',   badge: 'OS' },
                           ] as const).map(m => (
                             <button key={m.id} type="button" onClick={() => handleLipsyncEngineChange(m.id)}
-                              className={`p-2 rounded-xl border text-left transition-all ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
+                              className={`p-3 rounded-xl border text-left transition-all ${lipsyncEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/10' : 'border-[#2a2a2a] bg-[#161616] hover:border-[#444]'}`}>
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-sm">{m.icon}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-base">{m.icon}</span>
                                   <div>
-                                    <div className={`text-[10px] font-black leading-tight ${lipsyncEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
-                                    <div className="text-[9px] text-gray-500">{m.sub}</div>
+                                    <div className={`text-xs font-black leading-tight ${lipsyncEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                    <div className="text-[11px] text-gray-400 mt-0.5">{m.sub}</div>
                                   </div>
                                 </div>
-                                {m.badge && <span className="text-[8px] font-black text-[#d4af37] bg-[#d4af37]/10 px-1 py-0.5 rounded-full shrink-0">{m.badge}</span>}
+                                {m.badge && <span className="text-[9px] font-black text-[#d4af37] bg-[#d4af37]/15 border border-[#d4af37]/30 px-1.5 py-0.5 rounded-full shrink-0">{m.badge}</span>}
                               </div>
                             </button>
                           ))}
