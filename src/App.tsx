@@ -4059,21 +4059,21 @@ const handleBatchDownload = async (ids: string[]) => {
               title="Home"
             >
               <Home size={14} />
-              <span className="hidden 2xl:block">Home</span>
+              <span className="text-[10px]">Home</span>
             </button>
             <div className="w-px h-4 bg-[#222] mx-1 shrink-0" />
             {[
-              { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-              { id: 'branding', label: 'Marcas', icon: Palette },
-              { id: 'projects', label: 'Proj. ADS', icon: Briefcase },
-              { id: 'mkt_ads', label: 'UGC', icon: Megaphone },
-              { id: 'creative_studio', label: 'Estúdio', icon: Sparkles },
-              { id: 'lipsync', label: 'LipSync', icon: Mic },
-              { id: 'library', label: 'Biblioteca', icon: Library },
-              { id: 'plans', label: 'Planos', icon: ShoppingBag },
-              { id: 'learn_more', label: 'Aprenda', icon: BookOpen },
+              { id: 'dashboard',        label: 'Dashboard',        icon: LayoutDashboard },
+              { id: 'branding',         label: 'L. Marcas',        icon: Palette },
+              { id: 'projects',         label: 'L. ADS',           icon: Briefcase },
+              { id: 'mkt_ads',          label: 'L. UGC',           icon: Megaphone },
+              { id: 'creative_studio',  label: 'L. Estúdio',       icon: Sparkles },
+              { id: 'lipsync',          label: 'L. LipSync',       icon: Mic },
+              { id: 'library',          label: 'Biblioteca',       icon: Library },
+              { id: 'plans',            label: 'Planos',           icon: ShoppingBag },
+              { id: 'learn_more',       label: 'Aprenda Mais',     icon: BookOpen },
             ].map((tab) => (
-              <button 
+              <button
                 key={tab.id}
                 onClick={() => {
                   setActiveTab(tab.id as any);
@@ -4081,10 +4081,10 @@ const handleBatchDownload = async (ids: string[]) => {
                   if (tab.id === 'creative_studio') { setUseCreativeStudio(false); setUseLipsync(false); }
                   if (tab.id === 'lipsync') { setUseCreativeStudio(false); setUseLipsync(true); }
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap font-bold text-xs uppercase tracking-widest shrink-0 ${activeTab === tab.id ? 'bg-[#d4af37] text-black' : 'hover:bg-[#222] text-gray-400'}`}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap font-black text-[10px] uppercase tracking-wide shrink-0 ${activeTab === tab.id ? 'bg-[#d4af37] text-black' : 'hover:bg-[#1a1a1a] text-gray-400'}`}
               >
-                <tab.icon size={13} />
-                <span className="hidden lg:block">{tab.label}</span>
+                <tab.icon size={11} />
+                <span>{tab.label}</span>
               </button>
             ))}
           </nav>
@@ -4196,10 +4196,10 @@ const handleBatchDownload = async (ids: string[]) => {
       </header>
 
       {/* --- Main Content --- */}
-      <main className="pt-20 p-4 md:p-8 min-h-screen flex flex-col">
+      <main className="pt-16 p-4 md:p-6 min-h-screen flex flex-col">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white">
+            <h1 className="text-xl md:text-2xl font-black tracking-tighter uppercase text-white">
               {activeTab === 'dashboard' && 'Painel de Controle'}
               {activeTab === 'branding' && 'Minhas Marcas'}
               {activeTab === 'projects' && 'Projetos Criativos Ads'}
@@ -4213,7 +4213,7 @@ const handleBatchDownload = async (ids: string[]) => {
             {activeTab === 'mkt_ads' && '🎬 Lumina UGC'}
             {activeTab === 'learn_more' && '📚 Aprenda Mais'}
           </h1>
-          <p className="text-gray-500 text-sm md:text-base">
+          <p className="text-gray-500 text-xs md:text-sm">
             {activeTab === 'dashboard' && 'Visão geral de todas as funções principais do Lumina.'}
             {activeTab === 'branding' && 'Defina a identidade visual, cores e tipografia de seus clientes.'}
             {activeTab === 'projects' && 'Gere artes e criativos profissionais para marcas específicas.'}
@@ -4264,7 +4264,7 @@ const handleBatchDownload = async (ids: string[]) => {
                 <Sparkles size={14} className="text-[#d4af37]" />
                 BEM-VINDO AO LUMINA ART CREATOR
               </motion.div>
-              <h2 className="text-3xl md:text-5xl font-black tracking-tighter">O QUE VAMOS <span className="text-[#d4af37]">CRIAR HOJE?</span></h2>
+              <h2 className="text-xl md:text-2xl font-black tracking-tighter">O QUE VAMOS <span className="text-[#d4af37]">CRIAR HOJE?</span></h2>
               <p className="text-gray-500 text-sm max-w-lg mx-auto">Escolha uma das ferramentas abaixo e comece a criar conteúdo profissional com Inteligência Artificial</p>
             </div>
 
