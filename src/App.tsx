@@ -4093,7 +4093,7 @@ const handleBatchDownload = async (ids: string[]) => {
           </button>
 
           {/* Nav — scroll horizontal em telas menores */}
-          <nav className="flex items-center gap-0.5 overflow-x-auto scrollbar-hide flex-1 min-w-0">
+          <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0">
             {[
               { id: 'home',             label: 'Home',              icon: Home,            action: () => setView('landing') },
               { id: 'dashboard',        label: 'Dashboard',         icon: LayoutDashboard, action: null },
@@ -4115,9 +4115,9 @@ const handleBatchDownload = async (ids: string[]) => {
                   if (tab.id === 'creative_studio') { setUseCreativeStudio(false); setUseLipsync(false); }
                   if (tab.id === 'lipsync') { setUseCreativeStudio(false); setUseLipsync(true); }
                 }}
-                className={`flex items-center gap-1 px-2 py-1.5 rounded-lg transition-all whitespace-nowrap font-black text-[9px] uppercase tracking-wide shrink-0 ${activeTab === tab.id ? 'bg-[#d4af37] text-black' : 'hover:bg-[#1a1a1a] text-gray-400'}`}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap font-black text-[11px] uppercase tracking-wide shrink-0 ${activeTab === tab.id ? 'bg-[#d4af37] text-black' : 'hover:bg-[#1a1a1a] text-gray-400'}`}
               >
-                <tab.icon size={10} />
+                <tab.icon size={12} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -4231,38 +4231,21 @@ const handleBatchDownload = async (ids: string[]) => {
 
       {/* --- Main Content --- */}
       <main className="pt-16 p-4 md:p-6 min-h-screen flex flex-col">
-        <header className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tighter uppercase text-white">
-              {activeTab === 'dashboard' && 'Painel de Controle'}
-              {activeTab === 'branding' && 'Minhas Marcas'}
-              {activeTab === 'projects' && 'Projetos Criativos Ads'}
-              {activeTab === 'creative_studio' && 'Estúdio Lumina'}
-            {activeTab === 'lipsync' && 'LipSync Studio'}
-            {activeTab === 'library' && 'Sua Biblioteca'}
-            {activeTab === 'plans' && 'Planos e Assinaturas'}
-            {activeTab === 'profile' && 'Perfil e Conta'}
-            {activeTab === 'referrals' && 'Programa de Indicações'}
-            {activeTab === 'faq' && 'FAQ e Suporte'}
-            {activeTab === 'mkt_ads' && '🎬 Lumina UGC'}
-            {activeTab === 'learn_more' && '📚 Aprenda Mais'}
-          </h1>
-          <p className="text-gray-500 text-xs md:text-sm">
-            {activeTab === 'dashboard' && 'Visão geral de todas as funções principais do Lumina.'}
-            {activeTab === 'branding' && 'Defina a identidade visual, cores e tipografia de seus clientes.'}
-            {activeTab === 'projects' && 'Gere artes e criativos profissionais para marcas específicas.'}
-            {activeTab === 'creative_studio' && 'Crie vídeos, imagens, avatares e retratos artísticos com IA.'}
-            {activeTab === 'lipsync' && 'Sincronismo labial de alta fidelidade para seus vídeos.'}
-            {activeTab === 'library' && 'Acesse todas as suas criações em um só lugar.'}
-            {activeTab === 'plans' && 'Gerencie seus planos, créditos e configurações técnicas.'}
-            {activeTab === 'mkt_ads' && 'Crie vídeos UGC prontos para publicar em segundos.'}
-            {activeTab === 'learn_more' && 'Manuais completos para dominar cada funcionalidade do Lumina.'}
-            {activeTab === 'profile' && 'Gerencie seus dados pessoais, segurança e informações da conta.'}
-            {activeTab === 'referrals' && 'Convide amigos e ganhe créditos bônus para suas criações.'}
-            {activeTab === 'faq' && 'Dúvidas frequentes, tutoriais e canais de suporte.'}
-          </p>
-          </div>
-        </header>
+        {/* Header de título — apenas para abas de conta */}
+        {['profile','referrals','faq'].includes(activeTab) && (
+          <header className="mb-6">
+            <h1 className="text-lg font-black tracking-tighter uppercase text-white">
+              {activeTab === 'profile' && 'Perfil e Conta'}
+              {activeTab === 'referrals' && 'Programa de Indicações'}
+              {activeTab === 'faq' && 'FAQ e Suporte'}
+            </h1>
+            <p className="text-gray-500 text-xs mt-1">
+              {activeTab === 'profile' && 'Gerencie seus dados pessoais, segurança e informações da conta.'}
+              {activeTab === 'referrals' && 'Convide amigos e ganhe créditos bônus para suas criações.'}
+              {activeTab === 'faq' && 'Dúvidas frequentes, tutoriais e canais de suporte.'}
+            </p>
+          </header>
+        )}
 
         {/* --- Sub Navigation for Account Sections --- */}
         {['profile', 'referrals', 'faq'].includes(activeTab) && (
