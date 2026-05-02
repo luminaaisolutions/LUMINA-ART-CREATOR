@@ -63,7 +63,11 @@ import {
   RefreshCw,
   ChevronRight as ChevronRightIcon,
   Star,
-  Rocket
+  Rocket,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Play
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
@@ -262,6 +266,51 @@ const CREATIVE_AESTHETICS = [
   { id: '3d', name: '3D/Ilustrativo', description: 'Personagens e profundidade.' },
   { id: 'trendy', name: 'Trendy', description: 'Estética TikTok/K-pop.' }
 ];
+
+// ── ManualCard — Accordion para a aba Aprenda Mais ───────────────────────
+function ManualCard({ manual }: { manual: any }) {
+  const [open, setOpen] = useState<string | null>(null);
+  return (
+    <div className={`bg-[#111] border rounded-2xl overflow-hidden transition-all ${manual.color}`}>
+      <div className="p-5 flex items-center justify-between cursor-pointer select-none"
+        onClick={() => setOpen(open === 'root' ? null : 'root')}>
+        <div className="flex items-center gap-4">
+          <span className="text-2xl">{manual.icon}</span>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-black text-white text-base">{manual.title}</h3>
+              <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 border border-[#d4af37]/20 px-2 py-0.5 rounded-full">{manual.badge}</span>
+            </div>
+            <p className="text-xs text-gray-500">{manual.subtitle}</p>
+          </div>
+        </div>
+        <div className={`transition-transform ${open === 'root' ? 'rotate-180' : ''}`}>
+          <ChevronDown size={18} className="text-gray-500" />
+        </div>
+      </div>
+
+      {open === 'root' && (
+        <div className="border-t border-[#222] divide-y divide-[#1a1a1a]">
+          {manual.sections.map((section: any, idx: number) => (
+            <div key={idx}>
+              <button
+                className="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-[#1a1a1a] transition-colors"
+                onClick={() => setOpen(open === `s${idx}` ? 'root' : `s${idx}`)}>
+                <span className="text-sm font-bold text-gray-300">{section.title}</span>
+                <ChevronDown size={14} className={`text-gray-600 transition-transform shrink-0 ${open === `s${idx}` ? 'rotate-180' : ''}`} />
+              </button>
+              {open === `s${idx}` && (
+                <div className="px-5 pb-5 pt-1">
+                  <p className="text-sm text-gray-400 leading-relaxed">{section.content}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Timer({ start, end, status }: { start: any; end?: any; status: string }) {
   const [elapsed, setElapsed] = useState(0);
@@ -674,7 +723,7 @@ function AppContent() {
       localStorage.setItem('referredBy', ref);
     }
   }, []);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'branding' | 'projects' | 'creative_studio' | 'lipsync' | 'library' | 'plans' | 'profile' | 'referrals' | 'faq' | 'mkt_ads'>(localStorage.getItem('lumina_activeTab') as any || 'dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'branding' | 'projects' | 'creative_studio' | 'lipsync' | 'library' | 'plans' | 'profile' | 'referrals' | 'faq' | 'mkt_ads' | 'learn_more'>(localStorage.getItem('lumina_activeTab') as any || 'dashboard');
 
   useEffect(() => {
     localStorage.setItem('lumina_activeTab', activeTab);
@@ -3987,40 +4036,42 @@ const handleBatchDownload = async (ids: string[]) => {
         )}
       </AnimatePresence>
       {/* --- Top Navigation --- */}
-      <header className="fixed top-0 left-0 right-0 h-20 bg-[#111] border-b border-[#222] z-50 flex items-center justify-between px-8">
-        <div className="flex items-center gap-8">
+      <header className="fixed top-0 left-0 right-0 h-16 bg-[#111] border-b border-[#222] z-50 flex items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-4 min-w-0 flex-1">
           <button 
             onClick={() => setView('landing')}
-            className="flex items-center gap-3 group hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="flex items-center gap-2 group hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-[#d4af37] to-[#f1c40f] rounded-xl flex items-center justify-center shadow-lg shadow-[#d4af37]/20 group-hover:shadow-[#d4af37]/40 transition-all">
-              <Zap className="text-black w-6 h-6" />
+            <div className="w-8 h-8 bg-gradient-to-br from-[#d4af37] to-[#f1c40f] rounded-lg flex items-center justify-center shadow-lg shadow-[#d4af37]/20">
+              <Zap className="text-black w-5 h-5" />
             </div>
-            <div className="flex flex-col items-start leading-none">
-              <span className="font-black text-sm tracking-tighter text-white uppercase">LUMINA</span>
-              <span className="font-black text-[12px] tracking-widest text-[#d4af37] uppercase">ART CREATOR</span>
+            <div className="hidden sm:flex flex-col items-start leading-none">
+              <span className="font-black text-xs tracking-tighter text-white uppercase">LUMINA</span>
+              <span className="font-black text-[10px] tracking-widest text-[#d4af37] uppercase">ART CREATOR</span>
             </div>
           </button>
 
-          <nav className="flex items-center gap-2">
+          {/* Nav — scroll horizontal em telas menores */}
+          <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0">
             <button 
               onClick={() => setView('landing')}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap font-bold text-sm uppercase tracking-widest hover:bg-[#222] text-gray-400 group"
-              title="Voltar para a Landing Page"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap font-bold text-xs uppercase tracking-widest hover:bg-[#222] text-gray-400 shrink-0"
+              title="Home"
             >
-              <Home size={16} className="group-hover:text-[#d4af37] transition-colors" />
-              <span className="hidden xl:block">Home</span>
+              <Home size={14} />
+              <span className="hidden 2xl:block">Home</span>
             </button>
-            <div className="w-px h-6 bg-[#222] mx-2" />
+            <div className="w-px h-4 bg-[#222] mx-1 shrink-0" />
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-              { id: 'branding', label: 'Minhas Marcas', icon: Palette },
-              { id: 'projects', label: 'Projetos Criativos Ads', icon: Briefcase },
-              { id: 'mkt_ads', label: '🎬 Lumina Mkt Ads', icon: Megaphone },
-              { id: 'creative_studio', label: 'Estúdio Lumina', icon: Sparkles },
-              { id: 'lipsync', label: 'Lip Sync', icon: Mic },
+              { id: 'branding', label: 'Marcas', icon: Palette },
+              { id: 'projects', label: 'Proj. ADS', icon: Briefcase },
+              { id: 'mkt_ads', label: 'UGC', icon: Megaphone },
+              { id: 'creative_studio', label: 'Estúdio', icon: Sparkles },
+              { id: 'lipsync', label: 'LipSync', icon: Mic },
               { id: 'library', label: 'Biblioteca', icon: Library },
               { id: 'plans', label: 'Planos', icon: ShoppingBag },
+              { id: 'learn_more', label: 'Aprenda', icon: BookOpen },
             ].map((tab) => (
               <button 
                 key={tab.id}
@@ -4030,45 +4081,43 @@ const handleBatchDownload = async (ids: string[]) => {
                   if (tab.id === 'creative_studio') { setUseCreativeStudio(false); setUseLipsync(false); }
                   if (tab.id === 'lipsync') { setUseCreativeStudio(false); setUseLipsync(true); }
                 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all whitespace-nowrap font-bold text-sm uppercase tracking-widest ${activeTab === tab.id ? 'bg-[#d4af37] text-black shadow-lg shadow-[#d4af37]/20' : 'hover:bg-[#222] text-gray-400'}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all whitespace-nowrap font-bold text-xs uppercase tracking-widest shrink-0 ${activeTab === tab.id ? 'bg-[#d4af37] text-black' : 'hover:bg-[#222] text-gray-400'}`}
               >
-                <tab.icon size={16} />
-                <span className="hidden xl:block">{tab.label}</span>
+                <tab.icon size={13} />
+                <span className="hidden lg:block">{tab.label}</span>
               </button>
             ))}
           </nav>
         </div>
 
-        <div className="flex items-center gap-6 relative">
+        {/* Perfil — compacto, sempre visível */}
+        <div className="flex items-center gap-3 shrink-0 pl-4 border-l border-[#222]">
           {userData && (
-            <div className="hidden md:flex items-center gap-4 px-4 py-2 bg-[#1a1a1a] border border-[#222] rounded-2xl">
+            <div className="hidden lg:flex items-center gap-3 px-3 py-1.5 bg-[#1a1a1a] border border-[#222] rounded-xl">
               <div className="flex flex-col items-end">
-                <span className="text-[13px] font-black text-[#d4af37] uppercase tracking-widest leading-none mb-1">Créditos</span>
-                <span className="text-base font-black text-white leading-none">{userData.credits || 0}</span>
+                <span className="text-[10px] font-black text-[#d4af37] uppercase tracking-widest leading-none mb-0.5">Créditos</span>
+                <span className="text-sm font-black text-white leading-none">{userData.credits || 0}</span>
               </div>
-              <div className="w-px h-6 bg-[#222]" />
+              <div className="w-px h-4 bg-[#222]" />
               <div className="flex flex-col">
-                <span className="text-[13px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-1">Plano</span>
-                <span className="text-sm font-bold text-white leading-none uppercase">{userData.plan}</span>
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none mb-0.5">Plano</span>
+                <span className="text-xs font-bold text-white leading-none uppercase">{userData.plan}</span>
               </div>
             </div>
           )}
           
-          <div className="flex items-center gap-3 pl-6 border-l border-[#222] relative">
+          <div className="relative">
             <button 
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-3 group"
+              className="flex items-center gap-2 group"
             >
-              <div className="flex flex-col items-end hidden sm:block">
-                <p className="text-sm font-bold text-white leading-none mb-1 group-hover:text-[#d4af37] transition-colors">{user.displayName}</p>
-                <p className="text-[12px] text-gray-500 leading-none">{user.email}</p>
-              </div>
               <div className="relative">
-                <img src={user.photoURL || ''} alt="Avatar" className="w-10 h-10 rounded-full bg-gray-800 border border-[#222] group-hover:border-[#d4af37] transition-all" referrerPolicy="no-referrer" />
-                <div className="absolute -bottom-1 -right-1 bg-[#d4af37] text-black rounded-full p-0.5 border-2 border-[#111]">
-                  <ChevronDown size={8} />
+                <img src={user.photoURL || ''} alt="Avatar" className="w-8 h-8 rounded-full bg-gray-800 border border-[#222] group-hover:border-[#d4af37] transition-all" referrerPolicy="no-referrer" />
+                <div className="absolute -bottom-0.5 -right-0.5 bg-[#d4af37] text-black rounded-full p-0.5 border border-[#111]">
+                  <ChevronDown size={7} />
                 </div>
               </div>
+              <span className="hidden xl:block text-xs font-bold text-gray-300 group-hover:text-white max-w-[100px] truncate">{user.displayName?.split(' ')[0]}</span>
             </button>
 
             <AnimatePresence>
@@ -4147,7 +4196,7 @@ const handleBatchDownload = async (ids: string[]) => {
       </header>
 
       {/* --- Main Content --- */}
-      <main className="pt-24 p-4 md:p-8 min-h-screen flex flex-col">
+      <main className="pt-20 p-4 md:p-8 min-h-screen flex flex-col">
         <header className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase text-white">
@@ -4161,6 +4210,8 @@ const handleBatchDownload = async (ids: string[]) => {
             {activeTab === 'profile' && 'Perfil e Conta'}
             {activeTab === 'referrals' && 'Programa de Indicações'}
             {activeTab === 'faq' && 'FAQ e Suporte'}
+            {activeTab === 'mkt_ads' && '🎬 Lumina UGC'}
+            {activeTab === 'learn_more' && '📚 Aprenda Mais'}
           </h1>
           <p className="text-gray-500 text-sm md:text-base">
             {activeTab === 'dashboard' && 'Visão geral de todas as funções principais do Lumina.'}
@@ -4170,7 +4221,8 @@ const handleBatchDownload = async (ids: string[]) => {
             {activeTab === 'lipsync' && 'Sincronismo labial de alta fidelidade para seus vídeos.'}
             {activeTab === 'library' && 'Acesse todas as suas criações em um só lugar.'}
             {activeTab === 'plans' && 'Gerencie seus planos, créditos e configurações técnicas.'}
-            {activeTab === 'mkt_ads' && 'Crie vídeos de marketing prontos para publicar em segundos.'}
+            {activeTab === 'mkt_ads' && 'Crie vídeos UGC prontos para publicar em segundos.'}
+            {activeTab === 'learn_more' && 'Manuais completos para dominar cada funcionalidade do Lumina.'}
             {activeTab === 'profile' && 'Gerencie seus dados pessoais, segurança e informações da conta.'}
             {activeTab === 'referrals' && 'Convide amigos e ganhe créditos bônus para suas criações.'}
             {activeTab === 'faq' && 'Dúvidas frequentes, tutoriais e canais de suporte.'}
@@ -4205,284 +4257,86 @@ const handleBatchDownload = async (ids: string[]) => {
         {/* --- Dashboard Tab --- */}
         {activeTab === 'dashboard' && (
           <>
-            <div className="space-y-12 py-10">
-            <div className="text-center space-y-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="inline-flex items-center gap-3 px-4 py-2 bg-[#1a1a1a] border border-[#222] rounded-full text-sm font-bold text-gray-400 uppercase tracking-widest"
-              >
+            <div className="space-y-10 py-8">
+            <div className="text-center space-y-3">
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                className="inline-flex items-center gap-3 px-4 py-2 bg-[#1a1a1a] border border-[#222] rounded-full text-sm font-bold text-gray-400 uppercase tracking-widest">
                 <Sparkles size={14} className="text-[#d4af37]" />
                 BEM-VINDO AO LUMINA ART CREATOR
               </motion.div>
-              <h2 className="text-4xl md:text-6xl font-black tracking-tighter">O QUE DESEJA <span className="text-[#d4af37]">FAZER?</span></h2>
+              <h2 className="text-3xl md:text-5xl font-black tracking-tighter">O QUE VAMOS <span className="text-[#d4af37]">CRIAR HOJE?</span></h2>
+              <p className="text-gray-500 text-sm max-w-lg mx-auto">Escolha uma das ferramentas abaixo e comece a criar conteúdo profissional com Inteligência Artificial</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto px-4">
-              {[
-                { 
-                  id: 'branding', 
-                  title: 'Minhas Marcas', 
-                  desc: 'Mantenha sua marca com identidade visual consistente em todas as suas artes.', 
-                  icon: Palette, 
-                  btn: 'Gerenciar Marcas',
-                  color: 'from-orange-500/20 to-transparent',
-                  borderColor: 'hover:border-orange-500/50'
-                },
-                { 
-                  id: 'projects', 
-                  title: 'Projetos Criativos Ads', 
-                  desc: 'Gere criativos organizados por projetos e campanhas de marketing.', 
-                  icon: Layers, 
-                  btn: 'Ver Projetos',
-                  color: 'from-[#d4af37]/20 to-transparent',
-                  borderColor: 'hover:border-[#d4af37]/50'
-                },
-                { 
-                  id: 'creative_studio', 
-                  title: 'Estúdio Lumina', 
-                  desc: 'Crie fotos profissionais, avatares e retratos artísticos com IA.', 
-                  icon: User, 
-                  btn: 'Abrir Studio',
-                  color: 'from-blue-500/20 to-transparent',
-                  borderColor: 'hover:border-blue-500/50'
-                },
-                { 
-                  id: 'lipsync', 
-                  title: 'LipSync', 
-                  desc: 'Sincronismo labial de alta fidelidade para seus vídeos e avatares.', 
-                  icon: Mic, 
-                  btn: 'Abrir LipSync',
-                  color: 'from-pink-500/20 to-transparent',
-                  borderColor: 'hover:border-pink-500/50'
-                }
-              ].map((card, i) => (
-                <motion.div
-                  key={card.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className={`group relative bg-[#111] rounded-[40px] border border-[#222] p-6 sm:p-8 overflow-hidden transition-all ${card.borderColor} cursor-pointer`}
+            {/* 8 Cards — grid 4x2 */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-7xl mx-auto px-4">
+              {([
+                { id: 'branding',        title: 'Brand Kit',         desc: 'DNA da sua marca. Cores, fontes e identidade visual para consistência em todas as criações.',                                        icon: Palette,     btn: 'Criar Marcas',    color: 'from-orange-500/20',  border: 'hover:border-orange-500/50',  badge: '',           stat: '🎨 Identidade visual' },
+                { id: 'projects',        title: 'Projetos ADS',      desc: 'Criativos organizados por campanha. Wizard com IA para gerar ads profissionais em segundos.',                                     icon: Layers,      btn: 'Criar Projetos',  color: 'from-[#d4af37]/20',   border: 'hover:border-[#d4af37]/50',   badge: '⭐ Popular',  stat: '📊 Campanhas & Ads' },
+                { id: 'creative_studio', title: 'Estúdio Lumina',    desc: 'Imagens e vídeos com os melhores modelos do mundo: Veo 3.1, Sora 2, Kling 3.0 e muito mais.',                                     icon: Sparkles,    btn: 'Abrir Estúdio',   color: 'from-blue-500/20',    border: 'hover:border-blue-500/50',    badge: '🔥 Novo',    stat: '8+ motores de IA' },
+                { id: 'lipsync',         title: 'LipSync Studio',    desc: 'Avatares falantes e sincronização labial profissional. OmniHuman, Kling Avatar, Sync.so v3.',                                     icon: Mic,         btn: 'Abrir LipSync',   color: 'from-pink-500/20',    border: 'hover:border-pink-500/50',    badge: '',           stat: '👄 8 motores LipSync' },
+                { id: 'mkt_ads',         title: 'Lumina UGC',        desc: 'Do produto ao vídeo UGC viral em minutos. URL → script → avatar → vídeo pronto para publicar.',                                   icon: Megaphone,   btn: 'Criar UGC',       color: 'from-purple-500/20',  border: 'hover:border-purple-500/50',  badge: '✨ Exclusivo', stat: '🎬 UGC automatizado' },
+                { id: 'library',         title: 'Biblioteca',        desc: 'Todos os seus ativos criados em um só lugar. Download em lote, organização e gestão completa.',                                    icon: Library,     btn: 'Ver Biblioteca',  color: 'from-green-500/20',   border: 'hover:border-green-500/50',   badge: '',           stat: '📁 Gestor de ativos' },
+                { id: 'plans',           title: 'Planos & Créditos', desc: 'Gerencie seu plano, acompanhe saldo de créditos, indique amigos e configure sua conta.',                                          icon: ShoppingBag, btn: 'Ver Planos',      color: 'from-cyan-500/20',    border: 'hover:border-cyan-500/50',    badge: '',           stat: '💳 Gestão de conta' },
+                { id: 'learn_more',      title: 'Aprenda Mais',      desc: 'Manuais completos de cada funcionalidade. Domine todas as ferramentas do Lumina passo a passo.',                                  icon: BookOpen,    btn: 'Ver Manuais',     color: 'from-yellow-500/20',  border: 'hover:border-yellow-500/50',  badge: '📚 Guias',   stat: '7 manuais completos' },
+              ] as const).map((card, i) => (
+                <motion.div key={card.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+                  className={`group relative bg-[#111] rounded-2xl border border-[#222] p-5 overflow-hidden transition-all ${card.border} cursor-pointer flex flex-col min-h-[220px]`}
                   onClick={() => {
                     if (card.id === 'branding') setActiveTab('branding');
-                    if (card.id === 'projects') {
-                      setActiveTab('projects');
-                      setUseCreativeStudio(true);
-                      setUseLipsync(false);
-                    }
-                    if (card.id === 'creative_studio') {
-                      setActiveTab('creative_studio');
-                      setUseCreativeStudio(false);
-                      setUseLipsync(false);
-                    }
-                    if (card.id === 'lipsync') {
-                      setActiveTab('lipsync');
-                      setUseCreativeStudio(false);
-                      setUseLipsync(true);
-                    }
-                  }}
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-b ${card.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
-                  
-                  <div className="relative z-10 space-y-6">
-                    <div className="w-16 h-16 bg-[#1a1a1a] rounded-2xl flex items-center justify-center border border-[#222] group-hover:border-[#d4af37]/50 transition-colors">
-                      <card.icon size={32} className="text-gray-400 group-hover:text-[#d4af37] transition-colors" />
+                    if (card.id === 'projects') { setActiveTab('projects'); setUseCreativeStudio(true); setUseLipsync(false); }
+                    if (card.id === 'creative_studio') { setActiveTab('creative_studio'); setUseCreativeStudio(false); setUseLipsync(false); }
+                    if (card.id === 'lipsync') { setActiveTab('lipsync'); setUseCreativeStudio(false); setUseLipsync(true); }
+                    if (card.id === 'mkt_ads') setActiveTab('mkt_ads');
+                    if (card.id === 'library') setActiveTab('library');
+                    if (card.id === 'plans') setActiveTab('plans');
+                    if (card.id === 'learn_more') setActiveTab('learn_more' as any);
+                  }}>
+                  <div className={`absolute inset-0 bg-gradient-to-b ${card.color} to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+                  <div className="relative z-10 flex flex-col flex-1 gap-3">
+                    <div className="flex items-start justify-between">
+                      <div className="w-10 h-10 bg-[#1a1a1a] rounded-xl flex items-center justify-center border border-[#222] group-hover:border-[#d4af37]/40 transition-colors shrink-0">
+                        <card.icon size={20} className="text-gray-400 group-hover:text-[#d4af37] transition-colors" />
+                      </div>
+                      {card.badge && <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 border border-[#d4af37]/20 px-2 py-0.5 rounded-full">{card.badge}</span>}
                     </div>
-                    
-                    <div className="space-y-2">
-                      <span className="text-sm font-black text-[#d4af37] uppercase tracking-[0.2em]">{card.id}</span>
-                      <h3 className="text-2xl font-bold">{card.title}</h3>
-                      <p className="text-gray-500 text-sm leading-relaxed">{card.desc}</p>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-black text-white mb-1.5">{card.title}</h3>
+                      <p className="text-[11px] text-gray-500 leading-relaxed">{card.desc}</p>
                     </div>
-
-                    <button className="w-full py-4 bg-[#1a1a1a] border border-[#222] rounded-2xl text-sm font-bold uppercase tracking-widest group-hover:bg-[#d4af37] group-hover:text-black transition-all">
+                    <div className="text-[10px] font-bold text-gray-600 border-t border-[#1a1a1a] pt-2">{card.stat}</div>
+                    <button className="w-full py-2.5 bg-[#1a1a1a] border border-[#222] rounded-xl text-[11px] font-black uppercase tracking-widest text-gray-400 group-hover:bg-[#d4af37] group-hover:text-black group-hover:border-[#d4af37] transition-all">
                       {card.btn}
                     </button>
-                  </div>
-
-                  {/* Decorative elements */}
-                  <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <card.icon size={120} />
                   </div>
                 </motion.div>
               ))}
             </div>
 
-            {/* Recent Activity Section */}
-            <div className="max-w-6xl mx-auto px-4 space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold">Atividade Recente</h3>
-                <button onClick={() => setActiveTab('library')} className="text-sm font-bold text-[#d4af37] uppercase tracking-widest hover:underline">Ver Tudo</button>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {batch.filter(Boolean).slice(0, 5).map((item, i) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="aspect-[3/4] bg-[#111] rounded-2xl border border-[#222] overflow-hidden relative group cursor-pointer"
-                    onClick={() => openPreview(item, batch.slice(0, 5))}
-                  >
-                    {sessionPreviews[item.id] || item.previewUrl ? (
-                      item.type === 'video' || item.type === 'lipsync' ? (
-                        <video 
-                          src={sessionPreviews[item.id] || item.previewUrl} 
-                          className="w-full h-full object-cover" 
-                          muted 
-                          loop 
-                          onMouseOver={e => e.currentTarget.play()} 
-                          onMouseOut={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                        />
-                      ) : (
-                        <img src={sessionPreviews[item.id] || item.previewUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      )
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-800">
-                        <ImageIcon size={32} />
+            {/* Processamento ativo — só aparece quando há itens gerando */}
+            {batch.filter(item => item.status === 'processing').length > 0 && (
+              <div className="max-w-7xl mx-auto px-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-[#d4af37] animate-pulse" />
+                  <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest">Em Processamento</h3>
+                </div>
+                <div className="flex gap-3 flex-wrap">
+                  {batch.filter(item => item.status === 'processing').map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 px-4 py-2.5 bg-[#111] border border-[#d4af37]/20 rounded-xl">
+                      <div className="w-4 h-4 border-2 border-[#d4af37]/30 border-t-[#d4af37] rounded-full animate-spin shrink-0" />
+                      <div>
+                        <p className="text-[11px] text-gray-400 max-w-[140px] truncate">{item.prompt?.substring(0,30)}...</p>
+                        <div className="w-full h-0.5 bg-[#222] rounded-full mt-1">
+                          <div className="h-full bg-[#d4af37] rounded-full transition-all" style={{ width: `${item.progress || 0}%` }} />
+                        </div>
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-[12px] font-bold uppercase tracking-widest">Ver Detalhes</span>
+                      <span className="text-[10px] text-[#d4af37] font-black">{Math.round(item.progress || 0)}%</span>
                     </div>
-                  </motion.div>
-                ))}
-                {batch.length === 0 && (
-                  <div className="col-span-full py-20 text-center border border-dashed border-[#222] rounded-3xl">
-                    <p className="text-gray-600 text-sm">Nenhuma atividade recente encontrada.</p>
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
-          
-          {/* Batch List */}
-            <div className="bg-[#111] rounded-2xl border border-[#222] overflow-hidden">
-              <div className="p-6 border-b border-[#222] flex justify-between items-center">
-                <h2 className="font-bold text-xl">Fila de Processamento</h2>
-              </div>
-
-              <div className="divide-y divide-[#222]">
-                {batch.length === 0 ? (
-                  <div className="p-20 text-center text-gray-600">
-                    <Layers size={48} className="mx-auto mb-4 opacity-20" />
-                    <p>Nenhuma geração encontrada. Comece criando algo novo!</p>
-                  </div>
-                ) : (
-                  batch.filter(Boolean).map((item) => (
-                    <motion.div 
-                      key={item.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="p-6 flex flex-col md:flex-row gap-6 items-center hover:bg-[#151515] transition-colors"
-                    >
-                      <div 
-                        className="w-24 h-24 rounded-xl bg-[#1a1a1a] overflow-hidden relative flex-shrink-0 group cursor-pointer"
-                        onClick={() => openPreview(item, batch)}
-                      >
-                        {sessionPreviews[item.id] || item.previewUrl ? (
-                          item.type === 'video' || item.type === 'lipsync' ? (
-                            <video 
-                              src={sessionPreviews[item.id] || item.previewUrl} 
-                              className="w-full h-full object-cover" 
-                              muted 
-                              loop 
-                              onMouseOver={e => e.currentTarget.play()} 
-                              onMouseOut={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                            />
-                          ) : (
-                            <img 
-                              src={sessionPreviews[item.id] || item.previewUrl} 
-                              alt="Preview" 
-                              className="w-full h-full object-cover" 
-                              referrerPolicy="no-referrer" 
-                            />
-                          )
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-700">
-                            {item.type === 'video' || item.type === 'lipsync' ? <Video size={32} /> : <ImageIcon size={32} />}
-                          </div>
-                        )}
-                        {item.status === 'processing' && (
-                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                            <div className="w-8 h-8 border-2 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          {(sessionPreviews[item.id] || item.previewUrl) && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id);
-                              }} 
-                              className="p-2 bg-[#d4af37]/20 text-[#d4af37] rounded-lg hover:bg-[#d4af37] hover:text-black transition-all"
-                              title="Baixar Imagem"
-                            >
-                              <Download size={16} />
-                            </button>
-                          )}
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(item.id);
-                            }} 
-                            className="p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all" 
-                            title="Excluir"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className={`px-2 py-1 rounded text-[12px] font-bold uppercase tracking-wider ${item.type === 'video' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'}`}>
-                            {item.type}
-                          </span>
-                          <span className="text-sm text-gray-500 font-mono">ID: {item.id}</span>
-                          {item.duration && (
-                            <span className="flex items-center gap-1 text-[12px] font-mono text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">
-                              <Clock size={10} /> {item.duration}s
-                            </span>
-                          )}
-                          <Timer start={item.createdAt} end={item.completedAt} status={item.status} />
-                          {item.lowPriority && (
-                            <span className="px-2 py-1 rounded text-[12px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
-                              <Clock size={10} /> Low Priority
-                            </span>
-                          )}
-                          <span className={`flex items-center gap-1 text-sm font-medium ${item.status === 'completed' ? 'text-green-400' : item.status === 'failed' ? 'text-red-400' : 'text-[#d4af37]'}`}>
-                            {item.status === 'completed' ? <CheckCircle2 size={12} /> : item.status === 'failed' ? <AlertCircle size={12} /> : <Clock size={12} />}
-                            {item.status === 'completed' ? 'Concluído' : item.status === 'failed' ? 'Falhou' : item.progress < 50 ? 'Gerando...' : 'Salvando...'}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-300 line-clamp-2 mb-3">{item.prompt}</p>
-                        {item.error && <p className="text-[12px] text-red-500/70 mb-2 italic">Erro: {item.error}</p>}
-                        <div className="flex gap-4 text-[13px] text-gray-500 font-medium">
-                          <span className="flex items-center gap-1"><Maximize2 size={10} /> {item.aspectRatio}</span>
-                          <span className="flex items-center gap-1"><Zap size={10} /> {item.resolution}</span>
-                        </div>
-                      </div>
-
-                      <div className="w-full md:w-48 text-right">
-                        <div className="mb-2 flex justify-between text-sm font-bold">
-                          <span className="text-gray-500">Progresso</span>
-                          <span className="text-[#d4af37]">{Math.round(item.progress || 0)}%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-[#222] rounded-full overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.round(item.progress || 0)}%` }}
-                            className={`h-full ${item.status === 'failed' ? 'bg-red-500' : 'bg-gradient-to-r from-[#d4af37] to-[#f1c40f]'}`}
-                          />
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </div>
           </>
         )}
 
@@ -7176,14 +7030,121 @@ const handleBatchDownload = async (ids: string[]) => {
         )}
 
         {/* ================================================================ */}
-        {/* --- LUMINA MKT ADS Tab --- */}
+        {/* --- APRENDA MAIS Tab --- */}
+        {/* ================================================================ */}
+        {activeTab === 'learn_more' && (
+          <div className="max-w-5xl mx-auto space-y-6">
+            <div className="text-center space-y-2 pb-4">
+              <h2 className="text-2xl font-black text-white">📚 Central de Aprendizado</h2>
+              <p className="text-gray-500 text-sm">Manuais práticos e objetivos para dominar cada funcionalidade do Lumina Art Creator</p>
+            </div>
+
+            {([
+              {
+                id: 'estudio',
+                icon: '🎬',
+                title: 'Estúdio Lumina',
+                subtitle: 'Geração de imagens e vídeos com IA',
+                color: 'border-blue-500/30 hover:border-blue-500/60',
+                badge: '8+ motores',
+                sections: [
+                  { title: '📸 Como gerar imagens', content: 'Na aba Estúdio Lumina, selecione o tipo "Imagem". Escreva seu prompt descrevendo o que deseja criar. Escolha o motor de IA (Gemini Flash para velocidade, GPT Image 2 para texto, Flux 2 Max para fotorrealismo). Defina o aspect ratio (9:16 para Stories, 1:1 para Feed, 16:9 para YouTube). Clique em Gerar. Os créditos são descontados apenas após a geração concluída.' },
+                  { title: '🎥 Como gerar vídeos', content: 'Selecione o tipo "Vídeo". Para Texto-para-Vídeo, escreva a cena desejada. Para Imagem-para-Vídeo, faça upload de uma imagem de referência primeiro. Escolha o motor: Veo 3.1 (qualidade máxima com áudio nativo), Kling 3.0 (melhor custo-benefício), Seedance 2.0 (mais barato). Defina duração e aspect ratio. O vídeo será processado em background — acompanhe pela Biblioteca.' },
+                  { title: '⚙️ Motores disponíveis', content: 'IMAGEM: Gemini Flash (rápido), GPT Image 2 (texto em imagem), Flux 2 Max (fotorrealismo), Flux Kontext Max (edição por prompt), Seedream 5.0 (alta resolução), Nano Banana Pro (edição premium). VÍDEO: Veo 3.1 (Google, 4K+áudio), Veo 3.1 Fast, Sora 2 Pro (OpenAI), Kling 3.0, Seedance 2.0, PixVerse V6, Happy Horse.' },
+                  { title: '💡 Dicas de prompt', content: 'Seja específico: descreva pessoa, cenário, iluminação, ângulo e estilo. Para fotorrealismo, use "8K, hyper-realistic, studio lighting". Para vídeos, descreva a cena e o movimento esperado. Use o campo de referência de personagem para manter consistência entre gerações.' },
+                ]
+              },
+              {
+                id: 'lipsync',
+                icon: '👄',
+                title: 'LipSync Studio',
+                subtitle: 'Avatares falantes e sincronização labial',
+                color: 'border-pink-500/30 hover:border-pink-500/60',
+                badge: '8 motores',
+                sections: [
+                  { title: '🎭 Avatar falante (imagem + áudio)', content: 'Faça upload de uma imagem do avatar (rosto claro, boa resolução, frente para câmera). Faça upload do áudio (MP3 ou WAV, até 10 minutos). Escolha o motor: Kling Avatar Pro (humanos, animais, cartoon), HeyGen Avatar 4 (comercial premium), OmniHuman v1.5 (corpo inteiro com emoções), Aurora (máxima qualidade visual). Clique em Gerar LipSync.' },
+                  { title: '🔄 Sincronizar vídeo existente', content: 'Faça upload de um vídeo (MP4 com rosto visível). Faça upload do áudio novo. Escolha o motor: Sync.so v3 (melhor qualidade geral), Sync.so Pro (close-up premium), Sync.so v2 (dubbing geral), LatentSync (ByteDance, open source). O sistema substituirá o áudio original sincronizando os lábios automaticamente.' },
+                  { title: '💡 Dicas para melhor resultado', content: 'Use imagens com rosto bem iluminado e sem obstruções. O áudio deve ser claro, sem ruído de fundo excessivo. Para avatares, imagens em formato retrato (9:16) geram melhores resultados. Vídeos curtos (até 30s) processam mais rápido. Sync.so v3 é a melhor opção para qualidade profissional.' },
+                ]
+              },
+              {
+                id: 'projetos',
+                icon: '📊',
+                title: 'Projetos Criativos ADS',
+                subtitle: 'Criativos de marketing com wizard guiado',
+                color: 'border-[#d4af37]/30 hover:border-[#d4af37]/60',
+                badge: 'Wizard IA',
+                sections: [
+                  { title: '🚀 Como criar um projeto', content: 'Na aba Projetos Criativos ADS, clique em "Novo Projeto". Selecione ou crie uma marca (Brand Kit). Escolha o modo Assistente (guiado pela IA) ou Avançado (controle total). No modo Assistente, defina: objetivo (Vender/Engajar/Leads/Awareness), produto, público-alvo e plataforma. A IA gera o prompt automaticamente.' },
+                  { title: '🎨 Escolhendo o motor e estilo', content: 'No modo Estúdio: escolha entre Gemini, Imagen 4, Ideogram (para texto em imagem), GPT Image 2 ou Nano Banana Pro. Selecione o estilo visual (Fotorrealista, 3D, Arte Digital, etc.) e o aspecto da plataforma (TikTok 9:16, Feed 1:1, Stories, YouTube). A IA adapta o prompt ao estilo escolhido.' },
+                  { title: '📁 Organizando por projeto', content: 'Cada projeto agrupa todos os criativos de uma campanha. Use o Brand Kit para manter identidade visual consistente (cores, fontes, logo). Você pode gerar múltiplos criativos de uma vez. Todos ficam salvos na Biblioteca com o prompt utilizado para referência futura.' },
+                ]
+              },
+              {
+                id: 'ugc',
+                icon: '🎬',
+                title: 'Lumina UGC',
+                subtitle: 'Vídeos de marketing do produto ao vídeo em minutos',
+                color: 'border-purple-500/30 hover:border-purple-500/60',
+                badge: 'Automático',
+                sections: [
+                  { title: '🔗 Passo 1 — Informar o produto', content: 'Cole a URL da página do produto (Shopee, Amazon, site próprio) — a IA extrai automaticamente nome, benefícios e público. Ou preencha manualmente: nome, público-alvo, benefício principal e descrição. Opcionalmente, faça upload de uma foto do produto.' },
+                  { title: '🎭 Passo 2 — Escolher formato e plataforma', content: 'Formatos: UGC (pessoa comum recomendando), Unboxing (abertura de caixa), Review (avaliação hands-on), Tutorial (passo a passo), TV Spot (comercial cinematográfico), Wild Card (IA decide). Plataformas: TikTok (9:16), IG Reels (9:16), IG Feed (1:1), YT Shorts, YouTube (16:9). Escolha a duração: 15s, 30s ou 60s.' },
+                  { title: '✍️ Passo 3 — Script e Avatar', content: 'O Claude Sonnet gera automaticamente: Hook (para o scroll), Mensagem Principal, Roteiro completo, CTA e Legenda com hashtags. Todos os campos são editáveis — personalize conforme necessário. Gere o avatar com IA (contextualizado ao produto) ou use sua própria foto. Só avance após ter o avatar.' },
+                  { title: '🚀 Passo 4 — Gerar o vídeo', content: 'O Seedance 2.0 (ByteDance) anima o avatar com o roteiro gerado. O vídeo leva 2-5 minutos para ser gerado. Após pronto, baixe diretamente ou copie a legenda para postagem. Todos os vídeos ficam salvos na Biblioteca.' },
+                ]
+              },
+              {
+                id: 'biblioteca',
+                icon: '📁',
+                title: 'Biblioteca',
+                subtitle: 'Gestor central de todos os seus ativos criados',
+                color: 'border-green-500/30 hover:border-green-500/60',
+                badge: 'Central',
+                sections: [
+                  { title: '🔍 Filtrando e buscando', content: 'Use os filtros no topo para ver: Todos, Imagens, Vídeos ou LipSync. Clique em qualquer ativo para expandir e ver em tamanho maior. Todos os ativos criados em qualquer aba aparecem automaticamente aqui.' },
+                  { title: '⬇️ Download e gestão', content: 'Ativo individual: passe o mouse sobre a miniatura e clique no ícone de download. Download em lote: selecione múltiplos ativos clicando nas caixinhas e clique em "Baixar ZIP". Para excluir: ícone de lixeira. Para ver o prompt original: ícone de olho.' },
+                  { title: '💡 Dica importante', content: 'A Biblioteca é o ponto central de todos os ativos. Itens excluídos da Biblioteca são removidos permanentemente. Recomendamos baixar os ativos importantes antes de excluir. O download em ZIP é ideal para exportar uma campanha completa.' },
+                ]
+              },
+              {
+                id: 'brand',
+                icon: '🎨',
+                title: 'Brand Kit',
+                subtitle: 'Identidade visual da sua marca',
+                color: 'border-orange-500/30 hover:border-orange-500/60',
+                badge: 'DNA da Marca',
+                sections: [
+                  { title: '📋 Criando uma marca', content: 'Acesse "Minhas Marcas" → "Criar Nova Marca". Preencha: nome da marca, segmento, público-alvo, paleta de cores (hex), fontes e tom de voz. Faça upload do logo (PNG com fundo transparente preferencial). Salve — a marca fica disponível para todos os projetos.' },
+                  { title: '🔗 Usando em Projetos ADS', content: 'Ao criar um projeto criativo, selecione a marca cadastrada. O sistema incorpora automaticamente cores, fontes e logo da marca nos prompts enviados para a IA. Isso garante consistência visual em todas as peças da campanha.' },
+                ]
+              },
+              {
+                id: 'planos',
+                icon: '💳',
+                title: 'Planos & Créditos',
+                subtitle: 'Gestão de conta, créditos e indicações',
+                color: 'border-cyan-500/30 hover:border-cyan-500/60',
+                badge: 'Financeiro',
+                sections: [
+                  { title: '💰 Como funcionam os créditos', content: 'Cada geração consome créditos conforme o motor usado. Imagens simples (Gemini): ~1-3 créditos. Vídeos (Kling, Seedance): ~10-30 créditos. Vídeos premium (Veo 3.1, Sora 2): ~30-80 créditos. LipSync: ~10-25 créditos. Créditos são reembolsados automaticamente em caso de falha na geração.' },
+                  { title: '👥 Programa de Indicações', content: 'Acesse a aba Indicações. Compartilhe seu link único. Quando um indicado criar uma conta e ativar um plano, você recebe créditos de bônus automaticamente. Não há limite de indicações — quanto mais indicar, mais créditos acumula.' },
+                ]
+              },
+            ] as const).map((manual) => (
+              <ManualCard key={manual.id} manual={manual} />
+            ))}
+          </div>
+        )}
+
+
         {/* ================================================================ */}
         {activeTab === 'mkt_ads' && (
           <div className="max-w-6xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-black text-white">🎬 Lumina Mkt Ads</h2>
-                <p className="text-sm text-gray-500 mt-1">De produto a vídeo de marketing em minutos — powered by AI</p>
+                <h2 className="text-2xl font-black text-white">🎬 Lumina UGC</h2>
+                <p className="text-sm text-gray-500 mt-1">De produto a vídeo UGC viral em minutos — powered by AI</p>
               </div>
               {mktStep > 1 && (
                 <button onClick={() => { setMktStep(1); setMktScriptData(null); setMktAvatarUrl(''); setMktVideoUrl(''); setMktError(''); }}
