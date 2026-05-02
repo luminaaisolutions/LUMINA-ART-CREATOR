@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Zap, 
@@ -25,6 +25,71 @@ interface LandingPageProps {
   onViewTerms?: () => void;
   onViewPrivacy?: () => void;
   onViewContact?: () => void;
+}
+
+
+// ── RotatingBadge — Badge animado com 4 frases em loop ───────────────────
+function RotatingBadge() {
+  const frases = [
+    'A mais completa plataforma brasileira de criação com IA',
+    'Movido pelos melhores modelos de IA do mundo',
+    'Google · OpenAI · ByteDance · Black Forest Labs',
+    '15+ motores de IA · Qualidade profissional',
+  ];
+  const [idx, setIdx] = useState(0);
+  const [exiting, setExiting] = useState(false);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setExiting(true);
+      setTimeout(() => {
+        setIdx(i => (i + 1) % frases.length);
+        setExiting(false);
+      }, 380);
+    }, 3200);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <span
+      className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border mb-8"
+      style={{
+        background: 'rgba(212,168,67,0.08)',
+        borderColor: 'rgba(212,168,67,0.25)',
+        minWidth: '340px',
+        justifyContent: 'center',
+        backdropFilter: 'blur(8px)',
+        overflow: 'hidden',
+      }}
+    >
+      <span
+        style={{
+          width: '7px', height: '7px',
+          background: '#d4af37',
+          borderRadius: '50%',
+          flexShrink: 0,
+          boxShadow: '0 0 8px #d4af37, 0 0 16px rgba(212,168,67,0.4)',
+          animation: 'pulse 2s infinite',
+        }}
+      />
+      <span
+        style={{
+          display: 'block',
+          transform: exiting ? 'translateY(-110%)' : 'translateY(0)',
+          opacity: exiting ? 0 : 1,
+          transition: 'all 0.38s cubic-bezier(0.4,0,0.2,1)',
+          whiteSpace: 'nowrap',
+          fontSize: '10.5px',
+          fontWeight: 700,
+          letterSpacing: '2px',
+          textTransform: 'uppercase',
+          color: '#d4af37',
+        }}
+      >
+        ✦ {frases[idx]}
+      </span>
+    </span>
+  );
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ 
@@ -146,15 +211,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="inline-block px-4 py-1.5 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/20 text-[#d4af37] text-xs font-black uppercase tracking-[0.2em] mb-8">
-              Powered by Google Veo 3.1 & Imagen 3
-            </span>
+            <RotatingBadge />
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-8 text-white">
-              CRIE CONTEÚDO <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d4af37] via-[#f1c40f] to-[#d4af37]">PROFISSIONAL DE ELITE</span>
+              CRIE CONTEÚDO QUE <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d4af37] via-[#f1c40f] to-[#d4af37]">VENDE E VIRALIZA</span>
             </h1>
             <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-              Transforme suas ideias em produções cinematográficas de alto impacto. A primeira plataforma brasileira que une inteligência artificial de ponta com qualidade profissional absoluta.
+              Transforme ideias em conteúdo que vende, engaja e viraliza. Reúne Veo 3.1, Sora 2, Kling 3.0, Seedance 2.0, GPT Image 2 e 15+ motores em uma única plataforma brasileira — imagens, vídeos, UGC e LipSync em minutos.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
@@ -194,18 +257,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {[
               {
                 icon: <Layers className="text-[#d4af37]" size={32} />,
-                title: "Produção de Elite",
-                desc: "Crie múltiplos ativos de alta qualidade simultaneamente com a potência da nossa IA, mantendo o padrão profissional em cada detalhe."
+                title: "15+ Motores de IA",
+                desc: "Veo 3.1, Sora 2 Pro, Kling 3.0, Seedance 2.0, GPT Image 2, Flux 2 Max, OmniHuman e muito mais — todos em uma única plataforma."
               },
               {
                 icon: <Sparkles className="text-[#d4af37]" size={32} />,
-                title: "Lipsync Avançado",
-                desc: "Sincronismo labial ultra-realista que mapeia qualquer voz para qualquer personagem em vídeo ou imagem."
+                title: "LipSync Profissional",
+                desc: "Sync.so v3, Kling Avatar Pro, HeyGen Avatar 4, OmniHuman v1.5 e Aurora — avatares falantes com sincronização labial perfeita em português."
               },
               {
                 icon: <Cpu className="text-[#d4af37]" size={32} />,
-                title: "Tecnologia Veo 3.1",
-                desc: "Acesso exclusivo aos modelos mais potentes do Google para vídeos cinematográficos em 4K."
+                title: "Lumina UGC",
+                desc: "Cole a URL do produto e receba script, avatar e vídeo UGC completo gerado pela IA — do produto ao anúncio viral em minutos."
               }
             ].map((feature, i) => (
               <motion.div
@@ -241,7 +304,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   "Resolução nativa em até 4K cinematográfico",
                   "Consistência temporal perfeita entre frames",
                   "Controle total de iluminação e estilo artístico",
-                  "Integração direta com Google Cloud Project"
+                  "Lumina UGC: do produto ao vídeo viral em minutos"
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-4">
                     <CheckCircle2 className="text-[#d4af37]" size={24} />
@@ -407,7 +470,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               },
               {
                 q: "Qual a qualidade dos vídeos gerados?",
-                a: "Utilizamos o motor Google Veo 3.1, capaz de gerar vídeos em até 4K com alta fidelidade cinematográfica e consistência visual superior."
+                a: "Utilizamos 15+ motores líderes mundiais: Google Veo 3.1 (4K + áudio nativo), Sora 2 Pro (OpenAI), Kling 3.0, Seedance 2.0, Flux 2 Max e muitos mais — sempre atualizados com o que há de mais avançado."
               },
               {
                 q: "Os vídeos gerados são meus?",
