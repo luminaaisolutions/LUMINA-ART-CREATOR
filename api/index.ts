@@ -1811,50 +1811,79 @@ Retorne APENAS um JSON válido com esta estrutura:
           youtube: 'YouTube (16:9 horizontal, até 3min, mais profissional)',
         };
 
+        const scriptDuration = String(dur);
+        const scriptLang = lang;
+
         const prompt = `Você é um diretor criativo especialista em vídeos virais de marketing digital para o mercado brasileiro.
 
-PRODUTO: ${productInfo.productName}
-CATEGORIA: ${productInfo.productCategory}
-PÚBLICO-ALVO: ${productInfo.targetAudience}
-BENEFÍCIO PRINCIPAL: ${productInfo.mainBenefit}
-TOM: ${productInfo.tone}
+PRODUTO: ${productInfo.productName || 'Produto'}
+CATEGORIA: ${productInfo.productCategory || 'geral'}
+PÚBLICO-ALVO: ${productInfo.targetAudience || 'Público geral'}
+BENEFÍCIO PRINCIPAL: ${productInfo.mainBenefit || 'Benefício do produto'}
+TOM: ${productInfo.tone || 'profissional'}
 FORMATO DO VÍDEO: ${formatDescriptions[format] || format}
 PLATAFORMA: ${platformSpecs[platform] || platform}
-DURAÇÃO: ${dur} segundos
-IDIOMA: ${lang}
+DURAÇÃO: ${scriptDuration} segundos
+IDIOMA: ${scriptLang}
 
-Crie um script completo e um prompt de geração de vídeo. Retorne APENAS JSON válido:
+Crie um script completo e um prompt de geração de vídeo.
+IMPORTANTE: Retorne SOMENTE um objeto JSON válido, sem markdown, sem backticks, sem texto antes ou depois.
+O JSON deve ter exatamente estas chaves:
 {
-  "title": "título chamativo para o criativo",
-  "hook": "frase de abertura (primeiros 3 segundos, DEVE parar o scroll)",
-  "script": "roteiro completo do que o avatar deve falar (${dur} segundos de fala natural)",
-  "visualDirection": "descrição visual detalhada: cenário, iluminação, roupas do avatar, ângulo de câmera",
-  "avatarPrompt": "prompt em inglês para gerar o avatar ideal para este produto e formato (pessoa descrita detalhadamente)",
-  "videoPrompt": "prompt técnico em inglês para o motor de vídeo (Seedance 2.0) descrever exatamente o vídeo gerado",
-  "callToAction": "CTA final do vídeo",
-  "caption": "legenda completa para postagem com hashtags em ${lang}",
-  "estimatedEngagement": "estimativa de engajamento (baixo/médio/alto/viral)"
+  "title": "titulo chamativo para o criativo",
+  "hook": "frase de abertura dos primeiros 3 segundos que para o scroll",
+  "script": "roteiro completo de ${scriptDuration} segundos em ${scriptLang} com fala natural do avatar",
+  "visualDirection": "descricao visual: cenario, iluminacao, roupas do avatar, angulo de camera",
+  "avatarPrompt": "prompt in English describing the ideal avatar person for this product in detail",
+  "videoPrompt": "technical prompt in English for Seedance 2.0 video generation describing exactly the video",
+  "callToAction": "CTA final do video em ${scriptLang}",
+  "caption": "legenda completa para postagem com hashtags em ${scriptLang}",
+  "estimatedEngagement": "baixo ou medio ou alto ou viral"
 }`;
 
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+        console.log(`[MktAds] Gerando script para: ${productInfo.productName} formato=${format}`);
+
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.9, maxOutputTokens: 2048 }
+            generationConfig: { temperature: 0.9, maxOutputTokens: 2048, responseMimeType: 'application/json' }
           })
         });
 
         const geminiData = await geminiRes.json();
+        console.log(`[MktAds] Gemini status: ${geminiRes.status}`);
+
+        if (!geminiRes.ok) {
+          console.error(`[MktAds] Gemini error: ${JSON.stringify(geminiData).substring(0, 300)}`);
+          return res.status(500).json({ error: `Gemini erro ${geminiRes.status}: ${geminiData?.error?.message || 'desconhecido'}` });
+        }
+
         const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const cleanJson = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        console.log(`[MktAds] Raw response (200 chars): ${rawText.substring(0, 200)}`);
+
+        // Limpar JSON de possíveis wrappers
+        const cleanJson = rawText
+          .replace(/^[\s\S]*?(\{)/m, '{')  // remover tudo antes do primeiro {
+          .replace(/\}[\s\S]*$/m, (m: string) => m.charAt(0))  // remover tudo após o último }
+          .trim();
 
         try {
           const scriptData = JSON.parse(cleanJson);
-          console.log(`[MktAds] Script gerado: ${scriptData.title}`);
+          console.log(`[MktAds] Script gerado OK: ${scriptData.title}`);
           return res.json({ success: true, scriptData });
-        } catch(e) {
-          return res.status(500).json({ error: 'Erro ao gerar script. Tente novamente.' });
+        } catch(parseErr) {
+          console.error(`[MktAds] JSON parse error. Raw: ${rawText.substring(0, 500)}`);
+          // Tentar extrair JSON com regex como fallback
+          const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            try {
+              const scriptData = JSON.parse(jsonMatch[0]);
+              return res.json({ success: true, scriptData });
+            } catch(e2) {}
+          }
+          return res.status(500).json({ error: 'Erro ao processar resposta da IA. Tente novamente.' });
         }
       }
 
