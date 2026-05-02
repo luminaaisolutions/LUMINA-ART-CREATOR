@@ -1785,162 +1785,193 @@ Retorne APENAS um JSON válido com esta estrutura:
         }
       }
 
-      // --- generateMktAdsScript — Gera script completo para o vídeo de marketing ---
+      // --- generateMktAdsScript — Script profissional via Claude API ---
       if (method === 'generateMktAdsScript') {
-        const geminiKey = process.env.GEMINI_API_KEY;
-        if (!geminiKey) return res.status(503).json({ error: 'GEMINI_API_KEY não configurada.' });
-
         const { productInfo, format, platform, duration, language } = args;
         const lang = language || 'pt-BR';
         const dur = duration || 30;
-
-        const formatDescriptions: Record<string, string> = {
-          ugc: 'UGC (User Generated Content) — pessoa real falando para câmera, tom autêntico e casual, como uma recomendação de amigo',
-          unboxing: 'Unboxing — abertura de caixa mostrando o produto pela primeira vez, reação genuína e empolgada',
-          review: 'Review/Avaliação — análise hands-on do produto, mostrando funcionalidades, prós e contras',
-          tutorial: 'Tutorial — passo a passo ensinando como usar o produto, tom educativo e claro',
-          tvspot: 'TV Spot — comercial cinematográfico profissional, narrativa criativa e impactante',
-          wildcard: 'Wild Card — formato criativo e surpreendente, a IA decide a melhor abordagem para viralizar',
-        };
-
-        const platformSpecs: Record<string, string> = {
-          tiktok: 'TikTok (9:16 vertical, 15-60s, jovem, dinâmico, trending)',
-          instagram_reels: 'Instagram Reels (9:16 vertical, até 90s, visual bonito, lifestyle)',
-          instagram_feed: 'Instagram Feed (1:1 quadrado, visual premium)',
-          youtube_shorts: 'YouTube Shorts (9:16 vertical, até 60s)',
-          youtube: 'YouTube (16:9 horizontal, até 3min, mais profissional)',
-        };
-
         const scriptDuration = String(dur);
         const scriptLang = lang;
 
-        const prompt = `Você é um diretor criativo especialista em vídeos virais de marketing digital para o mercado brasileiro.
+        const formatDescriptions: Record<string, string> = {
+          ugc: 'UGC autêntico — pessoa comum falando para câmera como amigo recomendando, tom casual e genuíno, sem parecer publicidade',
+          unboxing: 'Unboxing — abertura de embalagem com reação genuína de surpresa e empolgação, mostrando detalhes do produto',
+          review: 'Review honesto — avaliação hands-on mostrando uso real, prós e contras, construindo credibilidade',
+          tutorial: 'Tutorial educativo — passo a passo de como usar, tom de autoridade, resolve um problema claro',
+          tvspot: 'TV Spot cinematográfico — narrativa emocional com storytelling, música, ritmo dinâmico, qualidade de comercial nacional',
+          wildcard: 'Wild Card viral — formato surpreendente e criativo, ângulo inesperado que gera compartilhamento orgânico',
+        };
+
+        const platformSpecs: Record<string, string> = {
+          tiktok: 'TikTok: vertical 9:16, cortes rápidos a cada 2-3s, linguagem jovem e direta, trending sounds, primeiros 3s são tudo',
+          instagram_reels: 'Instagram Reels: vertical 9:16, visual premium, lifestyle aspiracional, até 90s, estética coesa',
+          instagram_feed: 'Instagram Feed: quadrado 1:1, visual clean e profissional, caption longa funciona bem',
+          youtube_shorts: 'YouTube Shorts: vertical 9:16, até 60s, boa para tutoriais rápidos e reviews',
+          youtube: 'YouTube: horizontal 16:9, pode ser mais longo e aprofundado, audiência mais engajada',
+        };
+
+        // Definir persona ideal para o produto
+        const getAvatarPersona = (category: string, fmt: string) => {
+          const personas: Record<string, string> = {
+            beleza: fmt === 'ugc' ? 'jovem mulher 25-35 anos, pele impecável, maquiagem natural, ambiente de banheiro moderno, luz boa' : 'modelo feminina profissional, studio clean',
+            cosmeticos: 'mulher bonita 25-40 anos, tom de confiança e leveza, ambiente doméstico premium',
+            moda: 'pessoa estilosa, bem vestida, ambiente urbano moderno ou studio branco clean',
+            tecnologia: 'homem ou mulher jovem profissional 25-35, ambiente de escritório moderno ou home office',
+            alimentos: 'pessoa sorridente, cozinha moderna, visual apetitoso, tom familiar e caloroso',
+            fitness: 'pessoa fit e saudável, academia ou ambiente externo, roupas de treino, energia alta',
+            saude: 'profissional de saúde ou pessoa comum saudável e confiante, ambiente clean e profissional',
+            infantil: 'pai/mãe jovem 28-38 anos, ambiente familiar, sorriso genuíno e carinhoso',
+            'limpeza': 'dona de casa moderna 30-45 anos ou casal jovem, ambiente doméstico limpo e organizado',
+            default: 'pessoa carismática e autêntica, adequada ao produto, ambiente relevante ao contexto do produto'
+          };
+          return personas[category?.toLowerCase()] || personas.default;
+        };
+
+        const avatarPersona = getAvatarPersona(productInfo.productCategory, format);
+
+        const systemPrompt = `Você é o melhor diretor criativo de marketing digital do Brasil, especialista em criar conteúdo viral para TikTok, Instagram e YouTube. Você conhece profundamente as melhores práticas de copywriting, storytelling e psicologia do consumidor. Cria scripts que realmente vendem, seguindo frameworks como AIDA, PAS e Hook-Story-Offer.`;
+
+        const userPrompt = `Crie um script PROFISSIONAL e VIRAL de marketing digital para este produto:
 
 PRODUTO: ${productInfo.productName || 'Produto'}
-CATEGORIA: ${productInfo.productCategory || 'geral'}
+CATEGORIA: ${productInfo.productCategory || 'geral'}  
 PÚBLICO-ALVO: ${productInfo.targetAudience || 'Público geral'}
-BENEFÍCIO PRINCIPAL: ${productInfo.mainBenefit || 'Benefício do produto'}
-TOM: ${productInfo.tone || 'profissional'}
-FORMATO DO VÍDEO: ${formatDescriptions[format] || format}
+BENEFÍCIO PRINCIPAL: ${productInfo.mainBenefit || 'Benefícios do produto'}
+TOM: ${productInfo.tone || 'autêntico e envolvente'}
+FORMATO: ${formatDescriptions[format] || format}
 PLATAFORMA: ${platformSpecs[platform] || platform}
 DURAÇÃO: ${scriptDuration} segundos
 IDIOMA: ${scriptLang}
+PERSONA DO AVATAR: ${avatarPersona}
 
-Crie um script completo e um prompt de geração de vídeo.
-IMPORTANTE: Retorne SOMENTE um objeto JSON válido, sem markdown, sem backticks, sem texto antes ou depois.
-O JSON deve ter exatamente estas chaves:
-{
-  "title": "titulo chamativo para o criativo",
-  "hook": "frase de abertura dos primeiros 3 segundos que para o scroll",
-  "script": "roteiro completo de ${scriptDuration} segundos em ${scriptLang} com fala natural do avatar",
-  "visualDirection": "descricao visual: cenario, iluminacao, roupas do avatar, angulo de camera",
-  "avatarPrompt": "prompt in English describing the ideal avatar person for this product in detail",
-  "videoPrompt": "technical prompt in English for Seedance 2.0 video generation describing exactly the video",
-  "callToAction": "CTA final do video em ${scriptLang}",
-  "caption": "legenda completa para postagem com hashtags em ${scriptLang}",
-  "estimatedEngagement": "baixo ou medio ou alto ou viral"
-}`;
+REGRAS OBRIGATÓRIAS:
+- Hook deve parar o scroll nos primeiros 3 segundos — use uma pergunta provocativa, estatística chocante ou afirmação controversa
+- Script deve soar 100% natural, como uma pessoa real falando — sem jargão corporativo
+- Use técnicas de copywriting: dor → solução → prova → CTA
+- CTA deve criar urgência real
+- Caption deve ter hashtags relevantes e trending
 
-        console.log(`[MktAds] Gerando script para: ${productInfo.productName} formato=${format}`);
+Retorne APENAS um JSON válido com estas chaves exatas:
+{"title":"título criativo do ad","hook":"frase de abertura dos primeiros 3 segundos","mainMessage":"mensagem principal do vídeo (desenvolvimento, 80% do tempo)","script":"roteiro completo de ${scriptDuration}s com falas naturais e didáticas do avatar","visualDirection":"direção visual: cenário exato, iluminação, roupa do avatar, ângulo câmera, movimento","avatarPrompt":"detailed English prompt: ${avatarPersona}, realistic photography style, 8K, for ${platform} marketing video","videoPrompt":"technical English prompt for Seedance 2.0: person speaking naturally, ${platform === 'tiktok' || platform === 'instagram_reels' ? 'vertical 9:16' : platform === 'instagram_feed' ? 'square 1:1' : 'horizontal 16:9'}, ${productInfo.productCategory} product advertisement style","callToAction":"CTA final com urgência","caption":"legenda completa em ${scriptLang} com emojis e hashtags relevantes","estimatedEngagement":"viral"}`;
 
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.9, maxOutputTokens: 2048, responseMimeType: 'application/json' }
-          })
-        });
+        console.log(`[MktAds] Gerando script via Claude API para: ${productInfo.productName} formato=${format}`);
 
-        const geminiData = await geminiRes.json();
-        console.log(`[MktAds] Gemini status: ${geminiRes.status}`);
+        // Usar Claude Sonnet via API interna
+        try {
+          const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'anthropic-version': '2023-06-01',
+            },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-20250514',
+              max_tokens: 2048,
+              system: systemPrompt,
+              messages: [{ role: 'user', content: userPrompt }]
+            })
+          });
 
-        if (!geminiRes.ok) {
-          console.error(`[MktAds] Gemini error: ${JSON.stringify(geminiData).substring(0, 300)}`);
-          return res.status(500).json({ error: `Gemini erro ${geminiRes.status}: ${geminiData?.error?.message || 'desconhecido'}` });
+          const claudeData = await claudeRes.json();
+          const rawText = claudeData?.content?.[0]?.text || '';
+          console.log(`[MktAds Claude] status=${claudeRes.status} raw=${rawText.substring(0, 150)}`);
+
+          // 4 estratégias de parse
+          const tryParse = (text: string) => {
+            // 1. Direto
+            try { return JSON.parse(text); } catch {}
+            // 2. Limpar markdown
+            try { return JSON.parse(text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()); } catch {}
+            // 3. Regex bloco JSON
+            const m = text.match(/\{[\s\S]*\}/);
+            if (m) { try { return JSON.parse(m[0]); } catch {} }
+            // 4. Campo a campo
+            const extract = (key: string) => {
+              const rx = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`);
+              const match = text.match(rx);
+              return match ? match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : '';
+            };
+            const d = {
+              title: extract('title') || 'Ad Criativo',
+              hook: extract('hook') || '',
+              mainMessage: extract('mainMessage') || '',
+              script: extract('script') || '',
+              visualDirection: extract('visualDirection') || '',
+              avatarPrompt: extract('avatarPrompt') || `${avatarPersona}, 8K photorealistic`,
+              videoPrompt: extract('videoPrompt') || `Person speaking naturally to camera, ${productInfo.productCategory} marketing`,
+              callToAction: extract('callToAction') || 'Compre agora!',
+              caption: extract('caption') || '',
+              estimatedEngagement: extract('estimatedEngagement') || 'alto',
+            };
+            if (d.hook || d.script) return d;
+            return null;
+          };
+
+          const scriptData = tryParse(rawText);
+          if (scriptData) {
+            console.log(`[MktAds] Script gerado: ${scriptData.title}`);
+            return res.json({ success: true, scriptData });
+          }
+          throw new Error('Parse falhou');
+        } catch(claudeErr: any) {
+          // Fallback: Gemini
+          console.warn(`[MktAds] Claude falhou, usando Gemini: ${claudeErr.message}`);
+          const geminiKey = process.env.GEMINI_API_KEY;
+          if (!geminiKey) return res.status(503).json({ error: 'Sem chave de IA disponível.' });
+
+          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+              generationConfig: { temperature: 0.9, maxOutputTokens: 2048, responseMimeType: 'application/json' }
+            })
+          });
+          const gd = await geminiRes.json();
+          const rt = gd?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const tryParse2 = (text: string) => {
+            try { return JSON.parse(text); } catch {}
+            const m = text.match(/\{[\s\S]*\}/);
+            if (m) { try { return JSON.parse(m[0]); } catch {} }
+            return null;
+          };
+          const sd = tryParse2(rt);
+          if (sd) return res.json({ success: true, scriptData: sd });
+          return res.status(500).json({ error: 'Erro ao gerar script. Tente novamente.' });
         }
-
-        // Com responseMimeType: application/json, o texto já é JSON puro
-        const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        console.log(`[MktAds] Raw response (200 chars): ${rawText.substring(0, 200)}`);
-
-        // Estratégia 1: parse direto (responseMimeType garante JSON puro)
-        try {
-          const scriptData = JSON.parse(rawText);
-          console.log(`[MktAds] Script gerado OK: ${scriptData.title}`);
-          return res.json({ success: true, scriptData });
-        } catch(e1) {}
-
-        // Estratégia 2: limpar markdown se vier
-        try {
-          const cleaned = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-          const scriptData = JSON.parse(cleaned);
-          console.log(`[MktAds] Script gerado (cleaned): ${scriptData.title}`);
-          return res.json({ success: true, scriptData });
-        } catch(e2) {}
-
-        // Estratégia 3: extrair apenas o bloco JSON com regex
-        try {
-          const match = rawText.match(/\{[\s\S]*\}/);
-          if (match) {
-            const scriptData = JSON.parse(match[0]);
-            console.log(`[MktAds] Script gerado (regex): ${scriptData.title}`);
-            return res.json({ success: true, scriptData });
-          }
-        } catch(e3) {}
-
-        // Estratégia 4: extração campo a campo com regex (fallback final)
-        try {
-          const extract = (key: string) => {
-            const m = rawText.match(new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`));
-            return m ? m[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : '';
-          };
-          const scriptData = {
-            title: extract('title') || 'Ad Criativo',
-            hook: extract('hook') || '',
-            script: extract('script') || '',
-            visualDirection: extract('visualDirection') || '',
-            avatarPrompt: extract('avatarPrompt') || 'Professional person, studio lighting, friendly smile',
-            videoPrompt: extract('videoPrompt') || 'Person speaking to camera, professional setting',
-            callToAction: extract('callToAction') || 'Compre agora!',
-            caption: extract('caption') || '',
-            estimatedEngagement: extract('estimatedEngagement') || 'alto',
-          };
-          if (scriptData.hook || scriptData.script) {
-            console.log(`[MktAds] Script gerado (field extract): ${scriptData.title}`);
-            return res.json({ success: true, scriptData });
-          }
-        } catch(e4) {}
-
-        console.error(`[MktAds] Todas estratégias falharam. Raw: ${rawText.substring(0, 300)}`);
-        return res.status(500).json({ error: 'Erro ao processar resposta da IA. Tente novamente.' });
       }
 
-      // --- generateMktAdsAvatar — Gera imagem do avatar para o ad ---
+      // --- generateMktAdsAvatar — Avatar contextualizado ao produto via Nano Banana Pro ---
       if (method === 'generateMktAdsAvatar') {
         const falKey = process.env.FAL_API_KEY;
         if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
 
-        const prompt = args.avatarPrompt || 'Professional person, studio lighting, clean background, friendly smile';
-        const aspectRatio = args.platform === 'tiktok' || args.platform === 'instagram_reels' ? 'portrait_4_3' : 'square';
+        const avatarPrompt = args.avatarPrompt || 'Person speaking to camera, professional setting, natural smile';
+        const productCategory = args.productCategory || 'geral';
+        const platform = args.platform || 'tiktok';
+        const isVertical = ['tiktok','instagram_reels','youtube_shorts'].includes(platform);
 
-        console.log(`[MktAds] Gerando avatar: ${prompt.substring(0, 80)}`);
+        // Enriquecer o prompt com contexto do produto para garantir relevância
+        const enrichedPrompt = `${avatarPrompt}. This person is genuinely using and recommending a ${productCategory} product. Natural authentic expression, not overly posed. ${isVertical ? 'Vertical framing, upper body visible' : 'Standard framing'}. Photorealistic, 8K, natural lighting, NOT a corporate executive.`;
 
-        // Usa GPT Image 2 para gerar avatar de alta qualidade
-        const r = await fetch('https://fal.run/openai/gpt-image-2', {
+        console.log(`[MktAds Avatar] Nano Banana Pro: ${enrichedPrompt.substring(0, 100)}`);
+
+        // Usar Nano Banana Pro (fal.ai) — mais rápido que GPT Image 2
+        const r = await fetch('https://fal.run/fal-ai/nano-banana-pro', {
           method: 'POST',
           headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            prompt: `${prompt}, professional photography, 8K, photorealistic, perfect for marketing video`,
-            image_size: aspectRatio,
-            quality: 'high',
-            n: 1,
+            prompt: enrichedPrompt,
+            image_size: isVertical ? 'portrait_4_3' : 'square_hd',
+            num_images: 1,
+            enable_safety_checker: false,
           })
         });
         const t = await r.text();
         let d: any = {}; try { d = JSON.parse(t); } catch {}
+        console.log(`[MktAds Avatar] HTTP ${r.status}: ${t.substring(0, 150)}`);
         if (!r.ok) return res.status(r.status).json({ error: d?.detail || `Avatar HTTP ${r.status}` });
-        const imageUrl = d?.images?.[0]?.url || d?.data?.[0]?.url;
+        const imageUrl = d?.images?.[0]?.url || d?.image?.url || d?.data?.[0]?.url;
         if (!imageUrl) return res.status(500).json({ error: 'Avatar: sem URL retornada' });
         return res.json({ imageUrl });
       }
