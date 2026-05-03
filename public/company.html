@@ -9,7 +9,7 @@
 <meta property="og:description" content="Imagens, vídeos, ads e automações com IA. Plataforma SaaS brasileira — Lumina Art Creator. Teste grátis agora.">
 <meta property="og:url" content="https://www.luminaaisolutions.com.br">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800;900&family=Inter:wght@300;400;500;600;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;700;800;900&family=Inter:wght@300;400;500;600;800;900&family=Space+Grotesk:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- ═══════════════════════════════════════════════
        Lumina AI Solutions — company.html
@@ -585,7 +585,6 @@ section { padding: 100px 60px; }
 
 .container { max-width: 1200px; margin: 0 auto; }
 
-/* ─── PRODUTO HERO ──────────────────────────── */
 /* ─── SEÇÃO 2 · PRODUTO PRINCIPAL ─────────────────── */
 .product-hero {
   background: #000;
@@ -1204,6 +1203,71 @@ section { padding: 100px 60px; }
   margin-top: 2px;
 }
 
+/* ─── S2 refinamentos de integração no company.html ─── */
+.product-hero .section-label { display: none; }
+.product-hero .section-title { display: none; }
+.product-hero .section-desc { display: none; }
+.product-hero .feat-chip .icon { display: none; }
+.product-hero .btn-primary,
+.product-hero .btn-secondary { font-family: 'Space Grotesk', sans-serif; }
+.product-hero .btn-primary {
+  background: linear-gradient(135deg, #ffd25e, #d4a843) !important;
+  color: #080808 !important;
+  -webkit-text-fill-color: #080808 !important;
+  box-shadow: 0 12px 36px rgba(212,168,67,0.24), inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.product-hero .btn-secondary {
+  background: rgba(255,255,255,0.035) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+}
+.product-hero .feat-chip {
+  min-height: 62px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.028));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.045), 0 8px 26px rgba(0,0,0,0.18);
+}
+.s2-title .line-gold {
+  background: linear-gradient(90deg, #D4A843 0%, #ee9a58 48%, #e05c8c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.s2-title .line-pink {
+  background: linear-gradient(90deg, #e05c8c 0%, #a65df4 52%, #3B82F6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.product-visual::before {
+  content: '';
+  position: absolute;
+  inset: -50px -40px -60px -40px;
+  background: radial-gradient(ellipse at 52% 56%, rgba(124,58,237,0.14), transparent 58%);
+  pointer-events: none;
+  z-index: 0;
+}
+.product-visual > * { position: relative; z-index: 1; }
+.app-proj-thumb .pj-placeholder {
+  font-size: 42px;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.08), transparent 64%);
+}
+.product-stats-bar {
+  margin-top: 24px;
+  border-radius: 20px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(17,17,24,0.92), rgba(9,9,15,0.92));
+  box-shadow: 0 18px 70px rgba(0,0,0,0.4), 0 0 32px rgba(124,58,237,0.08);
+}
+.product-card { border-radius: 0 0 24px 24px; }
+.powered-bar { border-radius: 16px; margin-bottom: 34px; max-width: 100%; }
+.powered-bar + .product-card { border-radius: 24px; }
+.powered-bar + .product-card .product-card-header { border-radius: 24px 24px 0 0; }
+@media (max-width: 1024px) {
+  .powered-bar { overflow-x: auto; }
+  .powered-bar .pw-brands { gap: 14px; }
+}
+
 /* ─── SERVIÇOS ──────────────────────────────── */
 .services { background: var(--black); }
 
@@ -1723,11 +1787,6 @@ footer {
   section { padding: 80px 30px; }
   .hero { padding: 120px 30px 70px; }
   .product-hero-inner { grid-template-columns: 1fr; gap: 48px; }
-  .app-quick-grid { grid-template-columns: repeat(3, 1fr); }
-  .app-proj-grid { grid-template-columns: repeat(2, 1fr); }
-  .product-stats-bar { grid-template-columns: repeat(2, 1fr); }
-  .powered-bar .pw-brands { gap: 12px; }
-  .pw-brand { font-size: 11px; }
   .services-grid { grid-template-columns: repeat(2, 1fr); }
   .artists-grid { grid-template-columns: repeat(3, 1fr); }
   footer { padding: 40px 30px; }
@@ -2113,7 +2172,6 @@ footer {
   .lh-stat { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.10); }
   .lh-stat:last-child { border-bottom: none; }
 }
-</style>
 </style>
 
 </head>
@@ -2524,6 +2582,7 @@ footer {
     </div><!-- /product-visual -->
   </div><!-- /product-hero-inner -->
 </section>
+
 
 <!-- ═══════════════════════════════════════════
      S3 · SERVIÇOS — sections/s3-servicos.html
