@@ -7155,663 +7155,527 @@ const handleBatchDownload = async (ids: string[]) => {
 
         {/* ================================================================ */}
         {activeTab === 'mkt_ads' && (
-          <div className="max-w-6xl mx-auto space-y-6 pt-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-black text-white">🎬 Lumina UGC</h2>
-                <p className="text-sm text-gray-500 mt-1">De produto a vídeo UGC viral em minutos</p>
-              </div>
-              {mktStep > 1 && (
-                <button onClick={() => { setMktStep(1); setMktScriptData(null); setMktAvatarUrl(''); setMktVideoUrl(''); setMktError(''); }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#333] text-gray-400 hover:border-[#d4af37] hover:text-[#d4af37] text-sm font-bold transition-all">
-                  <RefreshCw size={14} /> Novo Ad
-                </button>
-              )}
-            </div>
+          <div className="pt-4 pb-8">
 
-            {/* Progress Steps */}
-            <div className="flex items-center gap-2">
-              {[
-                { n: 1, label: 'Produto' },
-                { n: 2, label: 'Formato' },
-                { n: 3, label: 'Script & Avatar' },
-                { n: 4, label: 'Vídeo' },
-              ].map((s, i) => (
-                <React.Fragment key={s.n}>
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-black transition-all ${mktStep >= s.n ? 'bg-[#d4af37] text-black' : 'bg-[#1a1a1a] border border-[#333] text-gray-500'}`}>
-                    <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-black">
-                      {mktStep > s.n ? '✓' : s.n}
-                    </span>
-                    {s.label}
+            {/* Layout 2 colunas */}
+            <div className="grid grid-cols-9 gap-6 items-start">
+
+              {/* ─── COLUNA ESQUERDA — Wizard de criação (5/9) ─── */}
+              <div className="col-span-9 lg:col-span-5 space-y-5">
+
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-black text-white">🎬 Lumina UGC</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">Do produto ao vídeo viral em minutos</p>
                   </div>
-                  {i < 3 && <div className={`flex-1 h-px ${mktStep > s.n ? 'bg-[#d4af37]' : 'bg-[#222]'}`} />}
-                </React.Fragment>
-              ))}
-            </div>
-
-            {/* Error */}
-            {mktError && (
-              <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
-                <AlertCircle size={18} className="text-red-400 shrink-0" />
-                <span className="text-sm text-red-300">{mktError}</span>
-                <button onClick={() => setMktError('')} className="ml-auto text-red-400 hover:text-red-300"><X size={16} /></button>
-              </div>
-            )}
-
-            {/* STEP 1 — PRODUTO */}
-            {mktStep === 1 && (
-              <div className="space-y-6">
-                {/* Toggle URL / Manual */}
-                <div className="flex gap-2 p-1 bg-[#111] rounded-2xl border border-[#222]">
-                  {[
-                    { id: 'url' as const, icon: Link, label: 'URL do Produto' },
-                    { id: 'manual' as const, icon: Pencil, label: 'Preencher Manualmente' },
-                  ].map(m => (
-                    <button key={m.id} onClick={() => setMktInputMode(m.id)}
-                      className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${mktInputMode === m.id ? 'bg-[#d4af37] text-black' : 'text-gray-500 hover:text-gray-300'}`}>
-                      <m.icon size={15} /> {m.label}
+                  {mktStep > 1 && (
+                    <button onClick={() => { setMktStep(1); setMktScriptData(null); setMktAvatarUrl(''); setMktVideoUrl(''); setMktError(''); setMktProductInfo(null); setMktProductInput(''); }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[#333] text-gray-400 hover:border-[#d4af37] hover:text-[#d4af37] text-xs font-bold transition-all">
+                      <RefreshCw size={12} /> Novo Ad
                     </button>
+                  )}
+                </div>
+
+                {/* Steps */}
+                <div className="flex items-center gap-2">
+                  {[
+                    { n: 1 as const, label: 'Produto' },
+                    { n: 2 as const, label: 'Formato' },
+                    { n: 3 as const, label: 'Script & Avatar' },
+                    { n: 4 as const, label: 'Vídeo' },
+                  ].map((s, i) => (
+                    <React.Fragment key={s.n}>
+                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black transition-all ${mktStep >= s.n ? 'bg-[#d4af37] text-black' : 'bg-[#1a1a1a] border border-[#333] text-gray-500'}`}>
+                        <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-black">
+                          {mktStep > s.n ? '✓' : s.n}
+                        </span>
+                        {s.label}
+                      </div>
+                      {i < 3 && <div className={`flex-1 h-px ${mktStep > s.n ? 'bg-[#d4af37]' : 'bg-[#222]'}`} />}
+                    </React.Fragment>
                   ))}
                 </div>
 
-                {mktInputMode === 'url' ? (
-                  <div className="space-y-3">
-                    <label className="block text-sm font-black text-gray-400 uppercase tracking-widest">URL do produto ou loja</label>
-                    <div className="flex gap-3">
-                      <div className="flex-1 flex items-center gap-3 bg-[#1a1a1a] border border-[#333] rounded-2xl px-4 focus-within:border-[#d4af37] transition-all">
-                        <Globe size={18} className="text-gray-600 shrink-0" />
-                        <input
-                          type="url"
-                          value={mktProductInput}
-                          onChange={e => setMktProductInput(e.target.value)}
-                          placeholder="https://loja.com/produto ou https://shopee.com/..."
-                          className="flex-1 bg-transparent py-4 text-sm text-white placeholder:text-gray-600 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-600">Cole a URL da página do produto — a IA extrai nome, benefícios e público automaticamente</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { key: 'name', label: 'Nome do Produto', placeholder: 'Ex: Sérum Vitamina C 30ml', val: mktManualName, set: setMktManualName },
-                      { key: 'audience', label: 'Público-alvo', placeholder: 'Ex: Mulheres 25-40 anos', val: mktManualAudience, set: setMktManualAudience },
-                    ].map(f => (
-                      <div key={f.key} className="space-y-2">
-                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">{f.label}</label>
-                        <input value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
-                          className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] transition-all" />
-                      </div>
-                    ))}
-                    <div className="space-y-2">
-                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Principal Benefício</label>
-                      <input value={mktManualBenefit} onChange={e => setMktManualBenefit(e.target.value)}
-                        placeholder="Ex: Clareia a pele em 7 dias"
-                        className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] transition-all" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Descrição</label>
-                      <input value={mktManualDesc} onChange={e => setMktManualDesc(e.target.value)}
-                        placeholder="Descreva o produto brevemente"
-                        className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] transition-all" />
-                    </div>
+                {/* Error */}
+                {mktError && (
+                  <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
+                    <AlertCircle size={16} className="text-red-400 shrink-0" />
+                    <span className="text-sm text-red-300">{mktError}</span>
+                    <button onClick={() => setMktError('')} className="ml-auto text-red-400 hover:text-red-300"><X size={14} /></button>
                   </div>
                 )}
 
-                {/* Upload foto do produto (opcional) */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-black text-gray-400 uppercase tracking-widest">
-                    Foto do Produto <span className="text-gray-600 normal-case font-normal">(opcional)</span>
-                  </label>
-                  <label className={`flex items-center gap-4 p-4 rounded-2xl border-2 border-dashed cursor-pointer transition-all ${mktProductImage ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#333] hover:border-[#555] bg-[#1a1a1a]'}`}>
-                    <input type="file" accept="image/*" className="hidden" onChange={async e => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = ev => {
-                        const dataUrl = ev.target?.result as string;
-                        const base64 = dataUrl.split(',')[1];
-                        setMktProductImage({ data: base64, mimeType: file.type, url: dataUrl });
-                      };
-                      reader.readAsDataURL(file);
-                    }} />
-                    {mktProductImage ? (
-                      <>
-                        <img src={mktProductImage.url} alt="Produto" className="w-16 h-16 object-cover rounded-xl" />
-                        <div>
-                          <p className="text-sm font-bold text-[#d4af37]">Foto carregada!</p>
-                          <p className="text-xs text-gray-500">O avatar segurará/usará este produto no vídeo</p>
-                        </div>
-                        <button onClick={e => { e.preventDefault(); setMktProductImage(null); }} className="ml-auto text-gray-600 hover:text-red-400"><X size={16} /></button>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-12 h-12 rounded-xl bg-[#222] flex items-center justify-center">
-                          <Package size={22} className="text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-400">Arraste ou clique para fazer upload</p>
-                          <p className="text-xs text-gray-600">JPG, PNG até 10MB — o avatar usará o produto no vídeo</p>
-                        </div>
-                      </>
-                    )}
-                  </label>
-                </div>
-
-                <button
-                  onClick={async () => {
-                    setMktError('');
-                    const hasUrl = mktInputMode === 'url' && mktProductInput.trim();
-                    const hasManual = mktInputMode === 'manual' && mktManualName.trim();
-                    if (!hasUrl && !hasManual) {
-                      setMktError(mktInputMode === 'url' ? 'Cole a URL do produto.' : 'Preencha pelo menos o nome do produto.');
-                      return;
-                    }
-                    setMktIsLoading(true);
-                    setMktLoadingMsg('🔍 Analisando produto com IA...');
-                    try {
-                      let productInfo;
-                      if (mktInputMode === 'url') {
-                        const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ method: 'extractProductInfo', args: { url: mktProductInput.trim() } }) });
-                        const d = await r.json();
-                        productInfo = d.productInfo;
-                      } else {
-                        productInfo = {
-                          productName: mktManualName, productCategory: 'geral',
-                          targetAudience: mktManualAudience || 'Público geral',
-                          mainBenefit: mktManualBenefit || mktManualDesc,
-                          tone: 'profissional', keyFeatures: [],
-                          suggestedHashtags: [], callToAction: 'Compre agora',
-                          platforms: ['TikTok', 'Instagram'], description: mktManualDesc,
-                        };
-                      }
-                      setMktProductInfo(productInfo);
-                      setMktStep(2);
-                    } catch(e: any) {
-                      setMktError('Erro ao analisar produto. Tente novamente.');
-                    } finally {
-                      setMktIsLoading(false);
-                    }
-                  }}
-                  disabled={mktIsLoading}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#f0d060] text-black font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {mktIsLoading ? (
-                    <><RefreshCw size={16} className="animate-spin" /> {mktLoadingMsg}</>
-                  ) : (
-                    <><Sparkles size={16} /> Analisar Produto</>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* STEP 2 — FORMATO + PLATAFORMA */}
-            {mktStep === 2 && mktProductInfo && (
-              <div className="space-y-6">
-
-                {/* Card do produto analisado */}
-                <div className="flex items-start gap-4 p-4 bg-[#1a1a1a] border border-[#d4af37]/30 rounded-2xl">
-                  {mktProductImage && <img src={mktProductImage.url} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-[#d4af37] font-black uppercase tracking-widest mb-1">✅ Produto identificado</p>
-                    <p className="font-black text-white">{mktProductInfo.productName}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{mktProductInfo.targetAudience} · {mktProductInfo.productCategory}</p>
-                    <p className="text-xs text-gray-400 mt-1 truncate">{mktProductInfo.mainBenefit}</p>
-                  </div>
-                  <button onClick={() => setMktStep(1)} className="text-gray-600 hover:text-gray-400 shrink-0"><Pencil size={14} /></button>
-                </div>
-
-                {/* Formato */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-black text-gray-400 uppercase tracking-widest">Escolha o formato do vídeo</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { id: 'ugc' as const,      icon: '👤', label: 'UGC',        sub: 'Pessoa real falando para câmera', badge: '🔥 Viral' },
-                      { id: 'unboxing' as const,  icon: '📦', label: 'Unboxing',   sub: 'Abertura de caixa + reação', badge: '' },
-                      { id: 'review' as const,    icon: '⭐', label: 'Review',     sub: 'Avaliação hands-on do produto', badge: '' },
-                      { id: 'tutorial' as const,  icon: '🎓', label: 'Tutorial',   sub: 'Passo a passo de como usar', badge: '' },
-                      { id: 'tvspot' as const,    icon: '📺', label: 'TV Spot',    sub: 'Comercial cinematográfico', badge: '💎 Premium' },
-                      { id: 'wildcard' as const,  icon: '🎲', label: 'Wild Card',  sub: 'IA decide o melhor formato', badge: '✨ Surpresa' },
-                    ].map(f => (
-                      <button key={f.id} onClick={() => setMktFormat(f.id)}
-                        className={`p-3 rounded-2xl border text-left transition-all ${mktFormat === f.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
-                        <div className="flex items-start justify-between mb-2">
-                          <span className="text-2xl">{f.icon}</span>
-                          {f.badge && <span className="text-[9px] font-black text-[#d4af37] bg-[#d4af37]/10 px-1.5 py-0.5 rounded-full">{f.badge}</span>}
-                        </div>
-                        <p className={`text-xs font-black ${mktFormat === f.id ? 'text-[#d4af37]' : 'text-white'}`}>{f.label}</p>
-                        <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">{f.sub}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Plataforma */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-black text-gray-400 uppercase tracking-widest">Plataforma de destino</label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {[
-                      { id: 'tiktok' as const,          icon: '🎵', label: 'TikTok',      ratio: '9:16' },
-                      { id: 'instagram_reels' as const,  icon: '📸', label: 'IG Reels',    ratio: '9:16' },
-                      { id: 'instagram_feed' as const,   icon: '🟣', label: 'IG Feed',     ratio: '1:1' },
-                      { id: 'youtube_shorts' as const,   icon: '▶️', label: 'YT Shorts',   ratio: '9:16' },
-                      { id: 'youtube' as const,          icon: '📹', label: 'YouTube',     ratio: '16:9' },
-                    ].map(p => (
-                      <button key={p.id} onClick={() => setMktPlatform(p.id)}
-                        className={`p-2.5 rounded-xl border text-center transition-all ${mktPlatform === p.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
-                        <span className="text-lg block mb-1">{p.icon}</span>
-                        <p className={`text-[10px] font-black ${mktPlatform === p.id ? 'text-[#d4af37]' : 'text-white'}`}>{p.label}</p>
-                        <p className="text-[9px] text-gray-600">{p.ratio}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Duração */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-black text-gray-400 uppercase tracking-widest">Duração do vídeo</label>
-                  <div className="flex gap-3">
-                    {([15, 30, 60] as const).map(d => (
-                      <button key={d} onClick={() => setMktDuration(d)}
-                        className={`flex-1 py-3 rounded-xl border text-sm font-black transition-all ${mktDuration === d ? 'border-[#d4af37] bg-[#d4af37]/8 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-400 hover:border-[#333]'}`}>
-                        {d}s {d === 15 ? '⚡' : d === 30 ? '🎯' : '📹'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  onClick={async () => {
-                    setMktError('');
-                    setMktIsLoading(true);
-                    setMktLoadingMsg('✍️ Gerando script criativo...');
-                    try {
-                      const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ method: 'generateMktAdsScript', args: {
-                          productInfo: mktProductInfo, format: mktFormat,
-                          platform: mktPlatform, duration: mktDuration, language: 'pt-BR'
-                        }})
-                      });
-                      const d = await r.json();
-                      if (!d.success) throw new Error(d.error || 'Erro ao gerar script');
-                      setMktScriptData(d.scriptData);
-                      setMktEditHook(d.scriptData.hook || '');
-                      setMktEditMainMsg(d.scriptData.mainMessage || '');
-                      setMktEditScript(d.scriptData.script || '');
-                      setMktEditCTA(d.scriptData.callToAction || '');
-                      setMktEditCaption(d.scriptData.caption || '');
-                      setMktStep(3);
-                    } catch(e: any) {
-                      setMktError(e.message || 'Erro ao gerar script.');
-                    } finally {
-                      setMktIsLoading(false);
-                    }
-                  }}
-                  disabled={mktIsLoading}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#f0d060] text-black font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {mktIsLoading ? (
-                    <><RefreshCw size={16} className="animate-spin" /> {mktLoadingMsg}</>
-                  ) : (
-                    <><Film size={16} /> Gerar Script</>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* STEP 3 — SCRIPT + AVATAR */}
-            {mktStep === 3 && mktScriptData && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-black text-white text-base">✍️ Script & Avatar</h3>
-                  <span className={`text-xs font-black px-3 py-1 rounded-full ${mktScriptData.estimatedEngagement === 'viral' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : mktScriptData.estimatedEngagement === 'alto' ? 'bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30' : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'}`}>
-                    {mktScriptData.estimatedEngagement === 'viral' ? '🚀 Potencial VIRAL' : mktScriptData.estimatedEngagement === 'alto' ? '📈 Alto engajamento' : '📊 Bom engajamento'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  {/* COLUNA ESQUERDA — Script editável */}
-                  <div className="space-y-4">
-
-                    {/* Hook */}
-                    <div className="space-y-1.5">
-                      <label className="flex items-center justify-between text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                        🎣 Hook — Primeiros 3 segundos
-                        <span className="text-[10px] text-gray-600 normal-case font-normal">Para o scroll</span>
-                      </label>
-                      <textarea value={mktEditHook} onChange={e => setMktEditHook(e.target.value)} rows={3}
-                        className="w-full bg-gradient-to-br from-[#d4af37]/10 to-transparent border border-[#d4af37]/40 rounded-xl px-4 py-3 text-sm font-bold text-white placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] resize-none leading-relaxed" />
-                    </div>
-
-                    {/* Mensagem principal */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">💬 Mensagem Principal</label>
-                      <textarea value={mktEditMainMsg} onChange={e => setMktEditMainMsg(e.target.value)} rows={3}
-                        className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] resize-none leading-relaxed" />
-                    </div>
-
-                    {/* Roteiro completo */}
-                    <div className="space-y-1.5">
-                      <label className="flex items-center justify-between text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                        📝 Roteiro Completo
-                        <span className="text-[10px] text-gray-600 normal-case font-normal">{mktDuration}s de fala</span>
-                      </label>
-                      <textarea value={mktEditScript} onChange={e => setMktEditScript(e.target.value)} rows={6}
-                        className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-xs text-gray-300 placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] resize-none leading-relaxed" />
-                    </div>
-
-                    {/* CTA */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest">⚡ CTA Final</label>
-                      <input value={mktEditCTA} onChange={e => setMktEditCTA(e.target.value)}
-                        className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-[#d4af37]" />
-                    </div>
-
-                    {/* Caption */}
-                    <div className="space-y-1.5">
-                      <label className="flex items-center justify-between text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                        📱 Legenda para Postagem
-                        <button onClick={() => navigator.clipboard?.writeText(mktEditCaption)}
-                          className="text-[10px] text-gray-600 hover:text-[#d4af37] flex items-center gap-1 normal-case font-normal transition-all">
-                          <Copy size={10} /> Copiar
-                        </button>
-                      </label>
-                      <textarea value={mktEditCaption} onChange={e => setMktEditCaption(e.target.value)} rows={3}
-                        className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-4 py-3 text-xs text-gray-400 focus:outline-none focus:border-[#d4af37] resize-none leading-relaxed" />
-                    </div>
-
-                    {/* Direção visual */}
-                    {mktScriptData.visualDirection && (
-                      <div className="p-3 bg-[#111] border border-[#222] rounded-xl">
-                        <p className="text-[10px] font-black text-gray-500 uppercase mb-1.5">🎬 Direção Visual</p>
-                        <p className="text-[11px] text-gray-400 leading-relaxed">{mktScriptData.visualDirection}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* COLUNA DIREITA — Avatar */}
-                  <div className="space-y-4">
-                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">🎭 Avatar do Vídeo</p>
-
-                    {/* Preview */}
-                    <div className={`relative rounded-2xl overflow-hidden border-2 ${mktAvatarUrl ? 'border-[#d4af37]' : 'border-[#2a2a2a]'} bg-[#0d0d0d]`}
-                      style={{ aspectRatio: mktPlatform === 'youtube' ? '16/9' : mktPlatform === 'instagram_feed' ? '1/1' : '9/16', maxHeight: '360px' }}>
-                      {mktAvatarUrl ? (
-                        <img src={mktAvatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-                          <div className="w-14 h-14 rounded-full bg-[#1a1a1a] border border-[#333] flex items-center justify-center">
-                            <User size={24} className="text-gray-600" />
-                          </div>
-                          <p className="text-xs text-gray-500 font-bold">Avatar será gerado pela IA</p>
-                          <p className="text-[10px] text-gray-700 leading-tight max-w-[160px]">
-                            {mktScriptData.avatarPrompt?.substring(0, 80)}...
-                          </p>
-                        </div>
-                      )}
-                      {mktIsLoading && mktLoadingMsg.includes('avatar') && (
-                        <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-3">
-                          <div className="w-8 h-8 border-2 border-[#d4af37]/30 border-t-[#d4af37] rounded-full animate-spin" />
-                          <p className="text-xs text-[#d4af37] font-bold">Gerando avatar...</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Contexto do avatar */}
-                    <div className="p-3 bg-[#111] border border-[#222] rounded-xl">
-                      <p className="text-[10px] font-black text-gray-500 uppercase mb-1.5">👤 Persona do Avatar</p>
-                      <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-3">{mktScriptData.avatarPrompt}</p>
-                    </div>
-
-                    {/* Botões avatar */}
-                    <button onClick={async () => {
-                        setMktIsLoading(true);
-                        setMktLoadingMsg('🎭 Gerando avatar...');
-                        setMktError('');
-                        try {
-                          const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ method: 'generateMktAdsAvatar', args: {
-                              avatarPrompt: mktScriptData.avatarPrompt,
-                              productCategory: mktProductInfo?.productCategory,
-                              platform: mktPlatform
-                            }})
-                          });
-                          const d = await r.json();
-                          if (d.imageUrl) setMktAvatarUrl(d.imageUrl);
-                          else throw new Error(d.error || 'Erro ao gerar avatar');
-                        } catch(e: any) { setMktError(e.message);
-                        } finally { setMktIsLoading(false); }
-                      }}
-                      disabled={mktIsLoading}
-                      className="w-full py-3 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#d4af37] text-sm font-black text-gray-300 hover:text-[#d4af37] transition-all disabled:opacity-40 flex items-center justify-center gap-2">
-                      {mktIsLoading && mktLoadingMsg.includes('avatar') ? (
-                        <><RefreshCw size={14} className="animate-spin" /> Gerando...</>
-                      ) : (
-                        <><Sparkles size={14} /> {mktAvatarUrl ? '🔄 Novo Avatar' : '✨ Gerar Avatar'}</>
-                      )}
-                    </button>
-
-                    <label className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-[#2a2a2a] hover:border-[#444] cursor-pointer transition-all">
-                      <input type="file" accept="image/*" className="hidden" onChange={e => {
-                        const f = e.target.files?.[0]; if (!f) return;
-                        const reader = new FileReader();
-                        reader.onload = ev => setMktAvatarUrl(ev.target?.result as string);
-                        reader.readAsDataURL(f);
-                      }} />
-                      <Upload size={13} className="text-gray-600" />
-                      <span className="text-xs text-gray-500 font-bold">Usar minha própria foto</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Botão avançar */}
-                <button onClick={() => {
-                  // Atualizar scriptData com valores editados
-                  setMktScriptData((prev: any) => ({
-                    ...prev,
-                    hook: mktEditHook,
-                    mainMessage: mktEditMainMsg,
-                    script: mktEditScript,
-                    callToAction: mktEditCTA,
-                    caption: mktEditCaption,
-                  }));
-                  setMktStep(4);
-                }}
-                  disabled={!mktAvatarUrl}
-                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#f0d060] text-black font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  <Rocket size={16} />
-                  {mktAvatarUrl ? 'Gerar Vídeo do Ad →' : 'Gere um avatar primeiro para continuar'}
-                </button>
-              </div>
-            )}
-
-            {/* STEP 4 — GERAÇÃO DO VÍDEO */}
-            {mktStep === 4 && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                  {/* Preview do setup */}
-                  <div className="space-y-4">
-                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest">📋 Resumo do Ad</p>
-                    <div className="space-y-3">
+                {/* STEP 1 — PRODUTO */}
+                {mktStep === 1 && (
+                  <div className="space-y-5">
+                    <div className="flex gap-2 p-1 bg-[#111] rounded-2xl border border-[#222]">
                       {[
-                        { label: 'Produto', value: mktProductInfo?.productName },
-                        { label: 'Formato', value: { ugc: 'UGC', unboxing: 'Unboxing', review: 'Review', tutorial: 'Tutorial', tvspot: 'TV Spot', wildcard: 'Wild Card' }[mktFormat] },
-                        { label: 'Plataforma', value: { tiktok: 'TikTok 9:16', instagram_reels: 'IG Reels 9:16', instagram_feed: 'IG Feed 1:1', youtube_shorts: 'YT Shorts 9:16', youtube: 'YouTube 16:9' }[mktPlatform] },
-                        { label: 'Duração', value: `${mktDuration} segundos` },
-                        { label: 'Motor', value: 'Seedance 2.0 (ByteDance)' },
-                        { label: 'Hook', value: mktScriptData?.hook?.substring(0, 50) + '...' },
-                      ].map(r => (
-                        <div key={r.label} className="flex items-start gap-3 py-2 border-b border-[#1a1a1a]">
-                          <span className="text-[10px] font-black text-gray-600 uppercase w-20 shrink-0">{r.label}</span>
-                          <span className="text-xs text-gray-300 leading-tight">{r.value}</span>
-                        </div>
+                        { id: 'url' as const, icon: Link, label: 'URL do Produto' },
+                        { id: 'manual' as const, icon: Pencil, label: 'Preencher Manualmente' },
+                      ].map(m => (
+                        <button key={m.id} onClick={() => setMktInputMode(m.id)}
+                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-black transition-all ${mktInputMode === m.id ? 'bg-[#d4af37] text-black' : 'text-gray-500 hover:text-gray-300'}`}>
+                          <m.icon size={14} /> {m.label}
+                        </button>
                       ))}
                     </div>
 
-                    {/* Avatar preview */}
-                    {mktAvatarUrl && (
-                      <div className="flex items-center gap-3 p-3 bg-[#1a1a1a] rounded-xl border border-[#222]">
-                        <img src={mktAvatarUrl} alt="Avatar" className="w-12 h-12 rounded-xl object-cover" />
-                        <div>
-                          <p className="text-[10px] font-black text-[#d4af37]">Avatar pronto</p>
-                          <p className="text-[10px] text-gray-600">Seedance 2.0 vai animar este personagem</p>
+                    {mktInputMode === 'url' ? (
+                      <div className="space-y-2">
+                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">URL do produto ou loja</label>
+                        <div className="flex items-center gap-3 bg-[#1a1a1a] border border-[#333] rounded-2xl px-4 focus-within:border-[#d4af37] transition-all">
+                          <Globe size={16} className="text-gray-600 shrink-0" />
+                          <input type="url" value={mktProductInput} onChange={e => setMktProductInput(e.target.value)}
+                            placeholder="https://loja.com/produto..."
+                            className="flex-1 bg-transparent py-3.5 text-sm text-white placeholder:text-gray-600 focus:outline-none" />
                         </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Área do vídeo gerado */}
-                  <div className="space-y-4">
-                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest">🎬 Vídeo gerado</p>
-
-                    {mktVideoUrl ? (
-                      <div className="space-y-3">
-                        <div className="relative rounded-2xl overflow-hidden bg-black border border-[#d4af37]/30"
-                          style={{ aspectRatio: mktPlatform === 'youtube' ? '16/9' : mktPlatform === 'instagram_feed' ? '1/1' : '9/16', maxHeight: '320px' }}>
-                          <video src={mktVideoUrl} controls className="w-full h-full object-contain" />
-                          <div className="absolute top-2 right-2">
-                            <span className="text-[10px] font-black text-black bg-[#d4af37] px-2 py-0.5 rounded-full">✅ PRONTO</span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <a href={mktVideoUrl} download="lumina-mkt-ad.mp4"
-                            className="flex-1 py-2.5 rounded-xl bg-[#d4af37] text-black font-black text-xs flex items-center justify-center gap-1.5 hover:opacity-90 transition-all">
-                            <Download size={13} /> Baixar Vídeo
-                          </a>
-                          <button onClick={() => navigator.clipboard?.writeText(mktScriptData?.caption || '')}
-                            className="flex-1 py-2.5 rounded-xl border border-[#333] text-gray-400 font-black text-xs flex items-center justify-center gap-1.5 hover:border-[#d4af37] hover:text-[#d4af37] transition-all">
-                            <Copy size={13} /> Copiar Caption
-                          </button>
-                        </div>
-                        <button
-                          onClick={() => { setMktVideoUrl(''); setMktAvatarUrl(''); setMktScriptData(null); setMktProductInfo(null); setMktStep(1); setMktProductInput(''); }}
-                          className="w-full py-2.5 rounded-xl border border-[#333] text-gray-500 text-xs font-bold hover:border-[#555] transition-all flex items-center justify-center gap-1.5">
-                          <Plus size={12} /> Criar Novo Ad
-                        </button>
+                        <p className="text-[11px] text-gray-600">A IA extrai nome, benefícios e público automaticamente</p>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center h-48 rounded-2xl border-2 border-dashed border-[#333] bg-[#0d0d0d] gap-3">
-                        {mktIsLoading ? (
-                          <>
-                            <div className="relative">
-                              <div className="w-12 h-12 rounded-full border-2 border-[#d4af37]/20 border-t-[#d4af37] animate-spin" />
-                            </div>
-                            <p className="text-sm font-bold text-[#d4af37]">{mktLoadingMsg}</p>
-                            {mktProgress > 0 && (
-                              <div className="w-48 h-1.5 bg-[#222] rounded-full overflow-hidden">
-                                <div className="h-full bg-[#d4af37] transition-all duration-500" style={{ width: `${mktProgress}%` }} />
-                              </div>
-                            )}
-                            <p className="text-[10px] text-gray-600">Pode levar até 3 minutos...</p>
-                          </>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { label: 'Nome do Produto', placeholder: 'Ex: Sérum Vitamina C', val: mktManualName, set: setMktManualName },
+                          { label: 'Público-alvo', placeholder: 'Ex: Mulheres 25-40', val: mktManualAudience, set: setMktManualAudience },
+                          { label: 'Principal Benefício', placeholder: 'Ex: Clareia em 7 dias', val: mktManualBenefit, set: setMktManualBenefit },
+                          { label: 'Descrição', placeholder: 'Descreva o produto', val: mktManualDesc, set: setMktManualDesc },
+                        ].map(f => (
+                          <div key={f.label} className="space-y-1.5">
+                            <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">{f.label}</label>
+                            <input value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.placeholder}
+                              className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] transition-all" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload foto */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Foto do Produto <span className="text-gray-600 normal-case font-normal">(opcional)</span></label>
+                      <label className={`flex items-center gap-3 p-3.5 rounded-xl border-2 border-dashed cursor-pointer transition-all ${mktProductImage ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#333] hover:border-[#444] bg-[#1a1a1a]'}`}>
+                        <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                          const file = e.target.files?.[0]; if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = ev => { const dataUrl = ev.target?.result as string; setMktProductImage({ data: dataUrl.split(',')[1], mimeType: file.type, url: dataUrl }); };
+                          reader.readAsDataURL(file);
+                        }} />
+                        {mktProductImage ? (
+                          <><img src={mktProductImage.url} alt="" className="w-12 h-12 object-cover rounded-lg" />
+                          <div><p className="text-sm font-bold text-[#d4af37]">Foto carregada!</p><p className="text-[11px] text-gray-500">O avatar usará este produto no vídeo</p></div>
+                          <button onClick={e => { e.preventDefault(); setMktProductImage(null); }} className="ml-auto text-gray-600 hover:text-red-400"><X size={14} /></button></>
                         ) : (
-                          <>
-                            <Film size={28} className="text-gray-700" />
-                            <p className="text-xs text-gray-600">O vídeo aparecerá aqui após geração</p>
-                          </>
+                          <><Package size={18} className="text-gray-600 shrink-0" />
+                          <div><p className="text-sm font-bold text-gray-400">Upload da foto do produto</p><p className="text-[11px] text-gray-600">JPG, PNG — o avatar segura o produto no vídeo</p></div></>
+                        )}
+                      </label>
+                    </div>
+
+                    <button onClick={async () => {
+                      setMktError('');
+                      const hasUrl = mktInputMode === 'url' && mktProductInput.trim();
+                      const hasManual = mktInputMode === 'manual' && mktManualName.trim();
+                      if (!hasUrl && !hasManual) { setMktError(mktInputMode === 'url' ? 'Cole a URL do produto.' : 'Preencha o nome do produto.'); return; }
+                      setMktIsLoading(true); setMktLoadingMsg('🔍 Analisando produto com IA...');
+                      try {
+                        let productInfo;
+                        if (mktInputMode === 'url') {
+                          const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: 'extractProductInfo', args: { url: mktProductInput.trim() } }) });
+                          const d = await r.json(); productInfo = d.productInfo;
+                        } else {
+                          productInfo = { productName: mktManualName, productCategory: 'geral', targetAudience: mktManualAudience || 'Público geral', mainBenefit: mktManualBenefit || mktManualDesc, tone: 'profissional', keyFeatures: [], suggestedHashtags: [], callToAction: 'Compre agora', platforms: ['TikTok', 'Instagram'], description: mktManualDesc };
+                        }
+                        setMktProductInfo(productInfo); setMktStep(2);
+                      } catch(e: any) { setMktError('Erro ao analisar produto. Tente novamente.');
+                      } finally { setMktIsLoading(false); }
+                    }} disabled={mktIsLoading}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#f0d060] text-black font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                      {mktIsLoading ? <><RefreshCw size={15} className="animate-spin" /> {mktLoadingMsg}</> : <><Sparkles size={15} /> Analisar Produto</>}
+                    </button>
+                  </div>
+                )}
+
+                {/* STEP 2 — FORMATO */}
+                {mktStep === 2 && mktProductInfo && (
+                  <div className="space-y-5">
+                    <div className="flex items-start gap-3 p-4 bg-[#1a1a1a] border border-[#d4af37]/30 rounded-2xl">
+                      {mktProductImage && <img src={mktProductImage.url} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-[#d4af37] font-black uppercase tracking-widest mb-0.5">✅ Produto identificado</p>
+                        <p className="font-black text-white text-sm">{mktProductInfo.productName}</p>
+                        <p className="text-[11px] text-gray-500">{mktProductInfo.targetAudience} · {mktProductInfo.productCategory}</p>
+                      </div>
+                      <button onClick={() => setMktStep(1)} className="text-gray-600 hover:text-gray-400 shrink-0"><Pencil size={13} /></button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Formato do vídeo</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: 'ugc' as const, icon: '👤', label: 'UGC', sub: 'Pessoa falando', badge: '🔥' },
+                          { id: 'unboxing' as const, icon: '📦', label: 'Unboxing', sub: 'Abertura de caixa', badge: '' },
+                          { id: 'review' as const, icon: '⭐', label: 'Review', sub: 'Avaliação hands-on', badge: '' },
+                          { id: 'tutorial' as const, icon: '🎓', label: 'Tutorial', sub: 'Passo a passo', badge: '' },
+                          { id: 'tvspot' as const, icon: '📺', label: 'TV Spot', sub: 'Cinematográfico', badge: '💎' },
+                          { id: 'wildcard' as const, icon: '🎲', label: 'Wild Card', sub: 'IA decide', badge: '✨' },
+                        ].map(f => (
+                          <button key={f.id} onClick={() => setMktFormat(f.id)}
+                            className={`p-2.5 rounded-xl border text-left transition-all ${mktFormat === f.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
+                            <div className="flex items-start justify-between mb-1"><span className="text-lg">{f.icon}</span>{f.badge && <span className="text-[9px] text-[#d4af37]">{f.badge}</span>}</div>
+                            <p className={`text-[11px] font-black ${mktFormat === f.id ? 'text-[#d4af37]' : 'text-white'}`}>{f.label}</p>
+                            <p className="text-[10px] text-gray-600">{f.sub}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Plataforma</label>
+                      <div className="grid grid-cols-5 gap-2">
+                        {[
+                          { id: 'tiktok' as const, icon: '🎵', label: 'TikTok', ratio: '9:16' },
+                          { id: 'instagram_reels' as const, icon: '📸', label: 'IG Reels', ratio: '9:16' },
+                          { id: 'instagram_feed' as const, icon: '🟣', label: 'IG Feed', ratio: '1:1' },
+                          { id: 'youtube_shorts' as const, icon: '▶️', label: 'YT Shorts', ratio: '9:16' },
+                          { id: 'youtube' as const, icon: '📹', label: 'YouTube', ratio: '16:9' },
+                        ].map(p => (
+                          <button key={p.id} onClick={() => setMktPlatform(p.id)}
+                            className={`p-2 rounded-xl border text-center transition-all ${mktPlatform === p.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
+                            <span className="text-base block mb-1">{p.icon}</span>
+                            <p className={`text-[10px] font-black ${mktPlatform === p.id ? 'text-[#d4af37]' : 'text-white'}`}>{p.label}</p>
+                            <p className="text-[9px] text-gray-600">{p.ratio}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-xs font-black text-gray-400 uppercase tracking-widest">Duração</label>
+                      <div className="flex gap-2">
+                        {([15, 30, 60] as const).map(d => (
+                          <button key={d} onClick={() => setMktDuration(d)}
+                            className={`flex-1 py-2.5 rounded-xl border text-sm font-black transition-all ${mktDuration === d ? 'border-[#d4af37] bg-[#d4af37]/8 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-400 hover:border-[#333]'}`}>
+                            {d}s {d === 15 ? '⚡' : d === 30 ? '🎯' : '📹'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button onClick={async () => {
+                      setMktError(''); setMktIsLoading(true); setMktLoadingMsg('✍️ Gerando script criativo...');
+                      try {
+                        const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: 'generateMktAdsScript', args: { productInfo: mktProductInfo, format: mktFormat, platform: mktPlatform, duration: mktDuration, language: 'pt-BR' } }) });
+                        const d = await r.json();
+                        if (!d.success) throw new Error(d.error || 'Erro ao gerar script');
+                        setMktScriptData(d.scriptData); setMktEditHook(d.scriptData.hook || ''); setMktEditMainMsg(d.scriptData.mainMessage || ''); setMktEditScript(d.scriptData.script || ''); setMktEditCTA(d.scriptData.callToAction || ''); setMktEditCaption(d.scriptData.caption || '');
+                        setMktStep(3);
+                      } catch(e: any) { setMktError(e.message || 'Erro ao gerar script.');
+                      } finally { setMktIsLoading(false); }
+                    }} disabled={mktIsLoading}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#f0d060] text-black font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                      {mktIsLoading ? <><RefreshCw size={15} className="animate-spin" /> {mktLoadingMsg}</> : <><Film size={15} /> Gerar Script</>}
+                    </button>
+                  </div>
+                )}
+
+                {/* STEP 3 — SCRIPT + AVATAR */}
+                {mktStep === 3 && mktScriptData && (
+                  <div className="space-y-5">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-black text-white text-sm">✍️ Script & Avatar</h3>
+                      <span className={`text-[11px] font-black px-2.5 py-1 rounded-full ${mktScriptData.estimatedEngagement === 'viral' ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30'}`}>
+                        {mktScriptData.estimatedEngagement === 'viral' ? '🚀 Potencial VIRAL' : '📈 Alto engajamento'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Script editável */}
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">🎣 Hook (3s)</label>
+                          <textarea value={mktEditHook} onChange={e => setMktEditHook(e.target.value)} rows={2}
+                            className="w-full bg-[#d4af37]/8 border border-[#d4af37]/30 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-[#d4af37] resize-none" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">💬 Mensagem Principal</label>
+                          <textarea value={mktEditMainMsg} onChange={e => setMktEditMainMsg(e.target.value)} rows={2}
+                            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#d4af37] resize-none" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">📝 Roteiro</label>
+                          <textarea value={mktEditScript} onChange={e => setMktEditScript(e.target.value)} rows={5}
+                            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-[11px] text-gray-300 focus:outline-none focus:border-[#d4af37] resize-none leading-relaxed" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">⚡ CTA</label>
+                          <input value={mktEditCTA} onChange={e => setMktEditCTA(e.target.value)}
+                            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-[#d4af37]" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="flex items-center justify-between text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                            📱 Caption
+                            <button onClick={() => navigator.clipboard?.writeText(mktEditCaption)} className="text-[10px] text-gray-600 hover:text-[#d4af37] normal-case font-normal flex items-center gap-1"><Copy size={9} /> Copiar</button>
+                          </label>
+                          <textarea value={mktEditCaption} onChange={e => setMktEditCaption(e.target.value)} rows={2}
+                            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-3 py-2 text-[11px] text-gray-400 focus:outline-none focus:border-[#d4af37] resize-none" />
+                        </div>
+                      </div>
+
+                      {/* Avatar */}
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">🎭 Avatar</label>
+                        <div className={`relative rounded-2xl overflow-hidden border-2 ${mktAvatarUrl ? 'border-[#d4af37]' : 'border-[#2a2a2a]'} bg-[#0d0d0d]`}
+                          style={{ aspectRatio: mktPlatform === 'youtube' ? '16/9' : mktPlatform === 'instagram_feed' ? '1/1' : '9/16', maxHeight: '300px' }}>
+                          {mktAvatarUrl ? (
+                            <img src={mktAvatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
+                              <User size={22} className="text-gray-700" />
+                              <p className="text-[11px] text-gray-600">Avatar gerado pela IA</p>
+                            </div>
+                          )}
+                          {mktIsLoading && mktLoadingMsg.includes('avatar') && (
+                            <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                              <div className="w-8 h-8 border-2 border-[#d4af37]/30 border-t-[#d4af37] rounded-full animate-spin" />
+                            </div>
+                          )}
+                        </div>
+                        <button onClick={async () => {
+                          setMktIsLoading(true); setMktLoadingMsg('🎭 Gerando avatar...'); setMktError('');
+                          try {
+                            const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: 'generateMktAdsAvatar', args: { avatarPrompt: mktScriptData.avatarPrompt, productCategory: mktProductInfo?.productCategory, platform: mktPlatform } }) });
+                            const d = await r.json();
+                            if (d.imageUrl) setMktAvatarUrl(d.imageUrl); else throw new Error(d.error || 'Erro');
+                          } catch(e: any) { setMktError(e.message); } finally { setMktIsLoading(false); }
+                        }} disabled={mktIsLoading}
+                          className="w-full py-2.5 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#d4af37] text-sm font-black text-gray-300 hover:text-[#d4af37] transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+                          {mktIsLoading && mktLoadingMsg.includes('avatar') ? <><RefreshCw size={13} className="animate-spin" /> Gerando...</> : <><Sparkles size={13} /> {mktAvatarUrl ? 'Novo Avatar' : 'Gerar Avatar'}</>}
+                        </button>
+                        <label className="flex items-center justify-center gap-2 py-2 rounded-xl border border-dashed border-[#2a2a2a] hover:border-[#444] cursor-pointer transition-all">
+                          <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setMktAvatarUrl(ev.target?.result as string); r.readAsDataURL(f); }} />
+                          <Upload size={12} className="text-gray-600" /><span className="text-[11px] text-gray-600 font-bold">Usar minha foto</span>
+                        </label>
+                        {mktScriptData.visualDirection && (
+                          <div className="p-3 bg-[#111] border border-[#222] rounded-xl">
+                            <p className="text-[10px] font-black text-gray-600 uppercase mb-1">🎬 Direção Visual</p>
+                            <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-3">{mktScriptData.visualDirection}</p>
+                          </div>
                         )}
                       </div>
+                    </div>
+
+                    <button onClick={() => { setMktScriptData((p: any) => ({ ...p, hook: mktEditHook, mainMessage: mktEditMainMsg, script: mktEditScript, callToAction: mktEditCTA, caption: mktEditCaption })); setMktStep(4); }}
+                      disabled={!mktAvatarUrl}
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#f0d060] text-black font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+                      <Rocket size={15} />{mktAvatarUrl ? 'Gerar Vídeo →' : 'Gere um avatar primeiro'}
+                    </button>
+                  </div>
+                )}
+
+                {/* STEP 4 — VÍDEO */}
+                {mktStep === 4 && (
+                  <div className="space-y-5">
+                    <div className="grid grid-cols-2 gap-5">
+                      {/* Resumo */}
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">📋 Resumo</p>
+                        <div className="space-y-2">
+                          {[
+                            { l: 'Produto', v: mktProductInfo?.productName },
+                            { l: 'Formato', v: { ugc: 'UGC', unboxing: 'Unboxing', review: 'Review', tutorial: 'Tutorial', tvspot: 'TV Spot', wildcard: 'Wild Card' }[mktFormat] },
+                            { l: 'Plataforma', v: { tiktok: 'TikTok 9:16', instagram_reels: 'IG Reels 9:16', instagram_feed: 'IG Feed 1:1', youtube_shorts: 'YT Shorts', youtube: 'YouTube 16:9' }[mktPlatform] },
+                            { l: 'Duração', v: `${mktDuration}s` },
+                            { l: 'Motor', v: 'Seedance 2.0' },
+                          ].map(r => (
+                            <div key={r.l} className="flex gap-3 py-1.5 border-b border-[#1a1a1a]">
+                              <span className="text-[10px] font-black text-gray-600 uppercase w-16 shrink-0">{r.l}</span>
+                              <span className="text-xs text-gray-300">{r.v}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {mktAvatarUrl && (
+                          <div className="flex items-center gap-3 p-3 bg-[#1a1a1a] rounded-xl border border-[#222]">
+                            <img src={mktAvatarUrl} alt="" className="w-10 h-10 rounded-xl object-cover" />
+                            <div><p className="text-[10px] font-black text-[#d4af37]">Avatar pronto</p><p className="text-[10px] text-gray-600">Seedance 2.0 animará este personagem</p></div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Vídeo */}
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">🎬 Resultado</p>
+                        {mktVideoUrl ? (
+                          <div className="space-y-2">
+                            <div className="relative rounded-xl overflow-hidden bg-black border border-[#d4af37]/30"
+                              style={{ aspectRatio: mktPlatform === 'youtube' ? '16/9' : mktPlatform === 'instagram_feed' ? '1/1' : '9/16', maxHeight: '260px' }}>
+                              <video src={mktVideoUrl} controls className="w-full h-full object-contain" />
+                            </div>
+                            <div className="flex gap-2">
+                              <a href={mktVideoUrl} download="lumina-ugc.mp4"
+                                className="flex-1 py-2 rounded-xl bg-[#d4af37] text-black font-black text-xs flex items-center justify-center gap-1.5 hover:opacity-90">
+                                <Download size={12} /> Baixar
+                              </a>
+                              <button onClick={() => navigator.clipboard?.writeText(mktEditCaption)}
+                                className="flex-1 py-2 rounded-xl border border-[#333] text-gray-400 text-xs font-black flex items-center justify-center gap-1.5 hover:border-[#d4af37]">
+                                <Copy size={12} /> Caption
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-44 rounded-xl border-2 border-dashed border-[#222] bg-[#0d0d0d] gap-3">
+                            {mktIsLoading ? (
+                              <><div className="w-10 h-10 border-2 border-[#d4af37]/20 border-t-[#d4af37] rounded-full animate-spin" />
+                              <p className="text-xs font-bold text-[#d4af37]">{mktLoadingMsg}</p>
+                              {mktProgress > 0 && <div className="w-36 h-1 bg-[#222] rounded-full"><div className="h-full bg-[#d4af37] rounded-full transition-all" style={{ width: `${mktProgress}%` }} /></div>}
+                              <p className="text-[10px] text-gray-600">Pode levar até 3 minutos...</p></>
+                            ) : (
+                              <><Film size={24} className="text-gray-700" /><p className="text-xs text-gray-600">O vídeo aparecerá aqui</p></>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {!mktVideoUrl && (
+                      <button onClick={async () => {
+                        setMktError(''); setMktIsLoading(true); setMktProgress(10); setMktLoadingMsg('🎬 Iniciando geração...');
+                        try {
+                          const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: 'generateMktAdsVideo', args: { videoPrompt: mktScriptData?.videoPrompt, avatarImageUrl: mktAvatarUrl, platform: mktPlatform, duration: Math.min(mktDuration / 2, 8) } }) });
+                          const d = await r.json();
+                          if (!d.requestId) throw new Error(d.error || 'Erro ao iniciar');
+                          setMktProgress(20); setMktLoadingMsg('⚙️ Seedance 2.0 processando...');
+                          const { requestId, endpoint } = d;
+                          for (let poll = 0; poll < 60; poll++) {
+                            await new Promise(res => setTimeout(res, 8000));
+                            const pr = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: 'getMktAdsVideoStatus', args: { requestId, endpoint } }) });
+                            const pd = await pr.json();
+                            const prog = Math.min(20 + Math.floor((poll / 60) * 75), 94);
+                            setMktProgress(prog);
+                            if (prog > 30) setMktLoadingMsg('🎨 Animando personagem...');
+                            if (prog > 60) setMktLoadingMsg('🔊 Adicionando áudio...');
+                            if (prog > 80) setMktLoadingMsg('✨ Finalizando...');
+                            if (pd?.done && pd?.videoUrl) {
+                              setMktVideoUrl(pd.videoUrl); setMktProgress(100);
+                              setMktGenerated(prev => [...prev, { id: Date.now().toString(), videoUrl: pd.videoUrl, avatarUrl: mktAvatarUrl, product: mktProductInfo?.productName, format: mktFormat, platform: mktPlatform, caption: mktEditCaption, createdAt: new Date().toISOString() }]);
+                              break;
+                            }
+                            if (pd?.done && pd?.error) throw new Error(pd.error);
+                          }
+                          if (!mktVideoUrl) throw new Error('Timeout — tente novamente.');
+                        } catch(e: any) { setMktError(e.message || 'Erro na geração.');
+                        } finally { setMktIsLoading(false); }
+                      }} disabled={mktIsLoading}
+                        className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#f0d060] text-black font-black text-sm uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-[#d4af37]/20">
+                        {mktIsLoading ? <><RefreshCw size={16} className="animate-spin" /> Gerando...</> : <><Rocket size={16} /> 🎬 Gerar Vídeo do Ad</>}
+                      </button>
                     )}
+                  </div>
+                )}
+              </div>
+
+              {/* ─── COLUNA DIREITA — Stats + Ativos + Dicas (4/9) ─── */}
+              <div className="col-span-9 lg:col-span-4 space-y-5">
+
+                {/* 📊 Stats */}
+                <div className="bg-[#111] border border-[#222] rounded-2xl p-5">
+                  <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-4">📊 Sessão atual</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: 'Ads criados', value: mktGenerated.length, icon: '🎬' },
+                      { label: 'Etapa atual', value: `${mktStep}/4`, icon: '📍' },
+                      { label: 'Motor', value: 'Seedance', icon: '⚡' },
+                    ].map(s => (
+                      <div key={s.label} className="bg-[#1a1a1a] rounded-xl p-3 text-center border border-[#222]">
+                        <div className="text-xl mb-1">{s.icon}</div>
+                        <div className="text-lg font-black text-[#d4af37]">{s.value}</div>
+                        <div className="text-[10px] text-gray-600 mt-0.5">{s.label}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Botão principal */}
-                {!mktVideoUrl && (
-                  <button
-                    onClick={async () => {
-                      setMktError('');
-                      setMktIsLoading(true);
-                      setMktProgress(10);
-                      setMktLoadingMsg('🎬 Iniciando geração do vídeo...');
-                      try {
-                        const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ method: 'generateMktAdsVideo', args: {
-                            videoPrompt: mktScriptData?.videoPrompt,
-                            avatarImageUrl: mktAvatarUrl,
-                            platform: mktPlatform,
-                            duration: Math.min(mktDuration / 2, 8), // Seedance max 8-15s
-                          }})
-                        });
-                        const d = await r.json();
-                        if (!d.requestId) throw new Error(d.error || 'Erro ao iniciar geração');
-
-                        setMktProgress(20);
-                        setMktLoadingMsg('⚙️ Seedance 2.0 processando...');
-
-                        // Polling
-                        const { requestId, endpoint } = d;
-                        const maxPolls = 60;
-                        for (let poll = 0; poll < maxPolls; poll++) {
-                          await new Promise(resolve => setTimeout(resolve, 8000));
-                          const pollR = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ method: 'getMktAdsVideoStatus', args: { requestId, endpoint } })
-                          });
-                          const pd = await pollR.json();
-                          const prog = Math.min(20 + Math.floor((poll / maxPolls) * 75), 94);
-                          setMktProgress(prog);
-                          if (prog > 30) setMktLoadingMsg('🎨 Animando personagem...');
-                          if (prog > 60) setMktLoadingMsg('🔊 Adicionando áudio...');
-                          if (prog > 80) setMktLoadingMsg('✨ Finalizando...');
-                          if (pd?.done && pd?.videoUrl) {
-                            setMktVideoUrl(pd.videoUrl);
-                            setMktProgress(100);
-                            // Salvar na biblioteca
-                            setMktGenerated(prev => [...prev, {
-                              id: Date.now().toString(),
-                              videoUrl: pd.videoUrl,
-                              avatarUrl: mktAvatarUrl,
-                              product: mktProductInfo?.productName,
-                              format: mktFormat,
-                              platform: mktPlatform,
-                              createdAt: new Date().toISOString(),
-                            }]);
-                            break;
-                          }
-                          if (pd?.done && pd?.error) throw new Error(pd.error);
-                        }
-                        if (!mktVideoUrl) throw new Error('Timeout — tente novamente.');
-                      } catch(e: any) {
-                        setMktError(e.message || 'Erro na geração do vídeo.');
-                      } finally {
-                        setMktIsLoading(false);
-                      }
-                    }}
-                    disabled={mktIsLoading}
-                    className="w-full py-5 rounded-2xl bg-gradient-to-r from-[#d4af37] via-[#f0d060] to-[#d4af37] bg-size-200 text-black font-black text-base uppercase tracking-widest hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg shadow-[#d4af37]/20"
-                  >
-                    {mktIsLoading ? (
-                      <><RefreshCw size={18} className="animate-spin" /> Gerando seu Ad...</>
-                    ) : (
-                      <><Rocket size={18} /> 🎬 Gerar Vídeo do Ad</>
+                {/* 🎬 Ativos gerados */}
+                <div className="bg-[#111] border border-[#222] rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">🎬 Vídeos criados</p>
+                    {mktGenerated.length > 0 && (
+                      <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-full">{mktGenerated.length} vídeo{mktGenerated.length > 1 ? 's' : ''}</span>
                     )}
-                  </button>
-                )}
+                  </div>
 
-                {/* Histórico desta sessão */}
-                {mktGenerated.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-xs font-black text-gray-500 uppercase tracking-widest">📚 Gerados nesta sessão</p>
-                    <div className="grid grid-cols-3 gap-3">
+                  {mktGenerated.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 gap-3">
+                      <div className="w-12 h-12 rounded-full bg-[#1a1a1a] border border-[#222] flex items-center justify-center">
+                        <Film size={20} className="text-gray-700" />
+                      </div>
+                      <p className="text-xs text-gray-600 text-center">Seus vídeos UGC<br />aparecerão aqui</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
                       {mktGenerated.map(g => (
-                        <div key={g.id} className="bg-[#1a1a1a] border border-[#222] rounded-xl overflow-hidden">
-                          <video src={g.videoUrl} className="w-full aspect-video object-cover" />
-                          <div className="p-2">
-                            <p className="text-[10px] font-black text-gray-300 truncate">{g.product}</p>
-                            <p className="text-[9px] text-gray-600">{g.format} · {g.platform}</p>
-                            <a href={g.videoUrl} download className="mt-1.5 flex items-center gap-1 text-[9px] text-[#d4af37] hover:underline">
-                              <Download size={9} /> Baixar
-                            </a>
+                        <div key={g.id} className="bg-[#1a1a1a] border border-[#222] rounded-xl overflow-hidden hover:border-[#333] transition-all">
+                          <div className="flex gap-3 p-3">
+                            <div className="relative shrink-0 w-16 rounded-lg overflow-hidden bg-black border border-[#222]"
+                              style={{ aspectRatio: ['tiktok','instagram_reels','youtube_shorts'].includes(g.platform) ? '9/16' : '1/1' }}>
+                              <video src={g.videoUrl} className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                <Play size={14} className="text-white fill-current" />
+                              </div>
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-1.5">
+                              <p className="text-xs font-black text-white truncate">{g.product}</p>
+                              <div className="flex gap-1.5">
+                                <span className="text-[9px] font-bold text-gray-500 bg-[#222] px-1.5 py-0.5 rounded-full">{g.format}</span>
+                                <span className="text-[9px] font-bold text-gray-500 bg-[#222] px-1.5 py-0.5 rounded-full">{g.platform}</span>
+                              </div>
+                              <div className="flex gap-2 pt-1">
+                                <a href={g.videoUrl} download
+                                  className="flex items-center gap-1 text-[10px] font-bold text-[#d4af37] hover:underline">
+                                  <Download size={10} /> Baixar
+                                </a>
+                                <button onClick={() => navigator.clipboard?.writeText(g.caption || '')}
+                                  className="flex items-center gap-1 text-[10px] font-bold text-gray-500 hover:text-gray-300">
+                                  <Copy size={10} /> Caption
+                                </button>
+                                <button onClick={() => setMktGenerated(prev => prev.filter(x => x.id !== g.id))}
+                                  className="flex items-center gap-1 text-[10px] font-bold text-gray-600 hover:text-red-400 ml-auto">
+                                  <X size={10} /> Excluir
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
+                  )}
+                </div>
+
+                {/* 💡 Dicas de UGC */}
+                <div className="bg-[#111] border border-[#222] rounded-2xl p-5 space-y-4">
+                  <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">💡 Dicas para viralizar</p>
+                  <div className="space-y-3">
+                    {[
+                      { icon: '🎣', title: 'Hook nos 3 primeiros segundos', desc: 'Se não parar o scroll nos 3s iniciais, ninguém vê o restante. Use pergunta provocativa ou afirmação chocante.' },
+                      { icon: '👤', title: 'UGC converte 4x mais', desc: 'Conteúdo de pessoa comum recomendando supera anúncios tradicionais em conversão e custo por resultado.' },
+                      { icon: '📱', title: 'TikTok e Reels têm alcance orgânico', desc: 'Poste nos primeiros dias às 7h, 12h ou 19h. Use 3-5 hashtags relevantes + 1 de nicho.' },
+                      { icon: '🔁', title: 'Teste variações do mesmo produto', desc: 'Crie 3 versões com formatos diferentes (UGC, Review, Tutorial) e deixe o algoritmo escolher o melhor.' },
+                      { icon: '⚡', title: '15s vs 30s vs 60s', desc: '15s para awareness, 30s para conversão direta, 60s para storytelling e produtos complexos.' },
+                    ].map((d, i) => (
+                      <div key={i} className="flex gap-3 p-3 bg-[#1a1a1a] rounded-xl border border-[#222] hover:border-[#2a2a2a] transition-all">
+                        <span className="text-lg shrink-0 mt-0.5">{d.icon}</span>
+                        <div>
+                          <p className="text-xs font-black text-white mb-0.5">{d.title}</p>
+                          <p className="text-[11px] text-gray-500 leading-relaxed">{d.desc}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+
               </div>
-            )}
+            </div>
           </div>
         )}
+
 
         {/* ================================================================ */}
         {/* --- Library Tab --- */}
