@@ -148,12 +148,207 @@ nav {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 120px 60px 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hero-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.hero-right {
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 140px 60px 80px;
   position: relative;
-  text-align: center;
+}
+
+/* Badge parceiros topo */
+.hero-partners-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(212,168,67,0.07);
+  border: 1px solid rgba(212,168,67,0.2);
+  border-radius: 100px;
+  padding: 7px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--lumina-gold);
+  margin-bottom: 28px;
+  animation: fadeInDown 0.8s ease both;
+}
+.hero-partners-badge::before {
+  content: '✦';
+  font-size: 10px;
+}
+
+.hero-brain-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+}
+
+.hero-brain-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  animation: floatBrain 6s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+@keyframes floatBrain {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+/* Social proof */
+.hero-social-proof {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.hero-avatars {
+  display: flex;
+}
+
+.hero-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #0d0d0f;
+  margin-left: -8px;
+  background: linear-gradient(135deg, #d4af37, #9b59b6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #000;
   overflow: hidden;
+}
+
+.hero-avatar:first-child { margin-left: 0; }
+
+.hero-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-social-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.4;
+}
+
+.hero-social-text strong {
+  color: var(--white);
+  font-weight: 700;
+}
+
+/* Stats — novo layout com ícone + subtítulo */
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-top: 60px;
+  padding-top: 40px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  animation: fadeInUp 0.8s ease 0.5s both;
+  max-width: 1280px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 32px;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.hero-stat-item:last-child { border-right: none; }
+
+.hero-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.hero-stat-icon.purple { background: rgba(139,92,246,0.15); }
+.hero-stat-icon.gold   { background: rgba(212,168,67,0.15); }
+.hero-stat-icon.blue   { background: rgba(59,130,246,0.15); }
+.hero-stat-icon.green  { background: rgba(16,185,129,0.15); }
+
+.hero-stat-body { display: flex; flex-direction: column; gap: 2px; }
+
+.hero-stat-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.hero-stat-label {
+  font-size: 11px;
+  color: var(--gray);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+}
+
+.hero-stat-desc {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Space Grotesk', sans-serif;
+  margin-top: 1px;
+}
+
+/* Responsive hero */
+@media (max-width: 900px) {
+  .hero { padding: 100px 24px 60px; }
+  .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+  .hero-left { align-items: center; text-align: center; }
+  .hero-right { display: none; }
+  .hero-stats { grid-template-columns: repeat(2, 1fr); }
+  .hero-stat-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .hero h1 { font-size: clamp(32px, 8vw, 56px); }
+  .hero-ctas { justify-content: center; }
+  .hero-benefits { justify-content: center; }
+  .hero-social-proof { justify-content: center; }
 }
 
 .hero-bg {
@@ -1291,75 +1486,112 @@ footer {
 <section class="hero" id="sobre">
   <div class="hero-bg"></div>
 
-  <div class="hero-badge" id="heroBadge">
-    <div class="badge-text-wrap">
-      <div class="badge-text-inner" id="badgeInner">
-        <span class="badge-text-item">✦ A mais completa plataforma brasileira de criação com IA</span>
-        <span class="badge-text-item">✦ Movido pelos melhores modelos de IA do mundo</span>
-        <span class="badge-text-item">✦ Google · OpenAI · ByteDance · Black Forest Labs</span>
-        <span class="badge-text-item">✦ 15+ motores de IA · Qualidade profissional</span>
-        <span class="badge-text-item">✦ A mais completa plataforma brasileira de criação com IA</span>
+  <div class="hero-inner">
+
+    <!-- COLUNA ESQUERDA -->
+    <div class="hero-left">
+
+      <!-- Badge parceiros -->
+      <div class="hero-partners-badge">
+        Google · OpenAI · ByteDance · Black Forest Labs
+      </div>
+
+      <!-- Headline -->
+      <h1>
+        <span class="line1">TRANSFORME IDEIAS EM CONTEÚDOS QUE</span>
+        <span class="line2">VENDEM, ENGAJAM E VIRALIZAM</span>
+      </h1>
+
+      <!-- Subheadline -->
+      <p class="hero-subheadline">
+        Os modelos de IA mais poderosos do mundo reunidos em uma única plataforma premium.
+      </p>
+
+      <!-- Parágrafo -->
+      <p class="hero-sub">
+        Produza vídeos cinematográficos, imagens hiper-realistas, anúncios de alta conversão e campanhas visuais em escala, sem equipes complexas ou dezenas de ferramentas separadas.
+      </p>
+
+      <!-- Benefits -->
+      <div class="hero-benefits">
+        <span class="hero-benefit">Gere vídeos virais em minutos</span>
+        <span class="hero-benefit">Crie anúncios de alta conversão</span>
+        <span class="hero-benefit">Produza campanhas sem equipe</span>
+        <span class="hero-benefit">Escale conteúdo visual diariamente</span>
+      </div>
+
+      <!-- CTAs -->
+      <div class="hero-ctas">
+        <a href="https://luminaaisolutions.com.br/app" class="btn-primary">
+          ✦ Criar Grátis Agora
+        </a>
+        <a href="#servicos" class="btn-secondary">
+          ▷ Ver o que fazemos
+        </a>
+      </div>
+
+      <!-- Social proof -->
+      <div class="hero-social-proof">
+        <div class="hero-avatars">
+          <div class="hero-avatar"><img src="https://randomuser.me/api/portraits/men/32.jpg" alt=""/></div>
+          <div class="hero-avatar"><img src="https://randomuser.me/api/portraits/women/44.jpg" alt=""/></div>
+          <div class="hero-avatar"><img src="https://randomuser.me/api/portraits/men/55.jpg" alt=""/></div>
+          <div class="hero-avatar"><img src="https://randomuser.me/api/portraits/women/68.jpg" alt=""/></div>
+        </div>
+        <p class="hero-social-text"><strong>+2.5K criadores e empresas</strong><br>já estão criando com IA</p>
+      </div>
+
+    </div>
+
+    <!-- COLUNA DIREITA — Brain Visual -->
+    <div class="hero-right">
+      <div class="hero-brain-wrap">
+        <img
+          src="/lumina_brain_visual_highres.png"
+          alt="Lumina AI — Ecossistema de criação com IA"
+          class="hero-brain-img"
+        />
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="hero-stats">
+    <div class="hero-stat-item">
+      <div class="hero-stat-icon purple">⚡</div>
+      <div class="hero-stat-body">
+        <div class="hero-stat-num">15+</div>
+        <div class="hero-stat-label">Motores de IA</div>
+        <div class="hero-stat-desc">Tecnologia de ponta integrada</div>
+      </div>
+    </div>
+    <div class="hero-stat-item">
+      <div class="hero-stat-icon gold">✦</div>
+      <div class="hero-stat-body">
+        <div class="hero-stat-num">4K</div>
+        <div class="hero-stat-label">Resolução máxima</div>
+        <div class="hero-stat-desc">Qualidade profissional garantida</div>
+      </div>
+    </div>
+    <div class="hero-stat-item">
+      <div class="hero-stat-icon blue">◷</div>
+      <div class="hero-stat-body">
+        <div class="hero-stat-num">24/7</div>
+        <div class="hero-stat-label">IA trabalhando</div>
+        <div class="hero-stat-desc">Produtividade sem limites</div>
+      </div>
+    </div>
+    <div class="hero-stat-item">
+      <div class="hero-stat-icon green">🌐</div>
+      <div class="hero-stat-body">
+        <div class="hero-stat-num">BR</div>
+        <div class="hero-stat-label">100% em Português</div>
+        <div class="hero-stat-desc">Suporte e interface nativos</div>
       </div>
     </div>
   </div>
 
-  <p class="hero-eyebrow">Powered by the world's leading AI models</p>
-
-  <h1>
-    <span class="line1">TRANSFORME IDEIAS EM CONTEÚDOS QUE</span>
-    <span class="line2">VENDEM, ENGAJAM E VIRALIZAM</span>
-  </h1>
-
-  <p class="hero-subheadline">
-    Os modelos de IA mais poderosos do mundo reunidos em uma única plataforma premium.
-  </p>
-
-  <p class="hero-sub">
-    Produza vídeos cinematográficos, imagens hiper-realistas, anúncios de alta conversão e campanhas visuais em escala, sem equipes complexas ou dezenas de ferramentas separadas.
-  </p>
-
-  <p class="hero-tech">
-    Powered by <strong>Veo 3.1, Kling 3.0, Seedance 2.0, GPT Image 2, Grok Image</strong> e <strong>Nano Banana Pro</strong>.
-  </p>
-
-  <div class="hero-benefits">
-    <span class="hero-benefit">Gere vídeos virais em minutos</span>
-    <span class="hero-benefit">Crie anúncios de alta conversão</span>
-    <span class="hero-benefit">Produza campanhas sem equipe</span>
-    <span class="hero-benefit">Escale conteúdo visual diariamente</span>
-  </div>
-
-  <div class="hero-ctas">
-    <a href="https://luminaaisolutions.com.br/app" class="btn-primary">
-      ✦ Criar Grátis Agora
-    </a>
-    <a href="#servicos" class="btn-secondary">
-      Ver o que fazemos
-    </a>
-  </div>
-
-  <p class="hero-note">
-    <span>Créditos gratuitos</span> ao criar sua conta — sem cartão de crédito
-  </p>
-
-  <div class="hero-stats">
-    <div class="reveal">
-      <div class="hero-stat-num">15+</div>
-      <div class="hero-stat-label">Motores de IA</div>
-    </div>
-    <div class="reveal reveal-delay-1">
-      <div class="hero-stat-num">4K</div>
-      <div class="hero-stat-label">Resolução máxima</div>
-    </div>
-    <div class="reveal reveal-delay-2">
-      <div class="hero-stat-num">24/7</div>
-      <div class="hero-stat-label">IA trabalhando</div>
-    </div>
-    <div class="reveal reveal-delay-3">
-      <div class="hero-stat-num">BR</div>
-      <div class="hero-stat-label">100% em Português</div>
-    </div>
-  </div>
 </section>
 
 <!-- TICKER -->
@@ -1842,35 +2074,7 @@ function animateCounter(el, target, suffix = '') {
   requestAnimationFrame(step);
 }
 </script>
-<!-- Badge rotativo -->
-<script>
-(function() {
-  const inner = document.getElementById('badgeInner');
-  if (!inner) return;
 
-  const total = 4; // número de frases reais (a 5ª é clone da 1ª para loop suave)
-  let current = 0;
-  const itemH = 16; // height de cada item em px
-  const interval = 3200; // ms entre cada troca
-
-  function next() {
-    current++;
-    inner.style.transition = 'transform 0.65s cubic-bezier(0.4, 0, 0.2, 1)';
-    inner.style.transform = `translateY(-${current * itemH}px)`;
-
-    // Quando chegar no clone (index 4), volta silenciosamente ao index 0
-    if (current >= total) {
-      setTimeout(() => {
-        inner.style.transition = 'none';
-        inner.style.transform = 'translateY(0px)';
-        current = 0;
-      }, 680);
-    }
-  }
-
-  setInterval(next, interval);
-})();
-</script>
 
 </body>
 </html>
