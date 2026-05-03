@@ -958,6 +958,14 @@ section { padding: 100px 60px; }
   width: 28px; height: 28px;
   border-radius: 50%;
   background: linear-gradient(135deg, #7c3aed, #ec4899);
+  overflow: hidden;
+}
+.app-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
 }
 .app-notif {
   width: 28px; height: 28px;
@@ -1013,6 +1021,13 @@ section { padding: 100px 60px; }
 .qc-ico.avatar{ background: rgba(59,130,246,0.15); }
 .qc-ico.lip   { background: rgba(244,63,94,0.15);  }
 .qc-ico.audio { background: rgba(212,168,67,0.15); }
+.qc-ico img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  opacity: 0.9;
+  display: block;
+}
 .app-quick-card .qc-name {
   font-size: 11px;
   font-weight: 600;
@@ -1046,6 +1061,12 @@ section { padding: 100px 60px; }
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.07);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.app-proj-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(212,168,67,0.25);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 .app-proj-thumb {
   height: 58px;
@@ -2419,16 +2440,16 @@ footer {
                 <div class="logo-orb"></div>
                 <span>LUMINA</span>
               </div>
-              <div class="app-nav-item active"><span class="nav-ico">📊</span> Dashboard</div>
-              <div class="app-nav-item"><span class="nav-ico">📁</span> Projetos</div>
-              <div class="app-nav-item"><span class="nav-ico">✨</span> Gerar</div>
-              <div class="app-nav-item"><span class="nav-ico">🤖</span> Modelos IA</div>
-              <div class="app-nav-item"><span class="nav-ico">👤</span> Avatares</div>
-              <div class="app-nav-item"><span class="nav-ico">🎙️</span> Vozes & Áudio</div>
-              <div class="app-nav-item"><span class="nav-ico">🎨</span> Brand Kit</div>
-              <div class="app-nav-item"><span class="nav-ico">📂</span> Meus Arquivos</div>
-              <div class="app-nav-item"><span class="nav-ico">🔗</span> Integrações</div>
-              <div class="app-nav-item"><span class="nav-ico">⚙️</span> Configurações</div>
+              <div class="app-nav-item active"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span> Dashboard</div>
+              <div class="app-nav-item"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span> Projetos</div>
+              <div class="app-nav-item"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span> Gerar</div>
+              <div class="app-nav-item"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></span> Modelos IA</div>
+              <div class="app-nav-item"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Avatares</div>
+              <div class="app-nav-item"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span> Vozes & Áudio</div>
+              <div class="app-nav-item"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg></span> Brand Kit</div>
+              <div class="app-nav-item"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><polyline points="17 13 12 18 7 13"/><line x1="12" y1="18" x2="12" y2="9"/></svg></span> Meus Arquivos</div>
+              <div class="app-nav-item"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span> Integrações</div>
+              <div class="app-nav-item"><span class="nav-ico"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> Configurações</div>
 
               <!-- créditos -->
               <div class="app-credits-box">
@@ -2451,7 +2472,7 @@ footer {
                 <div class="app-topbar-actions">
                   <div class="app-btn-new">+ Novo Projeto</div>
                   <div class="app-notif">🔔<div class="notif-dot"></div></div>
-                  <div class="app-avatar"></div>
+                  <div class="app-avatar"><img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=56&h=56&fit=crop&crop=face" alt="Avatar"></div>
                 </div>
               </div>
 
@@ -2460,27 +2481,27 @@ footer {
                 <div class="app-section-title">Comece criando</div>
                 <div class="app-quick-grid">
                   <div class="app-quick-card">
-                    <div class="qc-ico img">🖼️</div>
+                    <div class="qc-ico img"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(34,197,94,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
                     <div class="qc-name">Imagem</div>
                     <div class="qc-sub">Imagem 4K →</div>
                   </div>
                   <div class="app-quick-card">
-                    <div class="qc-ico vid">🎬</div>
+                    <div class="qc-ico vid"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(139,92,246,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
                     <div class="qc-name">Vídeo</div>
                     <div class="qc-sub">Vídeo com IA →</div>
                   </div>
                   <div class="app-quick-card">
-                    <div class="qc-ico avatar">👤</div>
+                    <div class="qc-ico avatar"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(59,130,246,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                     <div class="qc-name">Avatar IA</div>
                     <div class="qc-sub">Apresentador IA →</div>
                   </div>
                   <div class="app-quick-card">
-                    <div class="qc-ico lip">👄</div>
+                    <div class="qc-ico lip"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(244,63,94,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div>
                     <div class="qc-name">Lip Sync</div>
                     <div class="qc-sub">Sincronização labial →</div>
                   </div>
                   <div class="app-quick-card">
-                    <div class="qc-ico audio">🎵</div>
+                    <div class="qc-ico audio"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(212,168,67,0.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
                     <div class="qc-name">Áudio</div>
                     <div class="qc-sub">Voz com IA →</div>
                   </div>
@@ -2495,8 +2516,8 @@ footer {
                 </div>
                 <div class="app-proj-grid" style="margin-top:8px;">
                   <div class="app-proj-card">
-                    <div class="app-proj-thumb" style="background:linear-gradient(135deg,#7c3aed,#ec4899);">
-                      <div class="pj-placeholder">👩</div>
+                    <div class="app-proj-thumb">
+                      <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=120&fit=crop&crop=face" alt="VSL Produto X">
                       <span class="app-proj-badge video">VÍDEO</span>
                     </div>
                     <div class="app-proj-info">
@@ -2505,8 +2526,8 @@ footer {
                     </div>
                   </div>
                   <div class="app-proj-card">
-                    <div class="app-proj-thumb" style="background:linear-gradient(135deg,#1e3a5f,#2563eb);">
-                      <div class="pj-placeholder">🎧</div>
+                    <div class="app-proj-thumb">
+                      <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=120&fit=crop" alt="Anúncio Headphone">
                       <span class="app-proj-badge imagem">IMAGEM</span>
                     </div>
                     <div class="app-proj-info">
@@ -2515,8 +2536,8 @@ footer {
                     </div>
                   </div>
                   <div class="app-proj-card">
-                    <div class="app-proj-thumb" style="background:linear-gradient(135deg,#1a2e1a,#16a34a);">
-                      <div class="pj-placeholder">🧑</div>
+                    <div class="app-proj-thumb">
+                      <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=120&fit=crop&crop=face" alt="UGC Performance">
                       <span class="app-proj-badge video">VÍDEO</span>
                     </div>
                     <div class="app-proj-info">
@@ -2525,8 +2546,8 @@ footer {
                     </div>
                   </div>
                   <div class="app-proj-card">
-                    <div class="app-proj-thumb" style="background:linear-gradient(135deg,#1a1a0a,#ca8a04);">
-                      <div class="pj-placeholder">👟</div>
+                    <div class="app-proj-thumb">
+                      <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&h=120&fit=crop" alt="Campanha Tênis">
                       <span class="app-proj-badge imagem">IMAGEM</span>
                     </div>
                     <div class="app-proj-info">
