@@ -227,7 +227,7 @@ nav {
 .hero h1 {
   font-family: 'Syne', sans-serif;
   font-weight: 800;
-  font-size: clamp(48px, 7vw, 96px);
+  font-size: clamp(36px, 5.5vw, 80px);
   line-height: 1.0;
   letter-spacing: -2px;
   margin-bottom: 8px;
@@ -243,12 +243,32 @@ nav {
   background-clip: text;
 }
 
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 55, 0.65);
+  margin-bottom: 20px;
+  animation: fadeInUp 0.8s ease 0.05s both;
+}
+
+.hero-subheadline {
+  font-size: clamp(18px, 2.2vw, 22px);
+  color: rgba(255,255,255,0.9);
+  font-weight: 600;
+  max-width: 640px;
+  margin: 12px auto 12px;
+  line-height: 1.4;
+  animation: fadeInUp 0.8s ease 0.15s both;
+}
+
 .hero-sub {
-  font-size: clamp(16px, 2vw, 20px);
+  font-size: clamp(15px, 1.7vw, 17px);
   color: var(--gray-light);
-  max-width: 660px;
-  margin: 24px auto 44px;
-  line-height: 1.7;
+  max-width: 620px;
+  margin: 0 auto 10px;
+  line-height: 1.75;
   font-weight: 300;
   animation: fadeInUp 0.8s ease 0.2s both;
 }
@@ -256,6 +276,43 @@ nav {
 .hero-sub strong {
   color: var(--lumina-gold);
   font-weight: 600;
+}
+
+.hero-tech {
+  font-size: 13px;
+  color: rgba(212, 175, 55, 0.55);
+  max-width: 620px;
+  margin: 0 auto 28px;
+  line-height: 1.6;
+  animation: fadeInUp 0.8s ease 0.25s both;
+}
+
+.hero-tech strong {
+  color: rgba(212, 175, 55, 0.88);
+  font-weight: 600;
+}
+
+.hero-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 28px;
+  margin-bottom: 36px;
+  animation: fadeInUp 0.8s ease 0.3s both;
+}
+
+.hero-benefit {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero-benefit::before {
+  content: '✔';
+  color: var(--lumina-gold);
+  font-weight: 700;
 }
 
 .hero-ctas {
@@ -1246,14 +1303,31 @@ footer {
     </div>
   </div>
 
+  <p class="hero-eyebrow">Powered by the world's leading AI models</p>
+
   <h1>
-    <span class="line1">CRIAÇÕES COM IA</span>
-    <span class="line2">QUE GERAM RESULTADO</span>
+    <span class="line1">TRANSFORME IDEIAS EM CONTEÚDOS QUE</span>
+    <span class="line2">VENDEM, ENGAJAM E VIRALIZAM</span>
   </h1>
 
-  <p class="hero-sub">
-    Transforme ideias em conteúdo que <strong>vende, engaja e viraliza</strong>. Imagens e vídeos com <strong>Veo 3.1, Sora 2, Kling 3.0, Seedance 2.0, GPT Image 2 e Nano Banana Pro</strong> — os modelos mais avançados do mundo reunidos em uma única plataforma brasileira, 100% em português.
+  <p class="hero-subheadline">
+    Os modelos de IA mais poderosos do mundo reunidos em uma única plataforma premium.
   </p>
+
+  <p class="hero-sub">
+    Produza vídeos cinematográficos, imagens hiper-realistas, anúncios de alta conversão e campanhas visuais em escala, sem equipes complexas ou dezenas de ferramentas separadas.
+  </p>
+
+  <p class="hero-tech">
+    Powered by <strong>Veo 3.1, Kling 3.0, Seedance 2.0, GPT Image 2, Grok Image</strong> e <strong>Nano Banana Pro</strong>.
+  </p>
+
+  <div class="hero-benefits">
+    <span class="hero-benefit">Gere vídeos virais em minutos</span>
+    <span class="hero-benefit">Crie anúncios de alta conversão</span>
+    <span class="hero-benefit">Produza campanhas sem equipe</span>
+    <span class="hero-benefit">Escale conteúdo visual diariamente</span>
+  </div>
 
   <div class="hero-ctas">
     <a href="https://luminaaisolutions.com.br/app" class="btn-primary">
