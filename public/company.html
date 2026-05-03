@@ -742,28 +742,29 @@ section { padding: 100px 60px; }
 .powered-bar {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 10px 18px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px 12px 0 0;
-  margin-bottom: -1px;
+  gap: 18px;
+  padding: 12px 22px;
+  background: linear-gradient(180deg, rgba(20,20,28,0.75), rgba(5,5,8,0.9));
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  margin-bottom: 10px;
   position: relative;
   z-index: 2;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 18px 60px rgba(0,0,0,0.45);
 }
 .powered-bar .pw-dot {
-  width: 9px; height: 9px;
+  width: 10px; height: 10px;
   border-radius: 50%;
-  background: #FEBC2E;
-  box-shadow: 0 0 6px rgba(254,188,46,0.6);
+  background: #ffc84a;
+  box-shadow: 0 0 10px #ffc84a, 0 0 24px rgba(255,200,74,0.6);
   flex-shrink: 0;
 }
 .powered-bar .pw-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 2px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.42);
   font-family: 'Space Grotesk', sans-serif;
 }
 .powered-bar .pw-brands {
@@ -775,14 +776,32 @@ section { padding: 100px 60px; }
 .powered-bar .pw-brand {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255,255,255,0.6);
   font-family: 'Space Grotesk', sans-serif;
   white-space: nowrap;
 }
-.pw-brand svg { opacity: 0.6; }
+.pw-brand svg { opacity: 1; }
+.pw-brand .brand-icon {
+  width: 14px; height: 14px;
+  display: inline-block;
+  background: rgba(255,255,255,0.5);
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.2));
+}
+.pw-brand .brand-icon.google   { border-radius: 50%; }
+.pw-brand .brand-icon.openai   { border-radius: 2px; }
+.pw-brand .brand-icon.bytedance {
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+  border-radius: 0;
+}
+.pw-brand .brand-icon.blackforest {
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.5);
+  border-radius: 3px;
+  box-shadow: 0 0 8px rgba(255,255,255,0.16);
+}
 
 /* browser chrome */
 .product-card {
@@ -1196,38 +1215,46 @@ section { padding: 100px 60px; }
 .product-stats-bar {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  background: #111118;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-top: none;
-  border-radius: 0 0 20px 20px;
+  background: linear-gradient(180deg, rgba(17,18,28,0.85), rgba(7,7,12,0.92));
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 24px;
+  overflow: hidden;
+  margin-top: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 24px 80px rgba(0,0,0,0.45);
 }
 .product-stat-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 18px 20px;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  gap: 16px;
+  padding: 24px 28px;
+  border-right: 1px solid rgba(255,255,255,0.08);
 }
 .product-stat-item:last-child { border-right: none; }
-.ps-icon { font-size: 22px; }
-.ps-icon.gold   { color: var(--lumina-gold); }
-.ps-icon.yellow { color: #facc15; }
-.ps-icon.blue   { color: #60a5fa; }
-.ps-icon.green  { color: #4ade80; }
+.ps-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.ps-icon.gold   { color: #ff7a3d; filter: drop-shadow(0 0 10px rgba(255,122,61,0.9)); }
+.ps-icon.yellow { color: #ffd447; filter: drop-shadow(0 0 12px rgba(255,212,71,0.9)); }
+.ps-icon.blue   { color: #7aa7ff; filter: drop-shadow(0 0 12px rgba(122,167,255,0.85)); }
+.ps-icon.green  { color: #38d5ff; filter: drop-shadow(0 0 12px rgba(56,213,255,0.9)); }
 .ps-val {
-  font-size: 22px;
-  font-weight: 800;
+  display: block;
+  font-size: 28px;
+  font-weight: 900;
   color: #fff;
   font-family: 'Space Grotesk', sans-serif;
   line-height: 1;
 }
 .ps-desc {
+  display: block;
   font-size: 10px;
-  color: rgba(255,255,255,0.35);
+  color: rgba(160,166,185,0.7);
   font-family: 'Space Grotesk', sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-top: 2px;
+  letter-spacing: 0.08em;
+  margin-top: 6px;
 }
 
 /* ─── S2 refinamentos de integração no company.html ─── */
@@ -2408,25 +2435,25 @@ footer {
       <!-- barra Powered by -->
       <div class="powered-bar">
         <div class="pw-dot"></div>
-        <span class="pw-label">Powered by</span>
-        <div class="pw-brands">
-          <span class="pw-brand">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="rgba(255,255,255,0.6)"/></svg>
-            Google
-          </span>
-          <span class="pw-brand">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="4" fill="rgba(255,255,255,0.6)"/></svg>
-            OpenAI
-          </span>
-          <span class="pw-brand">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><polygon points="12,2 22,20 2,20" fill="rgba(255,255,255,0.6)"/></svg>
-            ByteDance
-          </span>
-          <span class="pw-brand">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="rgba(255,255,255,0.6)" stroke-width="2" fill="none"/></svg>
-            Black Forest Labs
-          </span>
-        </div>
+<span class="pw-label">Powered by</span>
+<div class="pw-brands">
+  <span class="pw-brand">
+    <span class="brand-icon google"></span>
+    Google
+  </span>
+  <span class="pw-brand">
+    <span class="brand-icon openai"></span>
+    OpenAI
+  </span>
+  <span class="pw-brand">
+    <span class="brand-icon bytedance"></span>
+    ByteDance
+  </span>
+  <span class="pw-brand">
+    <span class="brand-icon blackforest"></span>
+    Black Forest Labs
+  </span>
+</div>
       </div>
 
       <!-- browser chrome -->
@@ -2593,19 +2620,27 @@ footer {
       <!-- stats bar -->
       <div class="product-stats-bar">
         <div class="product-stat-item">
-          <span class="ps-icon gold">⚡</span>
+          <span class="ps-icon gold">
+  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 12.97H11L10 22l9.91-10.97H14L13 2z"/></svg>
+</span>
           <div><div class="ps-val">15+</div><div class="ps-desc">Motores de IA</div></div>
         </div>
         <div class="product-stat-item">
-          <span class="ps-icon yellow">⭐</span>
+          <span class="ps-icon yellow">
+  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+</span>
           <div><div class="ps-val">4K</div><div class="ps-desc">Resolução Máxima</div></div>
         </div>
         <div class="product-stat-item">
-          <span class="ps-icon blue">🕐</span>
+          <span class="ps-icon blue">
+  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+</span>
           <div><div class="ps-val">24/7</div><div class="ps-desc">IA Trabalhando</div></div>
         </div>
         <div class="product-stat-item">
-          <span class="ps-icon green">🌐</span>
+          <span class="ps-icon green">
+  <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+</span>
           <div><div class="ps-val">BR</div><div class="ps-desc">100% em Português</div></div>
         </div>
       </div>
