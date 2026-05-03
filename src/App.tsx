@@ -4996,633 +4996,563 @@ const handleBatchDownload = async (ids: string[]) => {
         )}
 
         {activeTab === 'creative_studio' && (
-          <div className="w-full max-w-full mx-auto py-8 px-4 md:px-8">
-            <div className="flex flex-col gap-8">
-              {/* Creative Studio Controls - Horizontal Layout */}
-              <div className="w-full">
-                <motion.div 
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-[#111] p-8 rounded-[40px] border border-[#222]"
-                >
-                  <form onSubmit={handleCreate} className="flex flex-col gap-8">
-                    <div className="flex flex-wrap items-start gap-8">
-                      {/* Left Column: Modes and Type */}
-                      <div className="flex-1 min-w-[300px] space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Sparkles size={24} className="text-[#d4af37]" />
-                          <h3 className="font-bold text-xl">Estúdio Lumina</h3>
-                        </div>
+          <div className="pt-4 pb-8">
+            <div className="grid grid-cols-9 gap-6 items-start">
 
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Modos do Studio</label>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            {[
-                              { id: 'pro', label: 'Foto Profissional', icon: User, prompt: 'Professional corporate headshot, high-end business attire, studio lighting, clean background, sharp focus, 8k' },
-                              { id: 'avatar', label: 'Avatar 3D', icon: Sparkles, prompt: '3D stylized avatar character, Pixar style, high detail, vibrant colors, expressive features, soft lighting' },
-                              { id: 'swap', label: 'Troca de Personagem', icon: Layers, prompt: 'Face swap integration, maintaining lighting and composition, seamless blend' },
-                              { id: 'product', label: 'Personagem + Produto', icon: ShoppingBag, prompt: 'Professional model interacting with product, lifestyle photography, commercial lighting, high-end advertising' }
-                            ].map((mode) => (
-                              <button
-                                key={mode.id}
-                                type="button"
-                                onClick={() => {
-                                  if (studioMode === mode.id) {
-                                    setStudioMode('');
-                                    setPrompt(buildPrefixedPrompt('', !!refAsset, !!productAsset));
-                                  } else {
-                                    setStudioMode(mode.id);
-                                    setPrompt(buildPrefixedPrompt(mode.prompt, !!refAsset, !!productAsset));
-                                    setType('image');
-                                  }
-                                }}
-                                className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${studioMode === mode.id ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500 hover:border-[#333]'}`}
-                              >
-                                <div className={`p-1 rounded-lg ${studioMode === mode.id ? 'bg-[#d4af37] text-black' : 'bg-[#222] text-gray-400'}`}>
-                                  <mode.icon size={12} />
-                                </div>
-                                <span className="text-sm font-bold text-left leading-tight uppercase tracking-wider">{mode.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+              {/* ═══════════════════════════════════════════════════════
+                  COLUNA ESQUERDA — 5 passos de criação (5/9)
+              ═══════════════════════════════════════════════════════ */}
+              <div className="col-span-9 lg:col-span-5 space-y-3">
 
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Tipo de Geração</label>
-                            <button 
-                              type="button"
-                              onClick={() => setFastMode(!fastMode)}
-                              className={`flex items-center gap-2 px-3 py-1 rounded-full text-[12px] font-black transition-all border ${fastMode ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] text-gray-500 border-[#222] hover:border-[#333]'}`}
-                            >
-                              <Zap size={8} fill={fastMode ? "currentColor" : "none"} />
-                              {fastMode ? 'TURBO' : 'QUALIDADE'}
+                {/* Header */}
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-3">
+                    <Sparkles size={18} className="text-[#d4af37]" />
+                    <h2 className="text-xl font-black text-white">Lumina Estúdio</h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => setFastMode(!fastMode)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black transition-all border ${fastMode ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] text-gray-500 border-[#222] hover:border-[#333]'}`}>
+                      <Zap size={10} fill={fastMode ? 'currentColor' : 'none'} />
+                      {fastMode ? 'TURBO' : 'QUALIDADE'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── PASSO 1 — O QUE CRIAR? ── */}
+                <div className="bg-[#111] border border-[#222] rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-6 h-6 rounded-full bg-[#d4af37] text-black text-[11px] font-black flex items-center justify-center shrink-0">1</span>
+                    <span className="text-sm font-black text-white uppercase tracking-widest">O que deseja criar?</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button type="button"
+                      onClick={() => setType('image')}
+                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${type === 'image' ? 'border-[#d4af37] bg-[#d4af37]/8 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}>
+                      <ImageIcon size={22} />
+                      <div className="text-center">
+                        <div className="text-sm font-black uppercase tracking-wide">Imagem</div>
+                        <div className="text-[10px] text-gray-500 mt-0.5">Foto, arte, ilustração</div>
+                      </div>
+                    </button>
+                    <button type="button"
+                      onClick={() => { setType('video'); setQuantity(q => Math.min(q, 3)); setVideoDuration(videoEngine === 'veo' ? 4 : 5); }}
+                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${type === 'video' ? 'border-[#d4af37] bg-[#d4af37]/8 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}>
+                      <Video size={22} />
+                      <div className="text-center">
+                        <div className="text-sm font-black uppercase tracking-wide">Vídeo</div>
+                        <div className="text-[10px] text-gray-500 mt-0.5">Animação cinematográfica</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── PASSO 2 — ESTILO & MODO ── */}
+                <div className="bg-[#111] border border-[#222] rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-6 h-6 rounded-full bg-[#d4af37] text-black text-[11px] font-black flex items-center justify-center shrink-0">2</span>
+                    <span className="text-sm font-black text-white uppercase tracking-widest">
+                      {type === 'image' ? 'Modo & Estilo Visual' : 'Estilo cinematográfico'}
+                    </span>
+                  </div>
+
+                  {type === 'image' ? (
+                    <div className="space-y-4">
+                      {/* Modos — só imagem */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: 'pro',     icon: User,        label: 'Foto Profissional', desc: 'Retrato, headshot, corporativo' },
+                          { id: 'avatar',  icon: Sparkles,    label: 'Avatar 3D',          desc: 'Pixar, anime, cartoon' },
+                          { id: 'swap',    icon: Layers,      label: 'Troca Personagem',   desc: 'Substituir rosto ou figura' },
+                          { id: 'product', icon: ShoppingBag, label: 'Produto + Pessoa',   desc: 'Modelo interagindo com produto' },
+                        ].map(mode => (
+                          <button key={mode.id} type="button"
+                            onClick={() => {
+                              const prompts: Record<string, string> = {
+                                pro: 'Professional corporate headshot, high-end business attire, studio lighting, clean background, sharp focus, 8k',
+                                avatar: '3D stylized avatar character, Pixar style, high detail, vibrant colors, expressive features, soft lighting',
+                                swap: 'Face swap integration, maintaining lighting and composition, seamless blend',
+                                product: 'Professional model interacting with product, lifestyle photography, commercial lighting, high-end advertising',
+                              };
+                              if (studioMode === mode.id) { setStudioMode(''); setPrompt(buildPrefixedPrompt('', !!refAsset, !!productAsset)); }
+                              else { setStudioMode(mode.id); setPrompt(buildPrefixedPrompt(prompts[mode.id], !!refAsset, !!productAsset)); }
+                            }}
+                            className={`flex items-center gap-2.5 p-3 rounded-xl border transition-all text-left ${studioMode === mode.id ? 'bg-[#d4af37]/10 border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] hover:border-[#333]'}`}>
+                            <div className={`p-1.5 rounded-lg shrink-0 ${studioMode === mode.id ? 'bg-[#d4af37] text-black' : 'bg-[#222] text-gray-400'}`}>
+                              <mode.icon size={13} />
+                            </div>
+                            <div>
+                              <div className={`text-xs font-black ${studioMode === mode.id ? 'text-[#d4af37]' : 'text-white'}`}>{mode.label}</div>
+                              <div className="text-[10px] text-gray-500">{mode.desc}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Estilos visuais */}
+                      <div>
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block">Estilo visual</label>
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {[
+                            { id: 'Cinematográfico', label: 'Cinema',  icon: Video },
+                            { id: 'Cyberpunk',       label: 'Cyber',   icon: Zap },
+                            { id: 'Realismo Extremo',label: 'Real',    icon: ImageIcon },
+                            { id: 'Anime',           label: 'Anime',   icon: Sparkles },
+                            { id: 'Pintura',         label: 'Arte',    icon: Palette },
+                            { id: '3D Render',       label: '3D',      icon: Maximize },
+                            { id: 'Vintage',         label: 'Vintage', icon: Clock },
+                            { id: '',                label: 'Livre',   icon: Pencil },
+                          ].map(s => (
+                            <button key={s.id} type="button" onClick={() => applyStyle(s.id)}
+                              className={`p-2 rounded-lg flex flex-col items-center gap-1 transition-all border ${selectedStyle === s.id ? 'bg-[#d4af37]/15 border-[#d4af37] text-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500 hover:border-[#333]'}`}>
+                              <s.icon size={12} />
+                              <span className="text-[9px] font-black uppercase">{s.label}</span>
                             </button>
-                          </div>
-                          <div className="space-y-3">
-                            {/* Tipo: Vídeo ou Imagem */}
-                            <div className="grid grid-cols-2 gap-2">
-                              <button
-                                type="button"
-                                onClick={() => { setType('video'); setQuantity(q => Math.min(q, 3)); setVideoDuration(videoEngine === 'veo' ? 4 : 5); }}
-                                className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'video' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
-                              >
-                                <Video size={18} />
-                                <span className="text-sm font-black uppercase tracking-widest">Vídeo</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setType('image')}
-                                className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${type === 'image' ? 'border-[#d4af37] bg-[#d4af37]/5 text-[#d4af37]' : 'border-[#222] bg-[#1a1a1a] text-gray-500 hover:border-[#333]'}`}
-                              >
-                                <ImageIcon size={18} />
-                                <span className="text-sm font-black uppercase tracking-widest">Imagem</span>
-                              </button>
-                            </div>
-
-                            {/* Seletor de motor de vídeo */}
-                            {type === 'video' && (
-                              <div className="space-y-2">
-                                <span className="text-[12px] font-black text-gray-500 uppercase tracking-widest">Motor de Vídeo</span>
-                                <div className="space-y-1.5">
-                                  {/* Veo 3.0 */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleVideoEngineChange('veo')}
-                                    className={`w-full p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${videoEngine === 'veo' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-base">🎬</span>
-                                      <div>
-                                        <div className={`text-sm font-black leading-tight ${videoEngine === 'veo' ? 'text-[#d4af37]' : 'text-white'}`}>Veo 3.0</div>
-                                        <div className="text-[11px] text-gray-500">Google DeepMind · Áudio nativo · LipSync</div>
-                                      </div>
-                                    </div>
-                                    {videoEngine === 'veo' && <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 px-2 py-0.5 rounded-full">ATIVO</span>}
-                                  </button>
-
-                                  {/* Kling 3.0 */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleVideoEngineChange('kling')}
-                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'kling' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-base">🔥</span>
-                                        <div>
-                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'kling' ? 'text-[#d4af37]' : 'text-white'}`}>Kling 3.0</div>
-                                          <div className="text-[11px] text-gray-500">Cinemático · Multi-cenas · até 15s</div>
-                                        </div>
-                                      </div>
-                                      <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">NOVO</span>
-                                    </div>
-                                    {videoEngine === 'kling' && (
-                                      <div className="flex gap-1.5 mt-2">
-                                        {(['standard', 'pro'] as const).map(t => (
-                                          <button key={t} type="button"
-                                            onClick={e => { e.stopPropagation(); setVideoTier(t); }}
-                                            className={`flex-1 py-1 rounded-lg text-[10px] font-black uppercase border transition-all ${videoTier === t ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#111] text-gray-500 border-[#333] hover:border-[#555]'}`}>
-                                            {t === 'standard' ? '⚡ Standard' : '💎 Pro'}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </button>
-
-                                  {/* Seedance 2.0 */}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleVideoEngineChange('seedance')}
-                                    className={`w-full p-2.5 rounded-xl border text-left transition-all ${videoEngine === 'seedance' ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-base">🌱</span>
-                                        <div>
-                                          <div className={`text-sm font-black leading-tight ${videoEngine === 'seedance' ? 'text-[#d4af37]' : 'text-white'}`}>Seedance 2.0</div>
-                                          <div className="text-[11px] text-gray-500">Movimento fluido · Física real · Áudio nativo</div>
-                                        </div>
-                                      </div>
-                                      <span className="text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">NOVO</span>
-                                    </div>
-                                    {videoEngine === 'seedance' && (
-                                      <div className="flex gap-1.5 mt-2">
-                                        {(['standard', 'fast'] as const).map(t => (
-                                          <button key={t} type="button"
-                                            onClick={e => { e.stopPropagation(); setVideoTier(t); }}
-                                            className={`flex-1 py-1 rounded-lg text-[10px] font-black uppercase border transition-all ${videoTier === t ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#111] text-gray-500 border-[#333] hover:border-[#555]'}`}>
-                                            {t === 'standard' ? '🌿 Standard' : '⚡ Fast'}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </button>
-
-                                  {/* Grid 2 colunas — motores compactos */}
-                                  {([
-                                    { id: 'veo31fast',  icon: '⚡', label: 'Veo 3.1 Fast',  sub: 'Google · Rápido',       badge: 'NOVO', color: 'green' },
-                                    { id: 'veo31',      icon: '🎬', label: 'Veo 3.1',        sub: 'Google · 4K · Áudio',   badge: 'NOVO', color: 'green' },
-                                    { id: 'sora2',      icon: '🌐', label: 'Sora 2 Pro',     sub: 'OpenAI · 25s',          badge: 'PRO',  color: 'blue' },
-                                    { id: 'happyHorse', icon: '🐴', label: 'Happy Horse',    sub: 'Alibaba · 1080p',       badge: 'NOVO', color: 'green' },
-                                  ] as const).map(m => (
-                                    <button key={m.id} type="button" onClick={() => handleVideoEngineChange(m.id)}
-                                      className={`w-full p-2 rounded-xl border text-left transition-all ${videoEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
-                                      <div className="flex items-center justify-between gap-1">
-                                        <div className="flex items-center gap-1.5 min-w-0">
-                                          <span className="text-sm shrink-0">{m.icon}</span>
-                                          <div className="min-w-0">
-                                            <div className={`text-[11px] font-black leading-tight truncate ${videoEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
-                                            <div className="text-[9px] text-gray-500 truncate">{m.sub}</div>
-                                          </div>
-                                        </div>
-                                        <span className={`text-[8px] font-black shrink-0 px-1 py-0.5 rounded-full ${m.color === 'blue' ? 'text-blue-400 bg-blue-500/10' : 'text-green-400 bg-green-500/10'}`}>{m.badge}</span>
-                                      </div>
-                                    </button>
-                                  ))}
-                                </div>
-
-                                {/* Flyer animado de créditos — aparece 3s ao trocar motor/duração/tier */}
-                                {showCreditFlyer && (
-                                  <div className="flex items-center gap-2 px-3 py-2 bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-xl animate-pulse">
-                                    <Sparkles size={12} className="text-[#d4af37] shrink-0" />
-                                    <span className="text-[12px] font-black text-[#d4af37]">
-                                      {getCostPerItem(false, false) * quantity} créditos por geração
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          ))}
                         </div>
                       </div>
+                    </div>
+                  ) : (
+                    /* Estilos para vídeo */
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'Cinematográfico', label: '🎬 Cinematográfico', desc: 'Câmera profissional, profundidade' },
+                        { id: 'Documental',      label: '📽️ Documental',     desc: 'Realismo, câmera na mão' },
+                        { id: 'Comercial',       label: '📺 Comercial',       desc: 'Produto, clean, luminoso' },
+                        { id: 'Dramático',       label: '🌑 Dramático',       desc: 'Alto contraste, sombras' },
+                        { id: 'Vibrante',        label: '🌈 Vibrante',        desc: 'Cores saturadas, energia' },
+                        { id: 'Minimalista',     label: '⬜ Minimalista',     desc: 'Clean, fundo neutro' },
+                      ].map(s => (
+                        <button key={s.id} type="button" onClick={() => applyStyle(s.id)}
+                          className={`p-2.5 rounded-xl border text-left transition-all ${selectedStyle === s.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
+                          <div className={`text-[11px] font-black ${selectedStyle === s.id ? 'text-[#d4af37]' : 'text-white'}`}>{s.label}</div>
+                          <div className="text-[10px] text-gray-500 mt-0.5">{s.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                      {/* Middle Column: Assets and Prompt */}
-                      <div className="flex-[2] min-w-[400px] space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
-                            <div className="flex items-center justify-between mb-2">
-                              <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Personagem / Referência</label>
-                              {refAsset && (
-                                <button type="button" onClick={analyzeAssetForPrompt} disabled={isAnalyzing} className="text-[13px] font-black text-[#d4af37] flex items-center gap-1 uppercase">
-                                  {isAnalyzing ? "..." : <Sparkles size={10} />}
-                                </button>
-                              )}
-                            </div>
-                            <input type="file" onChange={handleRefAssetUpload} className="hidden" ref={refAssetInputRef} accept="image/*,video/*" />
-                            <div 
-                              className={`w-full h-20 border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all relative overflow-hidden ${refAsset ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333] cursor-pointer'}`}
-                              onClick={() => !refAsset && refAssetInputRef.current?.click()}
-                            >
-                              {refAsset ? (
-                                <>
-                                  {refAsset.type === 'image' ? (
-                                    <img src={`data:${refAsset.mimeType};base64,${refAsset.data}`} className="h-full w-full object-contain p-2" />
-                                  ) : (
-                                    <video src={`data:${refAsset.mimeType};base64,${refAsset.data}`} className="h-full w-full object-contain p-2" />
-                                  )}
-                                  <button type="button" onClick={(e) => { e.stopPropagation(); setRefAsset(null); }} className="absolute top-1 right-1 p-1 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-all">
-                                    <Trash2 size={10} />
-                                  </button>
-                                </>
-                              ) : (
-                                <div className="text-center">
-                                  <User size={14} className="text-gray-600 mx-auto mb-1" />
-                                  <span className="text-sm font-bold text-gray-500 uppercase">Personagem</span>
-                                </div>
-                              )}
-                            </div>
+                {/* ── PASSO 3 — MOTOR DE IA ── */}
+                <div className="bg-[#111] border border-[#222] rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-6 h-6 rounded-full bg-[#d4af37] text-black text-[11px] font-black flex items-center justify-center shrink-0">3</span>
+                    <span className="text-sm font-black text-white uppercase tracking-widest">Motor de IA</span>
+                    <span className="ml-auto text-[10px] text-gray-600">
+                      {type === 'image' ? '8 motores disponíveis' : '7 motores disponíveis'}
+                    </span>
+                  </div>
+
+                  {type === 'image' ? (
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { id: 'nano',           icon: '⚡', label: 'Gemini Flash',     desc: 'Rápido · Versátil' },
+                        { id: 'nanoBanana',     icon: '🍌', label: 'Nano Banana 2',    desc: 'Google · Alta fidelidade' },
+                        { id: 'nanaBananaEdit', icon: '🍌', label: 'Nano Banana Pro',  desc: 'Google · Edição premium' },
+                        { id: 'gptImage',       icon: '🤖', label: 'GPT Image 2',      desc: 'OpenAI · Melhor texto' },
+                        { id: 'flux2max',       icon: '⚫', label: 'Flux 2 Max',       desc: 'BFL · Fotorrealismo' },
+                        { id: 'fluxKontextMax', icon: '🌊', label: 'Flux Kontext Max', desc: 'BFL · Edição precisa' },
+                        { id: 'seedream',       icon: '🌱', label: 'Seedream 5.0',     desc: 'ByteDance · 3K res.' },
+                        { id: 'ideogram',       icon: '✍️', label: 'Ideogram',         desc: 'Texto em imagem' },
+                      ].map(m => (
+                        <button key={m.id} type="button" onClick={() => setModelType(m.id as any)}
+                          className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all text-left ${modelType === m.id ? 'border-[#d4af37] bg-[#d4af37]/10' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
+                          <span className="text-base shrink-0">{m.icon}</span>
+                          <div className="min-w-0">
+                            <div className={`text-[11px] font-black truncate ${modelType === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                            <div className="text-[10px] text-gray-500">{m.desc}</div>
                           </div>
-
-                          <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
-                            <div className="flex items-center justify-between mb-2">
-                              <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Produto</label>
-                            </div>
-                            <input type="file" onChange={handleProductAssetUpload} className="hidden" ref={productAssetInputRef} accept="image/*" />
-                            <div 
-                              className={`w-full h-20 border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all relative overflow-hidden ${productAsset ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333] cursor-pointer'}`}
-                              onClick={() => !productAsset && productAssetInputRef.current?.click()}
-                            >
-                              {productAsset ? (
-                                <>
-                                  <img src={`data:${productAsset.mimeType};base64,${productAsset.data}`} className="h-full w-full object-contain p-2" />
-                                  <button type="button" onClick={(e) => { e.stopPropagation(); setProductAsset(null); }} className="absolute top-1 right-1 p-1 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-all">
-                                    <Trash2 size={10} />
-                                  </button>
-                                </>
-                              ) : (
-                                <div className="text-center">
-                                  <ShoppingBag size={14} className="text-gray-600 mx-auto mb-1" />
-                                  <span className="text-sm font-bold text-gray-500 uppercase">Produto</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <label className="block text-sm font-bold text-gray-400 uppercase tracking-widest">Prompt Criativo</label>
-                          </div>
-                          <textarea 
-                            value={prompt}
-                            onChange={handlePromptChange}
-                            placeholder="Descreva sua visão..."
-                            className="w-full bg-[#1a1a1a] border border-[#222] rounded-2xl p-4 focus:outline-none focus:border-[#d4af37] transition-colors resize-none text-sm h-24"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      {/* Right Column: Styles and Settings */}
-                      <div className="flex-1 min-w-[300px] space-y-6">
-                        <div className="bg-[#1a1a1a] border border-[#222] rounded-2xl overflow-hidden">
-                          <div className="p-3 border-b border-[#222] flex items-center justify-between">
+                          {modelType === m.id && <span className="ml-auto text-[8px] font-black text-[#d4af37] bg-[#d4af37]/10 px-1.5 py-0.5 rounded-full shrink-0">ATIVO</span>}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {/* Motores completos Veo 3.0 e Kling */}
+                      {[
+                        { id: 'veo',        icon: '🎬', label: 'Veo 3.0',        desc: 'Google DeepMind · Áudio nativo', badge: '', tier: false },
+                        { id: 'kling',      icon: '🔥', label: 'Kling 3.0',      desc: 'Cinemático · Multi-cenas · 15s', badge: 'TOP', tier: true },
+                        { id: 'seedance',   icon: '🌱', label: 'Seedance 2.0',   desc: 'Movimento fluido · Física real',  badge: '', tier: true },
+                      ].map(m => (
+                        <div key={m.id}>
+                          <button type="button" onClick={() => handleVideoEngineChange(m.id as any)}
+                            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${videoEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
                             <div className="flex items-center gap-2">
-                              <Wand2 size={14} className="text-[#d4af37]" />
-                              <span className="text-sm font-black text-white uppercase tracking-widest">Estilos</span>
+                              <span className="text-base">{m.icon}</span>
+                              <div>
+                                <div className={`text-sm font-black ${videoEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                <div className="text-[10px] text-gray-500">{m.desc}</div>
+                              </div>
                             </div>
-                            <button
-                              type="button"
-                              onClick={enhancePromptWithAI}
-                              disabled={isEnhancing || !prompt.trim()}
-                              className="bg-[#d4af37] text-black px-2 py-1 rounded-lg font-black text-[12px] flex items-center gap-1 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
-                            >
-                              {isEnhancing ? <div className="w-2 h-2 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <Zap size={10} fill="currentColor" />}
-                              IA
-                            </button>
-                          </div>
-                          <div className="p-3">
-                            <div className="grid grid-cols-3 gap-1.5">
-                              {[
-                                { id: 'Cinematográfico', label: 'CINEMA', icon: Video },
-                                { id: 'Cyberpunk', label: 'CYBER', icon: Zap },
-                                { id: 'Realismo Extremo', label: 'REAL', icon: ImageIcon },
-                                { id: 'Anime', label: 'ANIME', icon: Sparkles },
-                                { id: 'Pintura', label: 'ARTE', icon: Palette },
-                                { id: '3D Render', label: '3D', icon: Maximize },
-                                { id: 'Vintage', label: 'VINTAGE', icon: Clock },
-                              ].map((style) => (
-                                <button
-                                  key={style.id}
-                                  type="button"
-                                  onClick={() => applyStyle(style.id)}
-                                  className={`p-1.5 rounded-lg flex flex-col items-center gap-0.5 transition-all group ${selectedStyle === style.id ? 'bg-[#d4af37]/20 border-[#d4af37]' : 'bg-black/20 border border-white/5 hover:border-[#d4af37]/50'}`}
-                                >
-                                  <style.icon size={12} className={selectedStyle === style.id ? 'text-[#d4af37]' : 'text-gray-600 group-hover:text-[#d4af37]'} />
-                                  <span className={`text-sm font-black tracking-tighter uppercase ${selectedStyle === style.id ? 'text-white' : 'text-gray-500 group-hover:text-white'}`}>
-                                    {style.label}
-                                  </span>
+                            <div className="flex items-center gap-2">
+                              {m.badge && <span className="text-[9px] font-black text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded-full">{m.badge}</span>}
+                              {videoEngine === m.id && <span className="text-[9px] font-black text-[#d4af37] bg-[#d4af37]/10 px-1.5 py-0.5 rounded-full">ATIVO</span>}
+                            </div>
+                          </button>
+                          {videoEngine === m.id && m.tier && (
+                            <div className="flex gap-1.5 mt-1.5 px-1">
+                              {(m.id === 'kling' ? ['standard','pro'] : ['standard','fast']).map(t => (
+                                <button key={t} type="button" onClick={e => { e.stopPropagation(); setVideoTier(t as any); }}
+                                  className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase border transition-all ${videoTier === t ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#111] text-gray-500 border-[#333] hover:border-[#555]'}`}>
+                                  {m.id === 'kling' ? (t === 'standard' ? '⚡ Standard' : '💎 Pro') : (t === 'standard' ? '🌿 Standard' : '⚡ Fast')}
                                 </button>
                               ))}
                             </div>
-                          </div>
+                          )}
                         </div>
-
-                        <div className="mb-3">
-                  <label className={`block text-sm font-bold mb-1 uppercase tracking-widest ${type === 'video' ? 'text-gray-600' : 'text-gray-400'}`}>
-                    Motor de Imagem {type === 'video' && <span className="text-[10px] font-normal normal-case text-gray-700 ml-1">(disponível no modo Imagem)</span>}
-                  </label>
-                  <div className={`grid grid-cols-3 gap-1 transition-all ${type === 'video' ? 'opacity-30 pointer-events-none select-none' : ''}`}>
-                    {[
-                      { id: 'nano',           label: '⚡ Gemini Flash',      desc: 'Rápido e versátil' },
-                      { id: 'nanoBanana',     label: '🍌 Nano Banana 2',      desc: 'Google · Geração rápida' },
-                      { id: 'nanaBananaEdit', label: '🍌+ Nano Banana Pro',   desc: 'Google · Edição premium' },
-                      { id: 'gptImage',       label: '🤖 GPT Image 2',        desc: 'OpenAI · Melhor texto' },
-                      { id: 'flux2max',       label: '⚫ Flux 2 Max',         desc: 'BFL · Fotorrealismo max' },
-                      { id: 'fluxKontextMax', label: '🌊 Flux Kontext Max',   desc: 'BFL · Edição precisa' },
-                      { id: 'seedream',       label: '🌱 Seedream 5.0',       desc: 'ByteDance · 3K res.' },
-                      { id: 'ideogram',       label: '✍️ Ideogram',           desc: 'Texto em imagem' }
-                    ].map(m => (
-                      <button
-                        type="button"
-                        key={m.id}
-                        disabled={type === 'video'}
-                        onClick={() => setModelType(m.id as any)}
-                        className={`p-2 rounded-lg border text-center transition-all ${
-                          modelType === m.id
-                            ? 'border-[#d4af37] bg-[#d4af37]/10 text-[#d4af37]'
-                            : 'border-[#222] bg-[#1a1a1a] text-gray-400 hover:border-[#444]'
-                        }`}
-                      >
-                        <div className="text-sm font-bold">{m.label}</div>
-                        <div className="text-[13px] opacity-70">{m.desc}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-bold text-gray-400 mb-1 uppercase tracking-widest">Formato</label>
-                  <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-sm focus:outline-none focus:border-[#d4af37] appearance-none">
-                    <option value="9:16">9:16</option>
-                    <option value="16:9">16:9</option>
-                    <option value="1:1">1:1</option>
-                  </select>
-                </div>
-                          <div>
-                            <label className="block text-sm font-bold text-gray-400 mb-1 uppercase tracking-widest">Qualidade</label>
-                            <select value={resolution} onChange={(e) => setResolution(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg p-2 text-sm focus:outline-none focus:border-[#d4af37] appearance-none">
-                              <option value="720p">720p</option>
-                              <option value="1080p">1080p</option>
-                              <option value="2K">2K</option>
-                              <option value="4K">4K</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setLowPriority(!lowPriority)}
-                            className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border text-[13px] font-bold transition-all ${lowPriority ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
-                          >
-                            <Clock size={12} />
-                            ECONOMIA
+                      ))}
+                      {/* Motores extras em grid */}
+                      <div className="grid grid-cols-2 gap-1.5 pt-1">
+                        {([
+                          { id: 'veo31fast',  icon: '⚡', label: 'Veo 3.1 Fast',  sub: 'Google · Rápido',  badge: 'NOVO' },
+                          { id: 'veo31',      icon: '🎬', label: 'Veo 3.1',        sub: 'Google · 4K',      badge: 'NOVO' },
+                          { id: 'sora2',      icon: '🌐', label: 'Sora 2 Pro',     sub: 'OpenAI · 25s',     badge: 'PRO' },
+                          { id: 'happyHorse', icon: '🐴', label: 'Happy Horse',    sub: 'Alibaba · 1080p',  badge: 'NOVO' },
+                          { id: 'pixverse',   icon: '🌀', label: 'PixVerse V6',    sub: 'Física realista',  badge: '' },
+                        ] as const).map(m => (
+                          <button key={m.id} type="button" onClick={() => handleVideoEngineChange(m.id)}
+                            className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${videoEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
+                            <span className="text-sm shrink-0">{m.icon}</span>
+                            <div className="min-w-0 flex-1">
+                              <div className={`text-[11px] font-black truncate ${videoEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                              <div className="text-[10px] text-gray-500">{m.sub}</div>
+                            </div>
+                            {m.badge && <span className="text-[8px] font-black text-green-400 bg-green-500/10 px-1 py-0.5 rounded-full shrink-0">{m.badge}</span>}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setUseGrounding(!useGrounding)}
-                            className={`flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border text-[13px] font-bold transition-all ${useGrounding ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
-                          >
-                            <Globe size={12} />
-                            GROUNDING
-                          </button>
-                        </div>
+                        ))}
                       </div>
                     </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                      <div className="flex items-center gap-4">
-                        {/* Quantidade — 1·3·5·10 para imagem, 1·2·3 para vídeo */}
-                        <div className="flex flex-col">
-                          <label className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Quantidade</label>
-                          <div className="flex gap-1 mt-1">
-                            {(type === 'video'
-                              ? [1, 2, 3]
-                              : [1, 3, 5, 10]
-                            ).map(n => (
-                              <button
-                                key={n}
-                                type="button"
-                                onClick={() => setQuantity(n)}
-                                className={`w-8 h-8 rounded-lg border text-sm font-bold transition-all ${quantity === n ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
-                              >
-                                {n}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Duração — dinâmica por motor */}
-                        {type === 'video' && (
-                          <div className="flex flex-col">
-                            <label className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Duração</label>
-                            <div className="flex gap-1 mt-1">
-                              {(videoEngine === 'veo'
-                                ? [4, 8]
-                                : [5, 8, 10, 15]
-                              ).map(d => (
-                                <button
-                                  key={d}
-                                  type="button"
-                                  onClick={() => setVideoDuration(d)}
-                                  className={`w-9 h-8 rounded-lg border text-sm font-bold transition-all ${videoDuration === d ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500'}`}
-                                >
-                                  {d}s
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <button 
-                        type="submit"
-                        disabled={isProcessing}
-                        className="min-w-[300px] bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black py-4 rounded-2xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 text-base"
-                        onClick={(e) => handleCreate(e, false, false)}
-                      >
-                        {isProcessing ? <div className="w-5 h-5 border-4 border-black border-t-transparent rounded-full animate-spin" /> : <Play size={20} fill="currentColor" />}
-                        GERAR ({getCostPerItem(false, false) * quantity * Math.max(1, prompt.split('\n').filter(p => p.trim() !== '').length)} CRÉDITOS)
-                      </button>
-                    </div>
-                  </form>
-                </motion.div>
-              </div>
-
-              {/* Results Gallery - Below Controls, More Compact */}
-              <div className="w-full space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h3 className="text-xl font-bold">Galeria Studio</h3>
-                    <p className="text-gray-500 text-sm">Suas criações recentes aparecem aqui em tempo real.</p>
-                  </div>
-                  <button 
-                    onClick={() => setActiveTab('library')}
-                    className="text-[12px] font-bold text-[#d4af37] uppercase tracking-widest hover:underline flex items-center gap-2"
-                  >
-                    Ver Biblioteca Completa <ArrowRight size={12} />
-                  </button>
+                  )}
                 </div>
 
-                {batch.filter(item => item && item.sourceTab === 'creative_studio').length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {batch.filter(item => item && item.sourceTab === 'creative_studio').map((item, i) => {
-                      const studioList = batch.filter(item => item && item.sourceTab === 'creative_studio');
-                      return (
-                        <motion.div
-                          key={item.id}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="bg-[#111] rounded-[24px] border border-[#222] overflow-hidden group relative"
-                        >
-                          <div 
-                            className="aspect-[9/16] bg-black relative cursor-pointer overflow-hidden"
-                            onClick={() => openPreview(item, studioList)}
-                          >
-                          {sessionPreviews[item.id] || item.previewUrl ? (
-                            item.type === 'video' ? (
-                              <video 
-                                src={sessionPreviews[item.id] || item.previewUrl} 
-                                className="w-full h-full object-cover" 
-                                muted
-                                loop
-                                onMouseOver={e => e.currentTarget.play()}
-                                onMouseOut={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                              />
-                            ) : (
-                              <img 
-                                src={sessionPreviews[item.id] || item.previewUrl} 
-                                alt={item.prompt}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                referrerPolicy="no-referrer"
-                              />
-                            )
-                          ) : item.status === 'failed' ? (
-                            <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center gap-2">
-                              <AlertCircle size={24} className="text-red-500/50" />
-                              <p className="text-[12px] text-red-400 font-medium leading-tight line-clamp-3">{item.error}</p>
-                            </div>
+                {/* ── PASSO 4 — REFERÊNCIAS ── condicional por modo */}
+                {(type === 'image') && (
+                  <div className="bg-[#111] border border-[#222] rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-6 h-6 rounded-full bg-[#d4af37] text-black text-[11px] font-black flex items-center justify-center shrink-0">4</span>
+                      <span className="text-sm font-black text-white uppercase tracking-widest">Referências</span>
+                      <span className="text-[10px] text-gray-600 ml-1">(opcional)</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Personagem */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">👤 Personagem</label>
+                        <label className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed cursor-pointer transition-all ${refAsset ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#333] hover:border-[#555] bg-[#1a1a1a]'}`}>
+                          <input type="file" accept="image/*,video/*" className="hidden" onChange={async e => {
+                            const file = e.target.files?.[0]; if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                              const dataUrl = ev.target?.result as string;
+                              setRefAsset({ data: dataUrl.split(',')[1], mimeType: file.type, type: file.type.startsWith('video/') ? 'video' : 'image' });
+                              setPrompt(p => buildPrefixedPrompt(p.replace(/\[REF:[^\]]*\]\s*/g, '').replace(/\[PRODUCT:[^\]]*\]\s*/g, ''), true, !!productAsset));
+                            };
+                            reader.readAsDataURL(file);
+                          }} />
+                          {refAsset ? (
+                            <>
+                              {refAsset.type === 'video' ? (
+                                <video src={`data:${refAsset.mimeType};base64,${refAsset.data}`} className="w-16 h-16 object-cover rounded-lg" />
+                              ) : (
+                                <img src={`data:${refAsset.mimeType};base64,${refAsset.data}`} className="w-16 h-16 object-cover rounded-lg" alt="ref" />
+                              )}
+                              <span className="text-[10px] font-bold text-[#d4af37]">Personagem definido</span>
+                              <button type="button" onClick={e => { e.preventDefault(); setRefAsset(null); }} className="text-[10px] text-gray-600 hover:text-red-400">Remover</button>
+                            </>
                           ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                              <div className="relative">
-                                <div className="w-10 h-10 border-3 border-[#d4af37]/20 border-t-[#d4af37] rounded-full animate-spin" />
-                                <div className="absolute inset-0 flex items-center justify-center text-[12px] font-black text-[#d4af37]">
-                                  {item.progress}%
-                                </div>
-                              </div>
-                              <span className="text-[12px] font-black text-gray-500 uppercase tracking-widest animate-pulse">Gerando...</span>
-                            </div>
+                            <>
+                              <User size={20} className="text-gray-600" />
+                              <span className="text-[10px] text-gray-500 text-center">Foto de rosto ou vídeo<br />para consistência</span>
+                            </>
                           )}
-                          
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                            <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
-                              {item.type === 'video' ? <Play size={16} className="text-white fill-white ml-0.5" /> : <Maximize2 size={16} className="text-white" />}
-                            </div>
-                          </div>
-                        </div>
-                          
-                        <div className="p-3 flex flex-col gap-2 bg-[#161616]">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'completed' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-[#d4af37] animate-pulse'}`} />
-                              <span className="text-[12px] font-black text-gray-400 uppercase tracking-widest">
-                                {item.status === 'completed' ? 'OK' : item.status === 'failed' ? 'ERRO' : '...'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {(sessionPreviews[item.id] || item.previewUrl) && (
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id);
-                                  }}
-                                  className="text-gray-600 hover:text-[#d4af37] transition-colors"
-                                  title="Baixar"
-                                >
-                                  <Download size={12} />
-                                </button>
-                              )}
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(item.id);
-                                }}
-                                className="text-gray-600 hover:text-red-500 transition-colors"
-                                title="Excluir"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </div>
-                          {item.status === 'completed' && item.type === 'image' && (sessionPreviews[item.id] || item.previewUrl) && (
-                            <div className="flex gap-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const url = sessionPreviews[item.id] || item.previewUrl!;
-                                  fetch(url.startsWith('data:') || url.startsWith('blob:') ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`)
-                                    .then(r => r.blob())
-                                    .then(blob => {
-                                      const reader = new FileReader();
-                                      reader.onloadend = () => {
-                                        const base64 = (reader.result as string).split(',')[1];
-                                        setRefAsset({ data: base64, mimeType: 'image/png', type: 'image' });
-                                        showNotification('✅ Definida como Personagem!', 'success');
-                                      };
-                                      reader.readAsDataURL(blob);
-                                    });
-                                }}
-                                className="flex-1 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-lg text-[12px] font-black uppercase tracking-wider hover:bg-blue-500/20 transition-all"
-                              >
-                                👤 Person.
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const url = sessionPreviews[item.id] || item.previewUrl!;
-                                  fetch(url.startsWith('data:') || url.startsWith('blob:') ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`)
-                                    .then(r => r.blob())
-                                    .then(blob => {
-                                      const reader = new FileReader();
-                                      reader.onloadend = () => {
-                                        const base64 = (reader.result as string).split(',')[1];
-                                        setProductAsset({ data: base64, mimeType: 'image/png', type: 'image' });
-                                        showNotification('✅ Definida como Produto!', 'success');
-                                      };
-                                      reader.readAsDataURL(blob);
-                                    });
-                                }}
-                                className="flex-1 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-lg text-[12px] font-black uppercase tracking-wider hover:bg-purple-500/20 transition-all"
-                              >
-                                📦 Produto
-                              </button>
-                            </div>
+                        </label>
+                      </div>
+
+                      {/* Produto */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">📦 Produto</label>
+                        <label className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed cursor-pointer transition-all ${productAsset ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#333] hover:border-[#555] bg-[#1a1a1a]'}`}>
+                          <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                            const file = e.target.files?.[0]; if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                              const dataUrl = ev.target?.result as string;
+                              setProductAsset({ data: dataUrl.split(',')[1], mimeType: file.type, type: 'image' });
+                              setPrompt(p => buildPrefixedPrompt(p.replace(/\[REF:[^\]]*\]\s*/g, '').replace(/\[PRODUCT:[^\]]*\]\s*/g, ''), !!refAsset, true));
+                            };
+                            reader.readAsDataURL(file);
+                          }} />
+                          {productAsset ? (
+                            <>
+                              <img src={`data:${productAsset.mimeType};base64,${productAsset.data}`} className="w-16 h-16 object-cover rounded-lg" alt="product" />
+                              <span className="text-[10px] font-bold text-[#d4af37]">Produto definido</span>
+                              <button type="button" onClick={e => { e.preventDefault(); setProductAsset(null); }} className="text-[10px] text-gray-600 hover:text-red-400">Remover</button>
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingBag size={20} className="text-gray-600" />
+                              <span className="text-[10px] text-gray-500 text-center">Foto do produto<br />para cenas comerciais</span>
+                            </>
                           )}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="bg-[#111] rounded-[40px] border border-[#222] border-dashed p-12 flex flex-col items-center justify-center text-center gap-4">
-                    <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center border border-[#222]">
-                      <Sparkles size={24} className="text-gray-700" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-base font-bold text-gray-400">Nenhuma criação ainda</h4>
-                      <p className="text-gray-600 text-sm max-w-xs mx-auto">Use o painel acima para começar a criar artes e vídeos profissionais.</p>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 )}
+
+                {/* Upload ref para vídeo */}
+                {type === 'video' && (
+                  <div className="bg-[#111] border border-[#222] rounded-2xl p-5 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-full bg-[#d4af37] text-black text-[11px] font-black flex items-center justify-center shrink-0">4</span>
+                      <span className="text-sm font-black text-white uppercase tracking-widest">Imagem de referência</span>
+                      <span className="text-[10px] text-gray-600 ml-1">(opcional — image-to-video)</span>
+                    </div>
+                    <label className={`flex items-center gap-4 p-4 rounded-xl border-2 border-dashed cursor-pointer transition-all ${refAsset ? 'border-[#d4af37] bg-[#d4af37]/5' : 'border-[#333] hover:border-[#555] bg-[#1a1a1a]'}`}>
+                      <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = ev => { const d = ev.target?.result as string; setRefAsset({ data: d.split(',')[1], mimeType: file.type, type: 'image' }); };
+                        reader.readAsDataURL(file);
+                      }} />
+                      {refAsset ? (
+                        <><img src={`data:${refAsset.mimeType};base64,${refAsset.data}`} className="w-14 h-14 object-cover rounded-lg shrink-0" alt="ref" />
+                        <div><p className="text-sm font-bold text-[#d4af37]">Imagem carregada</p><p className="text-[11px] text-gray-500">Modo image-to-video ativo</p></div>
+                        <button type="button" onClick={e => { e.preventDefault(); setRefAsset(null); }} className="ml-auto text-gray-600 hover:text-red-400"><X size={14} /></button></>
+                      ) : (
+                        <><Upload size={18} className="text-gray-600 shrink-0" />
+                        <div><p className="text-sm text-gray-400 font-bold">Carregar imagem inicial</p><p className="text-[11px] text-gray-600">A IA anima a partir desta imagem</p></div></>
+                      )}
+                    </label>
+                  </div>
+                )}
+
+                {/* ── PASSO 5 — PROMPT & GERAR ── */}
+                <div className="bg-[#111] border border-[#222] rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-6 h-6 rounded-full bg-[#d4af37] text-black text-[11px] font-black flex items-center justify-center shrink-0">5</span>
+                    <span className="text-sm font-black text-white uppercase tracking-widest">Descreva e gere</span>
+                  </div>
+
+                  {/* Textarea */}
+                  <div className="relative">
+                    <textarea
+                      value={prompt} onChange={e => setPrompt(e.target.value)}
+                      placeholder={type === 'image'
+                        ? 'Descreva a imagem que deseja criar...\nEx: Mulher sorrindo com produto de beleza, fundo clean, luz de estúdio'
+                        : 'Descreva o vídeo que deseja criar...\nEx: Pessoa caminhando em cidade futurista, câmera lenta, luzes neon'}
+                      rows={5}
+                      className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-[#d4af37] resize-none leading-relaxed transition-all"
+                    />
+                    <button type="button" onClick={() => setPrompt('')}
+                      className="absolute top-2 right-2 text-gray-700 hover:text-gray-400 transition-colors">
+                      <X size={12} />
+                    </button>
+                  </div>
+
+                  {/* Configurações compactas */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 block">Formato</label>
+                      <select value={aspectRatio} onChange={e => setAspectRatio(e.target.value)}
+                        className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg px-2 py-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none text-white">
+                        <option value="9:16">9:16 Vertical</option>
+                        <option value="16:9">16:9 Horizontal</option>
+                        <option value="1:1">1:1 Quadrado</option>
+                        <option value="4:3">4:3 Clássico</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 block">Qualidade</label>
+                      <select value={resolution} onChange={e => setResolution(e.target.value)}
+                        className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg px-2 py-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none text-white">
+                        <option value="720p">720p</option>
+                        <option value="1080p">1080p</option>
+                        <option value="2K">2K</option>
+                        <option value="4K">4K</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 block">
+                        {type === 'video' ? 'Duração' : 'Quantidade'}
+                      </label>
+                      {type === 'video' ? (
+                        <select value={videoDuration} onChange={e => setVideoDuration(Number(e.target.value))}
+                          className="w-full bg-[#1a1a1a] border border-[#222] rounded-lg px-2 py-2 text-xs focus:outline-none focus:border-[#d4af37] appearance-none text-white">
+                          {(videoEngine === 'veo' ? [4,8] : [5,8,10,15]).map(d => <option key={d} value={d}>{d}s</option>)}
+                        </select>
+                      ) : (
+                        <div className="flex gap-1">
+                          {[1,3,5,10].map(n => (
+                            <button key={n} type="button" onClick={() => setQuantity(n)}
+                              className={`flex-1 py-2 rounded-lg border text-xs font-bold transition-all ${quantity === n ? 'bg-[#d4af37] text-black border-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500 hover:border-[#333]'}`}>
+                              {n}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Opções extras */}
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setLowPriority(!lowPriority)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-[11px] font-bold transition-all ${lowPriority ? 'bg-[#d4af37]/10 border-[#d4af37] text-[#d4af37]' : 'bg-[#1a1a1a] border-[#222] text-gray-500 hover:border-[#333]'}`}>
+                      <Clock size={11} /> Economia
+                    </button>
+                    <button type="button" onClick={() => setUseGrounding(!useGrounding)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-[11px] font-bold transition-all ${useGrounding ? 'bg-blue-500/10 border-blue-500 text-blue-400' : 'bg-[#1a1a1a] border-[#222] text-gray-500 hover:border-[#333]'}`}>
+                      <Globe size={11} /> Grounding
+                    </button>
+                  </div>
+
+                  {/* Botão Gerar */}
+                  <button type="button" disabled={isProcessing} onClick={e => handleCreate(e, false, false)}
+                    className="w-full bg-gradient-to-r from-[#d4af37] to-[#f1c40f] text-black font-black py-4 rounded-2xl shadow-xl shadow-[#d4af37]/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-3 text-sm uppercase tracking-widest disabled:opacity-50">
+                    {isProcessing
+                      ? <><div className="w-5 h-5 border-3 border-black border-t-transparent rounded-full animate-spin" /> Gerando...</>
+                      : <><Play size={16} fill="currentColor" /> Gerar — {getCostPerItem(false, false) * quantity * Math.max(1, prompt.split('\n').filter(p => p.trim()).length)} créditos</>
+                    }
+                  </button>
+                </div>
+              </div>
+
+              {/* ═══════════════════════════════════════════════════════
+                  COLUNA DIREITA — Stats + Galeria (4/9)
+              ═══════════════════════════════════════════════════════ */}
+              <div className="col-span-9 lg:col-span-4 space-y-5">
+
+                {/* 📊 Stats da sessão */}
+                <div className="bg-[#111] border border-[#222] rounded-2xl p-5">
+                  <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-4">📊 Sessão atual</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: 'Imagens', value: batch.filter(i => i.sourceTab === 'creative_studio' && i.type === 'image').length, icon: '🖼️' },
+                      { label: 'Vídeos',  value: batch.filter(i => i.sourceTab === 'creative_studio' && i.type === 'video').length, icon: '🎬' },
+                      { label: 'Motor',   value: type === 'image' ? (modelType === 'nano' ? 'Gemini' : modelType === 'gptImage' ? 'GPT-2' : modelType.replace('nanaBanana','NB').replace('Edit','').replace('Max','')) : (videoEngine === 'veo31fast' ? 'Veo F' : videoEngine.replace('happyHorse','Horse').replace('pixverse','Pix')), icon: '⚡' },
+                    ].map(s => (
+                      <div key={s.label} className="bg-[#1a1a1a] rounded-xl p-3 text-center border border-[#222]">
+                        <div className="text-xl mb-1">{s.icon}</div>
+                        <div className="text-lg font-black text-[#d4af37]">{s.value}</div>
+                        <div className="text-[10px] text-gray-600 mt-0.5">{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 🖼️ Galeria ou Inspiração */}
+                <div className="bg-[#111] border border-[#222] rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                      {batch.filter(i => i.sourceTab === 'creative_studio').length > 0 ? '🖼️ Criações ao vivo' : '✨ Inspiração'}
+                    </p>
+                    {batch.filter(i => i.sourceTab === 'creative_studio').length > 0 && (
+                      <button onClick={() => setActiveTab('library')}
+                        className="text-[10px] font-bold text-[#d4af37] hover:underline flex items-center gap-1">
+                        Ver tudo <ArrowRight size={10} />
+                      </button>
+                    )}
+                  </div>
+
+                  {batch.filter(i => i && i.sourceTab === 'creative_studio').length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2 max-h-[520px] overflow-y-auto pr-1 custom-scrollbar">
+                      {batch.filter(i => i && i.sourceTab === 'creative_studio').map((item, idx) => {
+                        const studioList = batch.filter(i => i && i.sourceTab === 'creative_studio');
+                        return (
+                          <motion.div key={item.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.04 }}
+                            className="bg-[#1a1a1a] rounded-xl border border-[#222] overflow-hidden group relative">
+                            <div className="aspect-square bg-black relative cursor-pointer" onClick={() => openPreview(item, studioList)}>
+                              {sessionPreviews[item.id] || item.previewUrl ? (
+                                item.type === 'video' ? (
+                                  <video src={sessionPreviews[item.id] || item.previewUrl} className="w-full h-full object-cover" muted loop
+                                    onMouseOver={e => e.currentTarget.play()} onMouseOut={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
+                                ) : (
+                                  <img src={sessionPreviews[item.id] || item.previewUrl} alt={item.prompt}
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
+                                )
+                              ) : item.status === 'failed' ? (
+                                <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center gap-2">
+                                  <AlertCircle size={20} className="text-red-500/50" />
+                                  <p className="text-[10px] text-red-400 line-clamp-2">{item.error}</p>
+                                </div>
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                                  <div className="relative">
+                                    <div className="w-8 h-8 border-2 border-[#d4af37]/20 border-t-[#d4af37] rounded-full animate-spin" />
+                                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-black text-[#d4af37]">{item.progress}%</div>
+                                  </div>
+                                  <span className="text-[10px] font-black text-gray-500 animate-pulse">Gerando...</span>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="w-8 h-8 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
+                                  {item.type === 'video' ? <Play size={14} className="text-white fill-white ml-0.5" /> : <Maximize2 size={14} className="text-white" />}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="p-2 flex items-center justify-between">
+                              <div className="flex items-center gap-1">
+                                <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'completed' ? 'bg-green-500' : item.status === 'failed' ? 'bg-red-500' : 'bg-[#d4af37] animate-pulse'}`} />
+                                <span className="text-[10px] font-black text-gray-500 uppercase">{item.status === 'completed' ? 'OK' : item.status === 'failed' ? 'ERRO' : '...'}</span>
+                              </div>
+                              <div className="flex gap-2">
+                                {(sessionPreviews[item.id] || item.previewUrl) && (
+                                  <button onClick={e => { e.stopPropagation(); handleDownload(sessionPreviews[item.id] || item.previewUrl!, item.id); }}
+                                    className="text-gray-600 hover:text-[#d4af37] transition-colors"><Download size={11} /></button>
+                                )}
+                                <button onClick={e => { e.stopPropagation(); handleDelete(item.id); }}
+                                  className="text-gray-600 hover:text-red-500 transition-colors"><Trash2 size={11} /></button>
+                              </div>
+                            </div>
+                            {item.status === 'completed' && item.type === 'image' && (sessionPreviews[item.id] || item.previewUrl) && (
+                              <div className="flex gap-1 px-2 pb-2">
+                                <button onClick={e => { e.stopPropagation(); const url = sessionPreviews[item.id] || item.previewUrl!; fetch(url.startsWith('data:') || url.startsWith('blob:') ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`).then(r => r.blob()).then(blob => { const reader = new FileReader(); reader.onloadend = () => { setRefAsset({ data: (reader.result as string).split(',')[1], mimeType: 'image/png', type: 'image' }); showNotification('✅ Definida como Personagem!', 'success'); }; reader.readAsDataURL(blob); }); }}
+                                  className="flex-1 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-lg text-[9px] font-black uppercase hover:bg-blue-500/20 transition-all">
+                                  👤 Person.
+                                </button>
+                                <button onClick={e => { e.stopPropagation(); const url = sessionPreviews[item.id] || item.previewUrl!; fetch(url.startsWith('data:') || url.startsWith('blob:') ? url : `/api/proxy-download?url=${encodeURIComponent(url)}`).then(r => r.blob()).then(blob => { const reader = new FileReader(); reader.onloadend = () => { setProductAsset({ data: (reader.result as string).split(',')[1], mimeType: 'image/png', type: 'image' }); showNotification('✅ Definida como Produto!', 'success'); }; reader.readAsDataURL(blob); }); }}
+                                  className="flex-1 py-1 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-lg text-[9px] font-black uppercase hover:bg-purple-500/20 transition-all">
+                                  📦 Produto
+                                </button>
+                              </div>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* Cards de inspiração quando galeria vazia */
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { icon: '📸', title: 'Foto Profissional',    desc: 'Headshot, retrato, corporativo',       prompt: 'Professional headshot portrait, business attire, studio lighting, clean background, 8K photorealistic', mode: 'pro',     tipo: 'image' as const },
+                        { icon: '🎭', title: 'Avatar 3D',            desc: 'Personagem Pixar, anime, cartoon',      prompt: '3D stylized character, Pixar animation style, vibrant colors, expressive, soft studio lighting',      mode: 'avatar',  tipo: 'image' as const },
+                        { icon: '🛍️', title: 'Foto de Produto',      desc: 'E-commerce, fundo clean, premium',     prompt: 'Product photography, clean white background, professional lighting, commercial photography, 8K',       mode: 'product', tipo: 'image' as const },
+                        { icon: '🎬', title: 'Vídeo Cinematográfico', desc: 'Cena épica, câmera profissional',      prompt: 'Cinematic scene, professional camera movement, dramatic lighting, 4K resolution, film grain',           mode: '',        tipo: 'video' as const },
+                        { icon: '🌆', title: 'Arte Digital',         desc: 'Illustration, concept art, fantasia',   prompt: 'Digital art illustration, concept art, fantasy landscape, vibrant colors, highly detailed, artstation', mode: '',        tipo: 'image' as const },
+                        { icon: '📱', title: 'Criativo para Ads',    desc: 'Redes sociais, conversão, impacto',    prompt: 'Social media advertising creative, bold typography, eye-catching design, product showcase, 9:16',        mode: '',        tipo: 'image' as const },
+                      ].map((card, i) => (
+                        <motion.button key={i} type="button" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+                          onClick={() => {
+                            setType(card.tipo);
+                            if (card.mode) setStudioMode(card.mode);
+                            setPrompt(buildPrefixedPrompt(card.prompt, !!refAsset, !!productAsset));
+                          }}
+                          className="p-3 bg-[#1a1a1a] border border-[#222] rounded-xl text-left hover:border-[#d4af37]/50 hover:bg-[#d4af37]/5 transition-all group">
+                          <div className="text-2xl mb-2">{card.icon}</div>
+                          <div className="text-[11px] font-black text-white group-hover:text-[#d4af37] transition-colors">{card.title}</div>
+                          <div className="text-[10px] text-gray-600 mt-0.5 leading-tight">{card.desc}</div>
+                          <div className="mt-2 text-[9px] font-black text-[#d4af37]/60 group-hover:text-[#d4af37] transition-colors uppercase tracking-wide">Usar este estilo →</div>
+                        </motion.button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
               </div>
             </div>
           </div>
         )}
+
+
 
         {/* --- LipSync Tab --- */}
         {activeTab === 'lipsync' && (
