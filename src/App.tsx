@@ -3770,13 +3770,20 @@ const handleBatchDownload = async (ids: string[]) => {
     }
     const isCreative = activeTab === 'projects';
     const styles: Record<string, string> = {
+      // Estilos de imagem
       'Cinematográfico': 'cinematic lighting, 8k resolution, highly detailed, professional color grading, dramatic atmosphere',
       'Cyberpunk': 'cyberpunk aesthetic, neon lights, rainy streets, futuristic technology, high contrast, vibrant colors',
       'Realismo Extremo': 'hyper-realistic, photorealistic, extreme detail, natural lighting, 8k, sharp focus',
       'Anime': 'anime style, vibrant colors, clean lines, expressive features, studio ghibli aesthetic',
       '3D Render': 'octane render, unreal engine 5, 3d masterpiece, volumetric lighting, ray tracing',
       'Pintura': 'oil painting style, thick brushstrokes, artistic texture, canvas feel, masterpiece',
-      'Vintage': 'vintage film look, 35mm, grain, nostalgic atmosphere, muted colors, classic cinematography'
+      'Vintage': 'vintage film look, 35mm, grain, nostalgic atmosphere, muted colors, classic cinematography',
+      // Estilos de vídeo
+      'Documental': 'documentary style, handheld camera, realistic natural lighting, cinéma vérité, authentic atmosphere',
+      'Comercial': 'commercial advertisement style, clean bright lighting, product showcase, professional look, high production value',
+      'Dramático': 'dramatic high contrast lighting, deep shadows, intense atmosphere, moody color grading, chiaroscuro',
+      'Vibrante': 'vibrant saturated colors, energetic dynamic movement, pop style, vivid palette, high energy',
+      'Minimalista': 'minimalist clean aesthetic, neutral background, simple composition, elegant, whitespace, premium feel',
     };
     
     if (styles[style]) {
