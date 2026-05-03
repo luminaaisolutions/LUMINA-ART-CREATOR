@@ -4077,7 +4077,7 @@ const handleBatchDownload = async (ids: string[]) => {
         )}
       </AnimatePresence>
       {/* --- Top Navigation --- */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-[#111] border-b border-[#222] z-50 flex items-center justify-between px-4 md:px-6">
+      <header className="fixed top-0 left-0 right-0 h-14 bg-[#111] border-b border-[#222] z-50 flex items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <button 
             onClick={() => setView('landing')}
@@ -4115,9 +4115,9 @@ const handleBatchDownload = async (ids: string[]) => {
                   if (tab.id === 'creative_studio') { setUseCreativeStudio(false); setUseLipsync(false); }
                   if (tab.id === 'lipsync') { setUseCreativeStudio(false); setUseLipsync(true); }
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all whitespace-nowrap font-black text-[11px] uppercase tracking-wide shrink-0 ${activeTab === tab.id ? 'bg-[#d4af37] text-black' : 'hover:bg-[#1a1a1a] text-gray-400'}`}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-all whitespace-nowrap font-black text-[12px] uppercase tracking-wide shrink-0 ${activeTab === tab.id ? 'bg-[#d4af37] text-black' : 'hover:bg-[#1a1a1a] text-gray-400'}`}
               >
-                <tab.icon size={12} />
+                <tab.icon size={14} />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -4230,7 +4230,7 @@ const handleBatchDownload = async (ids: string[]) => {
       </header>
 
       {/* --- Main Content --- */}
-      <main className="pt-16 p-4 md:p-6 min-h-screen flex flex-col">
+      <main className="pt-20 px-4 pb-8 md:px-8 min-h-screen flex flex-col">
         {/* Header de título — apenas para abas de conta */}
         {['profile','referrals','faq'].includes(activeTab) && (
           <header className="mb-6">
@@ -4274,8 +4274,8 @@ const handleBatchDownload = async (ids: string[]) => {
         {/* --- Dashboard Tab --- */}
         {activeTab === 'dashboard' && (
           <>
-            <div className="space-y-10 py-8">
-            <div className="text-center space-y-4">
+            <div className="space-y-10 py-10">
+            <div className="text-center space-y-5">
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                 <RotatingBadge />
               </motion.div>
@@ -4296,7 +4296,7 @@ const handleBatchDownload = async (ids: string[]) => {
                 { id: 'learn_more',      title: 'Aprenda Mais',      desc: 'Manuais completos de cada funcionalidade. Domine todas as ferramentas do Lumina passo a passo.',                                  icon: BookOpen,    btn: 'Ver Manuais',     color: 'from-yellow-500/20',  border: 'hover:border-yellow-500/50',  badge: '📚 Guias',   stat: '7 manuais completos' },
               ] as const).map((card, i) => (
                 <motion.div key={card.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                  className={`group relative bg-[#111] rounded-2xl border border-[#222] p-5 overflow-hidden transition-all ${card.border} cursor-pointer flex flex-col min-h-[220px]`}
+                  className={`group relative bg-[#111] rounded-2xl border border-[#222] p-6 overflow-hidden transition-all ${card.border} cursor-pointer flex flex-col min-h-[250px]`}
                   onClick={() => {
                     if (card.id === 'branding') setActiveTab('branding');
                     if (card.id === 'projects') { setActiveTab('projects'); setUseCreativeStudio(true); setUseLipsync(false); }
@@ -4310,17 +4310,17 @@ const handleBatchDownload = async (ids: string[]) => {
                   <div className={`absolute inset-0 bg-gradient-to-b ${card.color} to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
                   <div className="relative z-10 flex flex-col flex-1 gap-3">
                     <div className="flex items-start justify-between">
-                      <div className="w-10 h-10 bg-[#1a1a1a] rounded-xl flex items-center justify-center border border-[#222] group-hover:border-[#d4af37]/40 transition-colors shrink-0">
-                        <card.icon size={20} className="text-gray-400 group-hover:text-[#d4af37] transition-colors" />
+                      <div className="w-12 h-12 bg-[#1a1a1a] rounded-xl flex items-center justify-center border border-[#222] group-hover:border-[#d4af37]/40 transition-colors shrink-0">
+                        <card.icon size={22} className="text-gray-400 group-hover:text-[#d4af37] transition-colors" />
                       </div>
                       {card.badge && <span className="text-[10px] font-black text-[#d4af37] bg-[#d4af37]/10 border border-[#d4af37]/20 px-2 py-0.5 rounded-full">{card.badge}</span>}
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-sm font-black text-white mb-1.5">{card.title}</h3>
-                      <p className="text-[11px] text-gray-500 leading-relaxed">{card.desc}</p>
+                      <h3 className="text-base font-black text-white mb-2">{card.title}</h3>
+                      <p className="text-xs text-gray-500 leading-relaxed">{card.desc}</p>
                     </div>
                     <div className="text-[10px] font-bold text-gray-600 border-t border-[#1a1a1a] pt-2">{card.stat}</div>
-                    <button className="w-full py-2.5 bg-[#1a1a1a] border border-[#222] rounded-xl text-[11px] font-black uppercase tracking-widest text-gray-400 group-hover:bg-[#d4af37] group-hover:text-black group-hover:border-[#d4af37] transition-all">
+                    <button className="w-full py-3 bg-[#1a1a1a] border border-[#222] rounded-xl text-xs font-black uppercase tracking-widest text-gray-400 group-hover:bg-[#d4af37] group-hover:text-black group-hover:border-[#d4af37] transition-all">
                       {card.btn}
                     </button>
                   </div>
@@ -4357,7 +4357,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
         {/* --- Branding Tab --- */}
         {activeTab === 'branding' && (
-          <div className="w-full max-w-full mx-auto py-8 px-4 md:px-8 space-y-8">
+          <div className="w-full max-w-full mx-auto pt-4 pb-8 px-4 md:px-8 space-y-8">
             <div className="flex items-center gap-4 mb-8">
               {[
                 { id: 'list', label: 'Minhas Marcas', icon: Briefcase },
@@ -5626,7 +5626,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
         {/* --- LipSync Tab --- */}
         {activeTab === 'lipsync' && (
-          <div className="w-full max-w-6xl mx-auto py-8 px-4 md:px-8">
+          <div className="w-full max-w-6xl mx-auto pt-6 pb-8 px-4 md:px-8">
             <div className="flex flex-col gap-8">
 
               {/* Controls Panel */}
@@ -7048,7 +7048,7 @@ const handleBatchDownload = async (ids: string[]) => {
         {/* --- APRENDA MAIS Tab --- */}
         {/* ================================================================ */}
         {activeTab === 'learn_more' && (
-          <div className="max-w-5xl mx-auto space-y-6">
+          <div className="max-w-5xl mx-auto space-y-6 pt-4">
             <div className="text-center space-y-2 pb-4">
               <h2 className="text-2xl font-black text-white">📚 Central de Aprendizado</h2>
               <p className="text-gray-500 text-sm">Manuais práticos e objetivos para dominar cada funcionalidade do Lumina Art Creator</p>
@@ -7155,7 +7155,7 @@ const handleBatchDownload = async (ids: string[]) => {
 
         {/* ================================================================ */}
         {activeTab === 'mkt_ads' && (
-          <div className="max-w-6xl mx-auto space-y-6">
+          <div className="max-w-6xl mx-auto space-y-6 pt-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-black text-white">🎬 Lumina UGC</h2>
@@ -7816,7 +7816,7 @@ const handleBatchDownload = async (ids: string[]) => {
         {/* ================================================================ */}
         {/* --- Library Tab --- */}
         {activeTab === 'library' && (
-          <div className="space-y-8">
+          <div className="space-y-8 pt-4">
             {/* Barra flutuante de download em lote */}
             <AnimatePresence>
               {selectedForDownload.size > 0 && (
