@@ -1337,88 +1337,391 @@ section { padding: 100px 60px; }
   .powered-bar .pw-brands { gap: 14px; }
 }
 
-/* ─── SERVIÇOS ──────────────────────────────── */
-.services { background: var(--black); }
+/* ─── S3 SERVIÇOS — ECOSSISTEMA VISUAL ────────── */
+.services {
+  background: #000;
+  position: relative;
+  overflow: hidden;
+  padding: 110px 60px;
+}
 
+.services::before {
+  content: '';
+  position: absolute;
+  top: -300px; left: 50%;
+  transform: translateX(-50%);
+  width: 1000px; height: 700px;
+  background: radial-gradient(ellipse, rgba(124,58,237,0.06) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+/* ── Cabeçalho S3 ── */
+.s3-header {
+  text-align: center;
+  margin-bottom: 56px;
+  position: relative;
+  z-index: 2;
+}
+
+.s3-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(212,168,67,0.35);
+  color: var(--lumina-gold);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: rgba(212,168,67,0.06);
+  font-family: 'Space Grotesk', sans-serif;
+  margin-bottom: 24px;
+}
+
+.s3-eyebrow svg { flex-shrink: 0; }
+
+.s3-title {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(42px, 5.5vw, 76px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.s3-title .s3-grad {
+  background: linear-gradient(90deg, #ff914d 0%, #f45fa1 44%, #8b61ff 72%, #2d85ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.s3-subtitle {
+  font-size: 16px;
+  color: rgba(255,255,255,0.55);
+  font-family: 'Space Grotesk', sans-serif;
+  max-width: 540px;
+  margin: 0 auto;
+  line-height: 1.65;
+}
+
+/* ── Stats bar ── */
+.s3-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(18,18,26,0.85), rgba(8,8,14,0.9));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 24px 80px rgba(0,0,0,0.3);
+  overflow: hidden;
+  margin-bottom: 48px;
+  position: relative;
+  z-index: 2;
+}
+
+.s3-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 28px;
+  border-right: 1px solid rgba(255,255,255,0.07);
+}
+.s3-stat-item:last-child { border-right: none; }
+
+.s3-stat-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 10px currentColor);
+}
+.s3-stat-icon.orange { color: #ff7a3d; }
+.s3-stat-icon.gold   { color: #ffd447; }
+.s3-stat-icon.shield { color: #38d5ff; }
+.s3-stat-icon.target { color: #a78bfa; }
+
+.s3-stat-val {
+  display: block;
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
+  line-height: 1;
+}
+.s3-stat-lbl {
+  display: block;
+  font-size: 11px;
+  color: rgba(160,166,185,0.7);
+  font-family: 'Space Grotesk', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 5px;
+}
+
+/* ── Grid de cards ── */
 .services-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  margin-top: 60px;
-  background: var(--dark3);
-  border-radius: 20px;
-  overflow: hidden;
+  gap: 14px;
+  margin-top: 0;
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
+  position: relative;
+  z-index: 2;
 }
 
+/* ── Card base ── */
 .service-card {
-  background: var(--dark);
-  padding: 40px 36px;
-  transition: all 0.3s;
+  background: linear-gradient(160deg, rgba(22,22,32,0.95) 0%, rgba(10,10,16,0.98) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 32px 30px 28px;
+  transition: all 0.35s ease;
   position: relative;
   overflow: hidden;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
 }
 
+/* brilho de canto no hover */
+.service-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity 0.35s;
+  pointer-events: none;
+}
+
+/* linha de cor inferior */
 .service-card::after {
   content: '';
   position: absolute;
   bottom: 0; left: 0; right: 0;
   height: 2px;
-  background: var(--gradient-brand);
+  border-radius: 0 0 20px 20px;
   transform: scaleX(0);
-  transition: transform 0.3s;
+  transition: transform 0.35s ease;
   transform-origin: left;
 }
 
-.service-card:hover { background: var(--dark2); }
-.service-card:hover::after { transform: scaleX(1); }
+/* ── Cores por card (matching imagem: laranja, roxo, azul / ciano, roxo2, rosa) ── */
+.service-card:nth-child(1)::before { background: radial-gradient(ellipse at 30% 0%, rgba(255,122,61,0.12), transparent 60%); }
+.service-card:nth-child(1)::after  { background: linear-gradient(90deg, #ff7a3d, #ff4d4d); }
+.service-card:nth-child(1) .sc-icon-wrap { background: rgba(255,122,61,0.12); border-color: rgba(255,122,61,0.25); }
+.service-card:nth-child(1) .sc-icon-wrap svg, .service-card:nth-child(1) .sc-icon-emoji { color: #ff7a3d; filter: drop-shadow(0 0 10px rgba(255,122,61,0.7)); }
+.service-card:nth-child(1) .sc-badge { background: rgba(255,122,61,0.12); border-color: rgba(255,122,61,0.3); color: #ff9a6c; }
+.service-card:nth-child(1) .sc-cta { color: #ff9a6c; }
 
-.service-num {
-  font-family: 'Syne', sans-serif;
-  font-size: 48px;
-  font-weight: 800;
-  color: rgba(212,168,67,0.08);
+.service-card:nth-child(2)::before { background: radial-gradient(ellipse at 30% 0%, rgba(139,92,246,0.12), transparent 60%); }
+.service-card:nth-child(2)::after  { background: linear-gradient(90deg, #8b5cf6, #d946ef); }
+.service-card:nth-child(2) .sc-icon-wrap { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.25); }
+.service-card:nth-child(2) .sc-icon-wrap svg, .service-card:nth-child(2) .sc-icon-emoji { color: #a78bfa; filter: drop-shadow(0 0 10px rgba(167,139,250,0.7)); }
+.service-card:nth-child(2) .sc-badge { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.3); color: #c4b5fd; }
+.service-card:nth-child(2) .sc-cta { color: #c4b5fd; }
+
+.service-card:nth-child(3)::before { background: radial-gradient(ellipse at 30% 0%, rgba(56,189,248,0.10), transparent 60%); }
+.service-card:nth-child(3)::after  { background: linear-gradient(90deg, #38bdf8, #818cf8); }
+.service-card:nth-child(3) .sc-icon-wrap { background: rgba(56,189,248,0.10); border-color: rgba(56,189,248,0.22); }
+.service-card:nth-child(3) .sc-icon-wrap svg, .service-card:nth-child(3) .sc-icon-emoji { color: #38bdf8; filter: drop-shadow(0 0 10px rgba(56,189,248,0.7)); }
+.service-card:nth-child(3) .sc-badge { background: rgba(56,189,248,0.10); border-color: rgba(56,189,248,0.28); color: #7dd3fc; }
+.service-card:nth-child(3) .sc-cta { color: #7dd3fc; }
+
+.service-card:nth-child(4)::before { background: radial-gradient(ellipse at 30% 0%, rgba(52,211,153,0.10), transparent 60%); }
+.service-card:nth-child(4)::after  { background: linear-gradient(90deg, #34d399, #10b981); }
+.service-card:nth-child(4) .sc-icon-wrap { background: rgba(52,211,153,0.10); border-color: rgba(52,211,153,0.22); }
+.service-card:nth-child(4) .sc-icon-wrap svg, .service-card:nth-child(4) .sc-icon-emoji { color: #34d399; filter: drop-shadow(0 0 10px rgba(52,211,153,0.7)); }
+.service-card:nth-child(4) .sc-badge { background: rgba(52,211,153,0.10); border-color: rgba(52,211,153,0.28); color: #6ee7b7; }
+.service-card:nth-child(4) .sc-cta { color: #6ee7b7; }
+
+.service-card:nth-child(5)::before { background: radial-gradient(ellipse at 30% 0%, rgba(212,168,67,0.10), transparent 60%); }
+.service-card:nth-child(5)::after  { background: linear-gradient(90deg, #D4A843, #f59e0b); }
+.service-card:nth-child(5) .sc-icon-wrap { background: rgba(212,168,67,0.10); border-color: rgba(212,168,67,0.22); }
+.service-card:nth-child(5) .sc-icon-wrap svg, .service-card:nth-child(5) .sc-icon-emoji { color: #D4A843; filter: drop-shadow(0 0 10px rgba(212,168,67,0.7)); }
+.service-card:nth-child(5) .sc-badge { background: rgba(212,168,67,0.10); border-color: rgba(212,168,67,0.28); color: #fcd34d; }
+.service-card:nth-child(5) .sc-cta { color: #fcd34d; }
+
+.service-card:nth-child(6)::before { background: radial-gradient(ellipse at 30% 0%, rgba(244,63,94,0.10), transparent 60%); }
+.service-card:nth-child(6)::after  { background: linear-gradient(90deg, #f43f5e, #ec4899); }
+.service-card:nth-child(6) .sc-icon-wrap { background: rgba(244,63,94,0.10); border-color: rgba(244,63,94,0.22); }
+.service-card:nth-child(6) .sc-icon-wrap svg, .service-card:nth-child(6) .sc-icon-emoji { color: #f43f5e; filter: drop-shadow(0 0 10px rgba(244,63,94,0.7)); }
+.service-card:nth-child(6) .sc-badge { background: rgba(244,63,94,0.10); border-color: rgba(244,63,94,0.22); color: #fda4af; }
+.service-card:nth-child(6) .sc-cta { color: #fda4af; }
+
+.service-card:hover {
+  border-color: rgba(255,255,255,0.18);
+  transform: translateY(-5px);
+  box-shadow: 0 28px 72px rgba(0,0,0,0.5);
+}
+.service-card:hover::before { opacity: 1; }
+.service-card:hover::after  { transform: scaleX(1); }
+
+/* ── Elementos internos do card ── */
+.sc-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.sc-icon-wrap {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sc-icon-emoji {
+  font-size: 26px;
   line-height: 1;
-  margin-bottom: 20px;
-  transition: color 0.3s;
 }
 
-.service-card:hover .service-num { color: rgba(212,168,67,0.15); }
-
-.service-icon { font-size: 28px; margin-bottom: 16px; display: block; }
-
-.service-title {
-  font-family: 'Syne', sans-serif;
+.sc-badge {
+  font-size: 10px;
   font-weight: 700;
-  font-size: 19px;
-  color: var(--white);
-  margin-bottom: 12px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-family: 'Space Grotesk', sans-serif;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid;
+}
+
+.sc-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
   letter-spacing: -0.3px;
+  margin-bottom: 10px;
 }
 
-.service-desc {
-  font-size: 14px;
-  color: var(--gray);
-  line-height: 1.75;
+.sc-desc {
+  font-size: 13.5px;
+  color: rgba(160,166,185,0.8);
+  line-height: 1.72;
   margin-bottom: 20px;
+  flex: 1;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
-.service-tags {
+.sc-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  margin-bottom: 20px;
 }
 
-.service-tag {
+.sc-tag {
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--lumina-gold-dark);
-  background: rgba(212,168,67,0.06);
-  border: 1px solid rgba(212,168,67,0.12);
-  padding: 4px 10px;
-  border-radius: 4px;
+  letter-spacing: 0.8px;
   font-family: 'Space Grotesk', sans-serif;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.55);
+}
+
+.sc-cta {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  text-decoration: none;
+  transition: gap 0.25s;
+}
+.sc-cta:hover { gap: 10px; }
+
+/* ── Faixa de tecnologias inferior ── */
+.s3-tech-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 20px 32px;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  background: rgba(10,10,16,0.8);
+  margin-top: 40px;
+  position: relative;
+  z-index: 2;
+  overflow-x: auto;
+}
+
+.s3-tech-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  font-family: 'Space Grotesk', sans-serif;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-right: 32px;
+}
+
+.s3-tech-brands {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  flex: 1;
+}
+
+.s3-tech-brand {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Space Grotesk', sans-serif;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.s3-tech-brand:hover { color: rgba(255,255,255,0.65); }
+
+.s3-more {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(212,168,67,0.7);
+  font-family: 'Space Grotesk', sans-serif;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Responsive S3 ── */
+@media (max-width: 1024px) {
+  .services { padding: 80px 30px; }
+  .services-grid { grid-template-columns: repeat(2, 1fr); }
+  .s3-stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .s3-stat-item:nth-child(2) { border-right: none; }
+  .s3-stat-item:nth-child(1),
+  .s3-stat-item:nth-child(2) { border-bottom: 1px solid rgba(255,255,255,0.07); }
+}
+@media (max-width: 640px) {
+  .services { padding: 70px 20px; }
+  .services-grid { grid-template-columns: 1fr; }
+  .s3-stats-bar { grid-template-columns: 1fr; }
+  .s3-stat-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .s3-stat-item:last-child { border-bottom: none; }
+  .s3-title { font-size: clamp(36px, 10vw, 56px); }
 }
 
 /* ─── NICHOS ─────────────────────────────────── */
@@ -2683,83 +2986,190 @@ footer {
 <!-- ═══════════════════════════════════════════
      S3 · SERVIÇOS — sections/s3-servicos.html
      ═══════════════════════════════════════════ -->
-<!-- SERVIÇOS -->
 <section class="services" id="servicos">
   <div class="container">
-    <div class="reveal">
-      <div class="section-label">O que fazemos</div>
-      <h2 class="section-title">NOSSOS<br><span class="accent">SERVIÇOS</span></h2>
-      <p class="section-desc">Soluções de IA aplicada para empresas, criadores e agências que querem resultados reais.</p>
+
+    <!-- Cabeçalho -->
+    <div class="s3-header reveal">
+      <div class="s3-eyebrow">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        O QUE FAZEMOS
+      </div>
+      <h2 class="s3-title">NOSSO ECOSSISTEMA<br><span class="s3-grad">DE SOLUÇÕES IA</span></h2>
+      <p class="s3-subtitle">Uma suíte completa de ferramentas e sistemas inteligentes para impulsionar sua criação, automação e crescimento em qualquer escala.</p>
     </div>
 
-    <div class="services-grid">
-      <div class="service-card reveal">
-        <div class="service-num">01</div>
-        <span class="service-icon">🎯</span>
-        <div class="service-title">Marketing IA</div>
-        <p class="service-desc">Copy persuasiva, funis automáticos de e-mail e WhatsApp, tráfego otimizado e campanhas que convertem 24 horas por dia.</p>
-        <div class="service-tags">
-          <span class="service-tag">Copy IA</span>
-          <span class="service-tag">Funis Auto</span>
-          <span class="service-tag">WhatsApp Bot</span>
+    <!-- Stats bar -->
+    <div class="s3-stats-bar reveal reveal-delay-1">
+      <div class="s3-stat-item">
+        <span class="s3-stat-icon orange">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </span>
+        <div>
+          <span class="s3-stat-val">24/7</span>
+          <span class="s3-stat-lbl">IA Trabalhando</span>
         </div>
       </div>
-      <div class="service-card reveal reveal-delay-1">
-        <div class="service-num">02</div>
-        <span class="service-icon">🛍️</span>
-        <div class="service-title">Vendas Online</div>
-        <p class="service-desc">Setup de TikTok Shop e Instagram Shop, automações de carrinho abandonado, integração Shopify com recomendações e up-sell IA.</p>
-        <div class="service-tags">
-          <span class="service-tag">TikTok Shop</span>
-          <span class="service-tag">Shopify</span>
-          <span class="service-tag">Up-sell IA</span>
+      <div class="s3-stat-item">
+        <span class="s3-stat-icon gold">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </span>
+        <div>
+          <span class="s3-stat-val">+15</span>
+          <span class="s3-stat-lbl">Motores de IA</span>
         </div>
       </div>
-      <div class="service-card reveal reveal-delay-2">
-        <div class="service-num">03</div>
-        <span class="service-icon">🎬</span>
-        <div class="service-title">Audiovisual IA</div>
-        <p class="service-desc">Vídeos virais para Reels e Shorts, personas digitais personalizadas, músicas originais com artistas IA e avatares lip sync realista.</p>
-        <div class="service-tags">
-          <span class="service-tag">Vídeos Virais</span>
-          <span class="service-tag">Músicas IA</span>
-          <span class="service-tag">Lip Sync</span>
+      <div class="s3-stat-item">
+        <span class="s3-stat-icon shield">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </span>
+        <div>
+          <span class="s3-stat-val">100%</span>
+          <span class="s3-stat-lbl">Seguro e Privado</span>
         </div>
       </div>
-      <div class="service-card reveal">
-        <div class="service-num">04</div>
-        <span class="service-icon">⚙️</span>
-        <div class="service-title">Automações IA</div>
-        <p class="service-desc">Chatbots inteligentes, CRM com IA, agentes autônomos para vendas, suporte e backoffice. Sua empresa no piloto automático.</p>
-        <div class="service-tags">
-          <span class="service-tag">Chatbots</span>
-          <span class="service-tag">CRM IA</span>
-          <span class="service-tag">Agentes IA</span>
-        </div>
-      </div>
-      <div class="service-card reveal reveal-delay-1">
-        <div class="service-num">05</div>
-        <span class="service-icon">🌐</span>
-        <div class="service-title">Sites & Apps IA</div>
-        <p class="service-desc">Sites profissionais e aplicativos com IA embutida, landing pages de alta conversão, e-commerces e sistemas personalizados.</p>
-        <div class="service-tags">
-          <span class="service-tag">Sites</span>
-          <span class="service-tag">Landing Pages</span>
-          <span class="service-tag">Apps</span>
-        </div>
-      </div>
-      <div class="service-card reveal reveal-delay-2">
-        <div class="service-num">06</div>
-        <span class="service-icon">📊</span>
-        <div class="service-title">Consultoria IA</div>
-        <p class="service-desc">Diagnóstico completo, mapa de implementação de IA, treinamento da equipe e acompanhamento de resultados. Transformação com estratégia.</p>
-        <div class="service-tags">
-          <span class="service-tag">Diagnóstico</span>
-          <span class="service-tag">Estratégia</span>
-          <span class="service-tag">Treinamento</span>
+      <div class="s3-stat-item">
+        <span class="s3-stat-icon target">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </span>
+        <div>
+          <span class="s3-stat-val">Resultados</span>
+          <span class="s3-stat-lbl">Comprovados</span>
         </div>
       </div>
     </div>
+
+    <!-- Grid de cards -->
+    <div class="services-grid">
+
+      <!-- 1 · Marketing IA -->
+      <div class="service-card reveal">
+        <div class="sc-top">
+          <div class="sc-icon-wrap">
+            <span class="sc-icon-emoji">🎯</span>
+          </div>
+          <span class="sc-badge">Performance</span>
+        </div>
+        <div class="sc-title">Marketing IA</div>
+        <p class="sc-desc">Campanhas que convertem, funis automáticos e tráfego otimizado com inteligência artificial.</p>
+        <div class="sc-tags">
+          <span class="sc-tag">Copy IA</span>
+          <span class="sc-tag">Funis Auto</span>
+          <span class="sc-tag">Ads IA</span>
+        </div>
+        <a href="#contato" class="sc-cta">Converta 24h por dia →</a>
+      </div>
+
+      <!-- 2 · Vendas Online -->
+      <div class="service-card reveal reveal-delay-1">
+        <div class="sc-top">
+          <div class="sc-icon-wrap">
+            <span class="sc-icon-emoji">🛒</span>
+          </div>
+          <span class="sc-badge">Automação</span>
+        </div>
+        <div class="sc-title">Vendas Online</div>
+        <p class="sc-desc">TikTok Shop, Instagram Shop e integrações Shopify com automações inteligentes e upsell IA.</p>
+        <div class="sc-tags">
+          <span class="sc-tag">TikTok Shop</span>
+          <span class="sc-tag">Shopify</span>
+          <span class="sc-tag">Up-sell IA</span>
+        </div>
+        <a href="#contato" class="sc-cta">Escale suas vendas →</a>
+      </div>
+
+      <!-- 3 · Audiovisual IA -->
+      <div class="service-card reveal reveal-delay-2">
+        <div class="sc-top">
+          <div class="sc-icon-wrap">
+            <span class="sc-icon-emoji">🎬</span>
+          </div>
+          <span class="sc-badge">Criativo</span>
+        </div>
+        <div class="sc-title">Audiovisual IA</div>
+        <p class="sc-desc">Vídeos virais, músicas originais, avatares realistas e lip sync profissional com IA de última geração.</p>
+        <div class="sc-tags">
+          <span class="sc-tag">Vídeos Virais</span>
+          <span class="sc-tag">Músicas IA</span>
+          <span class="sc-tag">Lip Sync</span>
+        </div>
+        <a href="#contato" class="sc-cta">Crie conteúdo que viraliza →</a>
+      </div>
+
+      <!-- 4 · Automações IA -->
+      <div class="service-card reveal">
+        <div class="sc-top">
+          <div class="sc-icon-wrap">
+            <span class="sc-icon-emoji">🤖</span>
+          </div>
+          <span class="sc-badge">Inteligência</span>
+        </div>
+        <div class="sc-title">Automações IA</div>
+        <p class="sc-desc">Chatbots avançados, CRM com IA, agentes inteligentes e automações completas para seu negócio.</p>
+        <div class="sc-tags">
+          <span class="sc-tag">Chatbots</span>
+          <span class="sc-tag">CRM IA</span>
+          <span class="sc-tag">Agentes IA</span>
+        </div>
+        <a href="#contato" class="sc-cta">Automatize e economize tempo →</a>
+      </div>
+
+      <!-- 5 · Sites & Apps IA -->
+      <div class="service-card reveal reveal-delay-1">
+        <div class="sc-top">
+          <div class="sc-icon-wrap">
+            <span class="sc-icon-emoji">🌐</span>
+          </div>
+          <span class="sc-badge">Tecnologia</span>
+        </div>
+        <div class="sc-title">Sites & Apps IA</div>
+        <p class="sc-desc">Sites profissionais, landing pages de alta conversão e apps inteligentes com IA embutida.</p>
+        <div class="sc-tags">
+          <span class="sc-tag">Sites</span>
+          <span class="sc-tag">Landing Pages</span>
+          <span class="sc-tag">Apps</span>
+        </div>
+        <a href="#contato" class="sc-cta">Presença digital que impressiona →</a>
+      </div>
+
+      <!-- 6 · Consultoria IA -->
+      <div class="service-card reveal reveal-delay-2">
+        <div class="sc-top">
+          <div class="sc-icon-wrap">
+            <span class="sc-icon-emoji">📊</span>
+          </div>
+          <span class="sc-badge">Estratégia</span>
+        </div>
+        <div class="sc-title">Consultoria IA</div>
+        <p class="sc-desc">Diagnóstico completo, estratégia personalizada e implementação de IA para resultados reais.</p>
+        <div class="sc-tags">
+          <span class="sc-tag">Diagnóstico</span>
+          <span class="sc-tag">Estratégia</span>
+          <span class="sc-tag">Treinamento</span>
+        </div>
+        <a href="#contato" class="sc-cta">Transforme seu negócio →</a>
+      </div>
+
+    </div><!-- /services-grid -->
+
+    <!-- Faixa de tecnologias -->
+    <div class="s3-tech-bar reveal">
+      <div class="s3-tech-label">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Tecnologias que potencializam resultados
+      </div>
+      <div class="s3-tech-brands">
+        <span class="s3-tech-brand">Google</span>
+        <span class="s3-tech-brand">OpenAI</span>
+        <span class="s3-tech-brand">ByteDance</span>
+        <span class="s3-tech-brand">Runway</span>
+        <span class="s3-tech-brand">Sora</span>
+        <span class="s3-tech-brand">Kling</span>
+        <span class="s3-tech-brand">ElevenLabs</span>
+      </div>
+      <span class="s3-more">+ Mais</span>
+    </div>
+
   </div>
 </section>
 
