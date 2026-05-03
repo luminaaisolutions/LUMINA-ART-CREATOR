@@ -226,7 +226,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   onClick={onEnterStudio}
                   className="w-full sm:w-auto bg-[#d4af37] text-black px-12 py-5 rounded-2xl font-black text-xl flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-2xl shadow-[#d4af37]/20"
                 >
-                  VOLTAR AO STUDIO LUMINA
+                  ACESSAR O ESTÚDIO
                   <ArrowRight size={24} />
                 </button>
               ) : (
@@ -234,7 +234,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   onClick={onSignUp}
                   className="w-full sm:w-auto bg-[#d4af37] text-black px-10 py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:scale-105 transition-all shadow-2xl shadow-[#d4af37]/20"
                 >
-                  COMEÇAR AGORA (40 CRÉDITOS GRÁTIS)
+                  CRIE SUA CONTA
                   <ArrowRight size={20} />
                 </button>
               )}
@@ -243,9 +243,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 className="w-full sm:w-auto bg-[#111] border border-[#222] text-white px-10 py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 hover:bg-[#1a1a1a] transition-all"
               >
                 <Play size={20} className="text-[#d4af37]" />
-                VER DEMONSTRAÇÃO
+                NOSSO PORTFÓLIO
               </button>
             </div>
+
+            {/* Mensagem de creditos gratuitos */}
+            {!isAuthenticated && (
+              <p className="mt-4 text-sm text-gray-500 flex items-center justify-center gap-2">
+                <span className="text-[#d4af37]">✦</span>
+                Ganhe créditos gratuitos para testar ao criar sua conta
+                <span className="text-[#d4af37]">✦</span>
+              </p>
+            )}
           </motion.div>
         </div>
       </section>
