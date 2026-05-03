@@ -2044,6 +2044,130 @@ Retorne APENAS um JSON válido com estas chaves exatas:
       // =====================================================================
       // FIM — LUMINA MKT ADS
       // =====================================================================
+
+      // =====================================================================
+      // GROK IMAGINE — xAI via fal.ai
+      // =====================================================================
+
+      // --- generateGrokImage — Grok Imagine Text-to-Image ---
+      if (method === 'generateGrokImage') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body: any = { prompt: args.prompt };
+        if (args.aspectRatio) body.aspect_ratio = args.aspectRatio;
+        console.log(`[GrokImage T2I] prompt=${args.prompt?.substring(0,80)}`);
+        const r = await fetch('https://fal.run/xai/grok-imagine-image', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `GrokImage HTTP ${r.status}` });
+        const imageUrl = d?.images?.[0]?.url || d?.image?.url;
+        if (!imageUrl) return res.status(500).json({ error: 'GrokImage: sem URL retornada' });
+        return res.json({ imageUrl });
+      }
+
+      // --- generateGrokImageEdit — Grok Imagine Image-to-Image ---
+      if (method === 'generateGrokImageEdit') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body: any = { prompt: args.prompt, image_url: args.imageUrl };
+        console.log(`[GrokImage Edit] prompt=${args.prompt?.substring(0,80)}`);
+        const r = await fetch('https://fal.run/xai/grok-imagine-image/edit', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `GrokImageEdit HTTP ${r.status}` });
+        const imageUrl = d?.images?.[0]?.url || d?.image?.url;
+        if (!imageUrl) return res.status(500).json({ error: 'GrokImageEdit: sem URL retornada' });
+        return res.json({ imageUrl });
+      }
+
+      // --- generateGrokVideo — Grok Imagine T2V / I2V ---
+      if (method === 'generateGrokVideo') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const hasImage = !!args.imageUrl;
+        const endpoint = hasImage
+          ? 'xai/grok-imagine-video/image-to-video'
+          : 'xai/grok-imagine-video/text-to-video';
+        const body: any = {
+          prompt: args.prompt,
+          resolution: args.resolution || '720p',
+          duration: args.duration || 6,
+        };
+        if (args.imageUrl) body.image_url = args.imageUrl;
+        if (args.aspectRatio) body.aspect_ratio = args.aspectRatio;
+        console.log(`[GrokVideo] endpoint=${endpoint} hasImage=${hasImage}`);
+        const r = await fetch(`https://queue.fal.run/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `GrokVideo HTTP ${r.status}` });
+        return res.json({ requestId: d?.request_id, status: 'pending', endpoint });
+      }
+
+      // --- getGrokVideoStatus — polling Grok Video ---
+      if (method === 'getGrokVideoStatus') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const { requestId, endpoint } = args;
+        const timeout = new Promise<{ timedOut: true }>(r => setTimeout(() => r({ timedOut: true }), 12000));
+        const req = fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}/status`, {
+          headers: { 'Authorization': `Key ${falKey}` }
+        }).then(async r => ({ timedOut: false as const, status: r.status, text: await r.text() }))
+          .catch(e => ({ timedOut: false as const, status: 500, text: JSON.stringify({ error: e.message }) }));
+        const result = await Promise.race([req, timeout]);
+        if ('timedOut' in result && result.timedOut) return res.json({ done: false });
+        const { status, text } = result as { timedOut: false, status: number, text: string };
+        let d: any = {}; try { d = JSON.parse(text); } catch {}
+        if (status !== 200) return res.status(status).json(d);
+        if (d?.status === 'COMPLETED') {
+          const rR = await fetch(`https://queue.fal.run/${endpoint}/requests/${requestId}`, {
+            headers: { 'Authorization': `Key ${falKey}` }
+          });
+          if (rR.ok) {
+            const rd = await rR.json();
+            const videoUrl = rd?.video?.url || rd?.videos?.[0]?.url;
+            if (videoUrl) return res.json({ done: true, videoUrl });
+          }
+        }
+        if (d?.status === 'FAILED') return res.json({ done: true, error: d?.error || 'Grok Video falhou' });
+        return res.json({ done: false, status: d?.status });
+      }
+
+      // --- generateGrokExtendVideo — Grok Extend Video ---
+      if (method === 'generateGrokExtendVideo') {
+        const falKey = process.env.FAL_API_KEY;
+        if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
+        const body: any = {
+          video_url: args.videoUrl,
+          prompt: args.prompt || 'Continue the scene naturally',
+        };
+        console.log(`[GrokExtend] video=${args.videoUrl?.substring(0,60)}`);
+        const r = await fetch('https://queue.fal.run/xai/grok-imagine-video/extend-video', {
+          method: 'POST',
+          headers: { 'Authorization': `Key ${falKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        let d: any = {}; try { d = JSON.parse(t); } catch {}
+        if (!r.ok) return res.status(r.status).json({ error: d?.detail || `GrokExtend HTTP ${r.status}` });
+        return res.json({ requestId: d?.request_id, status: 'pending', endpoint: 'xai/grok-imagine-video/extend-video' });
+      }
+
+      // =====================================================================
+      // FIM — GROK IMAGINE
+      // =====================================================================
+
       if (method === 'generateSora2') {
         const falKey = process.env.FAL_API_KEY;
         if (!falKey) return res.status(503).json({ error: 'FAL_API_KEY não configurada.' });
