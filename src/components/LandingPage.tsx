@@ -212,13 +212,41 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             transition={{ duration: 0.6 }}
           >
             <RotatingBadge />
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-8 text-white">
-              CRIE CONTEÚDO QUE <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d4af37] via-[#f1c40f] to-[#d4af37]">VENDE E VIRALIZA</span>
-            </h1>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-              Transforme ideias em conteúdo que vende, engaja e viraliza. Reúne Veo 3.1, Sora 2, Kling 3.0, Seedance 2.0, GPT Image 2 e 15+ motores em uma única plataforma brasileira — imagens, vídeos, UGC e LipSync em minutos.
+
+            {/* Eyebrow fixo */}
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#d4af37]/70 mb-6">
+              Powered by the world's leading AI models
             </p>
+
+            {/* Headline */}
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.9] mb-6 text-white">
+              TRANSFORME IDEIAS EM CONTEÚDOS QUE{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#d4af37] via-[#f1c40f] to-[#d4af37]">VENDEM, ENGAJAM E VIRALIZAM</span>
+            </h1>
+
+            {/* Subheadline */}
+            <p className="text-xl md:text-2xl text-white/90 font-semibold max-w-2xl mx-auto mb-4 leading-snug">
+              Os modelos de IA mais poderosos do mundo reunidos em uma única plataforma premium.
+            </p>
+
+            {/* Parágrafo */}
+            <p className="text-base text-gray-400 max-w-2xl mx-auto mb-4 leading-relaxed">
+              Produza vídeos cinematográficos, imagens hiper-realistas, anúncios de alta conversão e campanhas visuais em escala, sem equipes complexas ou dezenas de ferramentas separadas.
+            </p>
+
+            {/* Prova tecnológica */}
+            <p className="text-sm text-[#d4af37]/60 max-w-2xl mx-auto mb-8 leading-relaxed">
+              Powered by <span className="text-[#d4af37]/90 font-semibold">Veo 3.1, Kling 3.0, Seedance 2.0, GPT Image 2, Grok Image</span> e <span className="text-[#d4af37]/90 font-semibold">Nano Banana Pro</span>.
+            </p>
+
+            {/* Benefits grid */}
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-10">
+              {['Gere vídeos virais em minutos', 'Crie anúncios de alta conversão', 'Produza campanhas sem equipe', 'Escale conteúdo visual diariamente'].map(b => (
+                <span key={b} className="flex items-center gap-1.5 text-sm text-white/70">
+                  <span className="text-[#d4af37] font-bold">✔</span> {b}
+                </span>
+              ))}
+            </div>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               {isAuthenticated ? (
