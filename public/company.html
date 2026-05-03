@@ -9,7 +9,7 @@
 <meta property="og:description" content="Imagens, vídeos, ads e automações com IA. Plataforma SaaS brasileira — Lumina Art Creator. Teste grátis agora.">
 <meta property="og:url" content="https://www.luminaaisolutions.com.br">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800;900&family=Inter:wght@300;400;500;600;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
   /* Paleta Lumina — extraída da logo */
@@ -37,7 +37,11 @@
 html { scroll-behavior: smooth; font-size: 16px; }
 
 body {
-  background: var(--black);
+  background:
+    radial-gradient(circle at 72% 32%, rgba(105,57,255,0.22), transparent 34%),
+    radial-gradient(circle at 92% 68%, rgba(14,114,255,0.12), transparent 26%),
+    radial-gradient(circle at 18% 18%, rgba(255,188,54,0.07), transparent 24%),
+    #05060b;
   color: var(--white);
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
@@ -170,10 +174,6 @@ nav {
 .hero-bg {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 72% 32%, rgba(105,57,255,0.22), transparent 34%),
-    radial-gradient(circle at 92% 68%, rgba(14,114,255,0.12), transparent 26%),
-    radial-gradient(circle at 18% 18%, rgba(255,188,54,0.07), transparent 24%);
   pointer-events: none;
 }
 
@@ -216,15 +216,15 @@ nav {
 }
 
 .hero h1 {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(40px, 4.8vw, 76px);
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(44px, 5.4vw, 82px);
   line-height: 0.97;
   font-weight: 900;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.055em;
   text-transform: uppercase;
   color: var(--white);
   margin: 0 0 28px;
-  max-width: 720px;
+  max-width: 760px;
   animation: fadeInUp 0.8s ease 0.1s both;
 }
 
@@ -346,7 +346,8 @@ nav {
   width: 100%;
   height: auto;
   display: block;
-  border-radius: 12px;
+  border-radius: 0;
+  mix-blend-mode: screen;
   animation: floatBrain 6s ease-in-out infinite;
 }
 
@@ -445,6 +446,57 @@ nav {
   .hero-stats { grid-template-columns: 1fr; }
   .hero-stat-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
   .hero-stat-item:last-child { border-bottom: none; }
+}
+
+/* ─── BOTÕES ─────────────────────────────────── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #ffd25e, #e1a82d);
+  color: #090909;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  text-decoration: none;
+  padding: 17px 32px;
+  border-radius: 10px;
+  border: none;
+  box-shadow: 0 8px 32px rgba(245,185,51,0.22), 0 0 0 1px rgba(255,210,94,0.15);
+  cursor: pointer;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #ffe47a, #f0b832);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 44px rgba(245,185,51,0.35), 0 0 0 1px rgba(255,210,94,0.25);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.04);
+  color: #ffffff;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  padding: 17px 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.18);
+  cursor: pointer;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+}
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.32);
+  transform: translateY(-2px);
 }
 
 /* ─── TICKER ────────────────────────────────── */
