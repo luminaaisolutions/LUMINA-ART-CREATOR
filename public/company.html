@@ -591,6 +591,9 @@ section { padding: 100px 60px; }
   position: relative;
   overflow: hidden;
   padding: 100px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .product-hero::before {
@@ -605,11 +608,13 @@ section { padding: 100px 60px; }
 
 .product-hero-inner {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 70px;
+  grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
+  gap: 48px;
   align-items: center;
-  max-width: 1280px;
+  max-width: 1320px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ─── label "PRODUTO PRINCIPAL" ─── */
@@ -637,7 +642,7 @@ section { padding: 100px 60px; }
 /* ─── Título LUMINA ART CREATOR ─── */
 .s2-title {
   font-family: 'Bebas Neue', 'Anton', sans-serif;
-  font-size: clamp(56px, 7vw, 92px);
+  font-size: clamp(64px, 8vw, 110px);
   font-weight: 900;
   line-height: 0.92;
   letter-spacing: -1px;
@@ -653,7 +658,7 @@ section { padding: 100px 60px; }
   line-height: 1.75;
   color: rgba(255,255,255,0.65);
   font-family: 'Space Grotesk', sans-serif;
-  max-width: 460px;
+  max-width: 100%;
   margin-bottom: 32px;
 }
 
@@ -704,17 +709,18 @@ section { padding: 100px 60px; }
 
 /* ─── CTAs ─── */
 .s2-ctas {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   margin-bottom: 28px;
 }
 
 /* ─── Badges inferiores ─── */
 .s2-badges {
   display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  gap: 16px;
+  align-items: center;
 }
 .s2-badge {
   display: flex;
@@ -2374,10 +2380,14 @@ footer {
           <span class="chip-icon">⚡</span>
           <div class="chip-text"><strong>15+ Motores de IA</strong><small>Google, OpenAI, Runway e mais</small></div>
         </div>
-        <div class="feat-chip" style="grid-column:1/-1; max-width:calc(50% - 5px);">
-          <span class="chip-icon">🇧🇷</span>
-          <div class="chip-text"><strong>100% em Português</strong><small>Interface e suporte em PT-BR</small></div>
-        </div>
+        <div class="feat-chip">
+  <span class="chip-icon">🇧🇷</span>
+  <div class="chip-text"><strong>100% em Português</strong><small>Interface e suporte em PT-BR</small></div>
+</div>
+<div class="feat-chip">
+  <span class="chip-icon">🎞️</span>
+  <div class="chip-text"><strong>Imagens Cinematográficas</strong><small>Qualidade de produção profissional</small></div>
+</div>
       </div>
 
       <div class="s2-ctas">
