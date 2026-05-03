@@ -817,13 +817,13 @@ function AppContent() {
   // Form State
   const [prompt, setPrompt] = useState('');
   const [type, setType] = useState<'video' | 'image'>('video');
-  const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance' | 'veo31' | 'veo31fast' | 'pixverse' | 'sora2' | 'happyHorse'>('kling');
+  const [videoEngine, setVideoEngine] = useState<'veo' | 'kling' | 'seedance' | 'veo31' | 'veo31fast' | 'pixverse' | 'sora2' | 'happyHorse' | 'grokVideo'>('kling');
   const [videoTier, setVideoTier] = useState<'standard' | 'pro' | 'fast'>('standard');
   const [showCreditFlyer, setShowCreditFlyer] = useState(false);
   const creditFlyerTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ao trocar motor, ajusta duração para o valor padrão do motor
-  const handleVideoEngineChange = (engine: 'veo' | 'kling' | 'seedance' | 'veo31' | 'veo31fast' | 'pixverse' | 'sora2' | 'happyHorse', tier: 'standard' | 'pro' | 'fast' = 'standard') => {
+  const handleVideoEngineChange = (engine: 'veo' | 'kling' | 'seedance' | 'veo31' | 'veo31fast' | 'pixverse' | 'sora2' | 'happyHorse' | 'grokVideo', tier: 'standard' | 'pro' | 'fast' = 'standard') => {
     setVideoEngine(engine);
     setVideoTier(tier);
     setVideoDuration(engine === 'veo' ? 4 : 5);
@@ -835,7 +835,7 @@ function AppContent() {
   };
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [resolution, setResolution] = useState('1080p');
-  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage' | 'fluxKontext' | 'fluxKontextMax' | 'flux2max' | 'nanaBananaEdit' | 'seedream'>('nano');
+  const [modelType, setModelType] = useState<'nano' | 'imagen' | 'ideogram' | 'nanoBanana' | 'gptImage' | 'fluxKontext' | 'fluxKontextMax' | 'flux2max' | 'nanaBananaEdit' | 'seedream' | 'grokImage' | 'grokImageEdit'>('nano');
   const [quantity, setQuantity] = useState(1);
   const [videoDuration, setVideoDuration] = useState(4); // Default 4s
   const [lipsyncDuration, setLipsyncDuration] = useState(4);
@@ -1135,6 +1135,7 @@ function AppContent() {
   const [mktError, setMktError] = useState('');
   const [mktProgress, setMktProgress] = useState(0);
   const [mktGenerated, setMktGenerated] = useState<any[]>([]);
+  const [mktVideoEngine, setMktVideoEngine] = useState<'seedance'|'grok'>('seedance');
   // ────────────────────────────────────────────────────────────────────────
   const [audioStart, setAudioStart] = useState(0);
   const [audioEnd, setAudioEnd] = useState(30);
@@ -1949,7 +1950,7 @@ function AppContent() {
     }
     
     // Hedra Image / Flux 2 Pro: sempre 1 item — evitar cobranças múltiplas
-    if (modelType === 'fluxKontext' || modelType === 'fluxKontextMax' || modelType === 'flux2max' || modelType === 'nanaBananaEdit' || modelType === 'seedream') {
+    if (['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream','grokImage','grokImageEdit'].includes(modelType)) {
       currentQuantity = 1;
       rawPrompts.splice(0, rawPrompts.length, rawPrompts[0] || '');
     }
@@ -2115,7 +2116,7 @@ function AppContent() {
           
           let enhancedPrompt = itemPrompt;
           let faceDescription = '';
-          if (!fastMode && currentModelType !== 'fluxKontext' && currentModelType !== 'fluxKontextMax' && currentModelType !== 'flux2max' && currentModelType !== 'nanaBananaEdit' && currentModelType !== 'seedream') {
+          if (!fastMode && !['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream','grokImage','grokImageEdit'].includes(currentModelType)) {
             try {
               const hasRef = currentRefAsset && currentRefAsset.type === 'image';
               const hasProduct = currentProductAsset && currentProductAsset.type === 'image';
@@ -2430,18 +2431,21 @@ function AppContent() {
               }
 
               // Hedra Image — rota separada antes do callGeminiAPI
-              if (['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream'].includes(currentModelType)) {
+              if (['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream','grokImage','grokImageEdit'].includes(currentModelType)) {
                 const methodMap: Record<string, string> = {
                   fluxKontext: 'generateFluxKontext',
                   fluxKontextMax: 'generateFluxKontext',
                   flux2max: 'generateFlux2Max',
                   nanaBananaEdit: 'generateNanaBananaEdit',
                   seedream: 'generateSeedream',
+                  grokImage: 'generateGrokImage',
+                  grokImageEdit: 'generateGrokImageEdit',
                 };
                 const methodName = methodMap[currentModelType];
                 const extraArgs: Record<string, any> = {
                   fluxKontextMax: { useMax: true },
                   nanaBananaEdit: { usePro: true },
+                  grokImageEdit: { imageUrl: currentRefAsset?.url },
                 };
                 const hedraImgRes = await fetch('/api/gemini', {
                   method: 'POST',
@@ -3036,7 +3040,8 @@ if (referenceImages.length > 0) {
             const isPixVerse = currentVideoEngine === 'pixverse';
             const isSora2 = currentVideoEngine === 'sora2';
             const isHappyHorse = currentVideoEngine === 'happyHorse';
-            const method = isPixVerse ? 'generatePixVerse' : isSora2 ? 'generateSora2' : isHappyHorse ? 'generateHappyHorse' : 'generateVeo31';
+            const isGrok = currentVideoEngine === 'grokVideo';
+            const method = isPixVerse ? 'generatePixVerse' : isSora2 ? 'generateSora2' : isHappyHorse ? 'generateHappyHorse' : isGrok ? 'generateGrokVideo' : 'generateVeo31';
             const hedraRes = await fetch('/api/gemini', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -3064,7 +3069,7 @@ if (referenceImages.length > 0) {
             const videoEndpoint = videoInitData?.endpoint || (currentVideoEngine.startsWith('veo') ? 'fal-ai/veo3.1' : isPixVerse ? 'fal-ai/pixverse/v6/text-to-video' : isSora2 ? 'fal-ai/sora-2/text-to-video/pro' : 'fal-ai/alibaba/happy-horse/text-to-video');
             await updateDoc(doc(db, itemPath), { progress: 30, status: 'processing' });
 
-            const pollMethod = isPixVerse ? 'getPixVerseStatus' : isSora2 ? 'getSora2Status' : isHappyHorse ? 'getHappyHorseStatus' : 'getVeo31Status';
+            const pollMethod = isPixVerse ? 'getPixVerseStatus' : isSora2 ? 'getSora2Status' : isHappyHorse ? 'getHappyHorseStatus' : isGrok ? 'getGrokVideoStatus' : 'getVeo31Status';
             const maxPolls = 60;
             for (let poll = 0; poll < maxPolls; poll++) {
               await new Promise(r => setTimeout(r, 10000));
@@ -3350,7 +3355,7 @@ if (referenceImages.length > 0) {
         let expandedPrompts = Array(currentQuantity).fill(itemPrompt);
 
         // Hedra Image: sem expansão de prompts — Hedra tem enhance nativo
-        if (!['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream'].includes(currentModelType) && currentQuantity > 1 && currentType === 'image' && !fastMode) {
+        if (!['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream','grokImage','grokImageEdit'].includes(currentModelType) && currentQuantity > 1 && currentType === 'image' && !fastMode) {
           try {
             const expansionRes = await callGeminiAPI({
               model: 'gemini-2.5-flash',
@@ -3380,7 +3385,7 @@ if (referenceImages.length > 0) {
           itemId: generationIds[pIndex * currentQuantity + i]
         }));
 
-        const concurrencyLimit = ['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream'].includes(currentModelType) ? 1 : 3;
+        const concurrencyLimit = ['fluxKontext','fluxKontextMax','flux2max','nanaBananaEdit','seedream','grokImage','grokImageEdit'].includes(currentModelType) ? 1 : 3;
         let taskIdx = 0;
         const processQueue = async (): Promise<void> => {
           if (taskIdx >= tasks.length) return;
@@ -5157,6 +5162,8 @@ const handleBatchDownload = async (ids: string[]) => {
                         { id: 'nanoBanana',     icon: '🍌', label: 'Nano Banana 2',    desc: 'Google · Alta fidelidade' },
                         { id: 'nanaBananaEdit', icon: '🍌', label: 'Nano Banana Pro',  desc: 'Google · Edição premium' },
                         { id: 'gptImage',       icon: '🤖', label: 'GPT Image 2',      desc: 'OpenAI · Melhor texto' },
+                        { id: 'grokImage',      icon: '🐦', label: 'Grok Imagine',     desc: 'xAI · #1 ranking' },
+                        { id: 'grokImageEdit',  icon: '🐦', label: 'Grok Edit',        desc: 'xAI · Edição precisa' },
                         { id: 'flux2max',       icon: '⚫', label: 'Flux 2 Max',       desc: 'BFL · Fotorrealismo' },
                         { id: 'fluxKontextMax', icon: '🌊', label: 'Flux Kontext Max', desc: 'BFL · Edição precisa' },
                         { id: 'seedream',       icon: '🌱', label: 'Seedream 5.0',     desc: 'ByteDance · 3K res.' },
@@ -5216,6 +5223,7 @@ const handleBatchDownload = async (ids: string[]) => {
                           { id: 'sora2',      icon: '🌐', label: 'Sora 2 Pro',     sub: 'OpenAI · 25s',     badge: 'PRO' },
                           { id: 'happyHorse', icon: '🐴', label: 'Happy Horse',    sub: 'Alibaba · 1080p',  badge: 'NOVO' },
                           { id: 'pixverse',   icon: '🌀', label: 'PixVerse V6',    sub: 'Física realista',  badge: '' },
+                          { id: 'grokVideo',  icon: '🐦', label: 'Grok Imagine',   sub: 'xAI · #1 · 17s',  badge: '🏆' },
                         ] as const).map(m => (
                           <button key={m.id} type="button" onClick={() => handleVideoEngineChange(m.id)}
                             className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all ${videoEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
@@ -6705,6 +6713,7 @@ const handleBatchDownload = async (ids: string[]) => {
                                 { id: 'nano',       label: 'Gemini',        sub: '⚡ Rápido e versátil', badge: 'Padrão' },
                                 { id: 'nanoBanana', label: 'Nano Banana 2', sub: '🍌 Alta fidelidade',   badge: 'Novo' },
                                 { id: 'gptImage',   label: 'GPT Image 2',   sub: '🤖 Máxima qualidade', badge: 'Pro' },
+                                { id: 'grokImage',  label: 'Grok Imagine',  sub: '🐦 xAI · #1 ranking', badge: '🏆' },
                                 { id: 'imagen',     label: 'Imagen 4',      sub: '🎨 Fotorrealismo',     badge: 'Pro' },
                               ].map(m => (
                                 <button
@@ -7421,7 +7430,7 @@ const handleBatchDownload = async (ids: string[]) => {
                             { l: 'Formato', v: { ugc: 'UGC', unboxing: 'Unboxing', review: 'Review', tutorial: 'Tutorial', tvspot: 'TV Spot', wildcard: 'Wild Card' }[mktFormat] },
                             { l: 'Plataforma', v: { tiktok: 'TikTok 9:16', instagram_reels: 'IG Reels 9:16', instagram_feed: 'IG Feed 1:1', youtube_shorts: 'YT Shorts', youtube: 'YouTube 16:9' }[mktPlatform] },
                             { l: 'Duração', v: `${mktDuration}s` },
-                            { l: 'Motor', v: 'Seedance 2.0' },
+                            { l: 'Motor', v: mktVideoEngine === 'grok' ? 'Grok Imagine (xAI)' : 'Seedance 2.0' },
                           ].map(r => (
                             <div key={r.l} className="flex gap-3 py-1.5 border-b border-[#1a1a1a]">
                               <span className="text-[10px] font-black text-gray-600 uppercase w-16 shrink-0">{r.l}</span>
@@ -7432,7 +7441,7 @@ const handleBatchDownload = async (ids: string[]) => {
                         {mktAvatarUrl && (
                           <div className="flex items-center gap-3 p-3 bg-[#1a1a1a] rounded-xl border border-[#222]">
                             <img src={mktAvatarUrl} alt="" className="w-10 h-10 rounded-xl object-cover" />
-                            <div><p className="text-[10px] font-black text-[#d4af37]">Avatar pronto</p><p className="text-[10px] text-gray-600">Seedance 2.0 animará este personagem</p></div>
+                            <div><p className="text-[10px] font-black text-[#d4af37]">Avatar pronto</p><p className="text-[10px] text-gray-600">{mktVideoEngine === 'grok' ? 'Grok Imagine animará este personagem' : 'Seedance 2.0 animará este personagem'}</p></div>
                           </div>
                         )}
                       </div>
@@ -7472,18 +7481,52 @@ const handleBatchDownload = async (ids: string[]) => {
                       </div>
                     </div>
 
+                    {/* Seletor de motor de vídeo */}
+                    {!mktVideoUrl && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">⚡ Motor de vídeo</label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { id: 'seedance' as const, icon: '🌱', label: 'Seedance 2.0', sub: 'ByteDance · Áudio nativo · 2-5min' },
+                            { id: 'grok'     as const, icon: '🐦', label: 'Grok Imagine',  sub: 'xAI · #1 ranking · ~17 segundos' },
+                          ].map(m => (
+                            <button key={m.id} type="button" onClick={() => setMktVideoEngine(m.id)}
+                              className={`flex items-center gap-2 p-3 rounded-xl border transition-all text-left ${mktVideoEngine === m.id ? 'border-[#d4af37] bg-[#d4af37]/8' : 'border-[#222] bg-[#1a1a1a] hover:border-[#333]'}`}>
+                              <span className="text-lg shrink-0">{m.icon}</span>
+                              <div>
+                                <div className={`text-xs font-black ${mktVideoEngine === m.id ? 'text-[#d4af37]' : 'text-white'}`}>{m.label}</div>
+                                <div className="text-[10px] text-gray-500">{m.sub}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {!mktVideoUrl && (
                       <button onClick={async () => {
                         setMktError(''); setMktIsLoading(true); setMktProgress(10); setMktLoadingMsg('🎬 Iniciando geração...');
                         try {
-                          const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: 'generateMktAdsVideo', args: { videoPrompt: mktScriptData?.videoPrompt, avatarImageUrl: mktAvatarUrl, platform: mktPlatform, duration: Math.min(mktDuration / 2, 8) } }) });
+                          // Roteamento por motor
+                          const useGrok = mktVideoEngine === 'grok';
+                          const apiMethod = useGrok ? 'generateGrokVideo' : 'generateMktAdsVideo';
+                          const platformAspect: Record<string, string> = { tiktok: '9:16', instagram_reels: '9:16', youtube_shorts: '9:16', instagram_feed: '1:1', youtube: '16:9' };
+                          const apiArgs = useGrok ? {
+                            prompt: mktScriptData?.videoPrompt,
+                            imageUrl: mktAvatarUrl,
+                            aspectRatio: platformAspect[mktPlatform] || '9:16',
+                            resolution: '720p',
+                            duration: Math.min(Math.floor(mktDuration / 2), 8),
+                          } : { videoPrompt: mktScriptData?.videoPrompt, avatarImageUrl: mktAvatarUrl, platform: mktPlatform, duration: Math.min(mktDuration / 2, 8) };
+                          const r = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: apiMethod, args: apiArgs }) });
                           const d = await r.json();
                           if (!d.requestId) throw new Error(d.error || 'Erro ao iniciar');
                           setMktProgress(20); setMktLoadingMsg('⚙️ Seedance 2.0 processando...');
                           const { requestId, endpoint } = d;
+                          const pollMethod2 = useGrok ? 'getGrokVideoStatus' : 'getMktAdsVideoStatus';
                           for (let poll = 0; poll < 60; poll++) {
-                            await new Promise(res => setTimeout(res, 8000));
-                            const pr = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: 'getMktAdsVideoStatus', args: { requestId, endpoint } }) });
+                            await new Promise(res => setTimeout(res, useGrok ? 4000 : 8000));
+                            const pr = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ method: pollMethod2, args: { requestId, endpoint } }) });
                             const pd = await pr.json();
                             const prog = Math.min(20 + Math.floor((poll / 60) * 75), 94);
                             setMktProgress(prog);
