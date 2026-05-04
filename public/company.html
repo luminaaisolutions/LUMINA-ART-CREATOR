@@ -1337,7 +1337,7 @@ section { padding: 100px 60px; }
   .powered-bar .pw-brands { gap: 14px; }
 }
 
-/* ─── S3 SERVIÇOS — ECOSSISTEMA VISUAL ────────── */
+/* ─── S3 SERVIÇOS — ECOSSISTEMA VISUAL (VERSÃO ATUALIZADA) ────────── */
 .services {
   background: #000;
   position: relative;
@@ -1402,10 +1402,10 @@ section { padding: 100px 60px; }
 
 .s3-subtitle {
   font-size: 16px;
-  color: rgba(255,255,255,0.55);
+  color: rgba(255,255,255,0.70);
   font-family: 'Space Grotesk', sans-serif;
-  max-width: 540px;
-  margin: 0 auto;
+  max-width: 640px;
+  margin: 0 auto 48px;
   line-height: 1.65;
 }
 
@@ -1465,7 +1465,7 @@ section { padding: 100px 60px; }
 .services-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 16px;
   margin-top: 0;
   background: transparent;
   border-radius: 0;
@@ -1476,11 +1476,11 @@ section { padding: 100px 60px; }
 
 /* ── Card base ── */
 .service-card {
-  background: linear-gradient(160deg, rgba(22,22,32,0.95) 0%, rgba(10,10,16,0.98) 100%);
+  background: linear-gradient(160deg, rgba(20,20,28,0.95) 0%, rgba(10,10,16,0.98) 100%);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 20px;
-  padding: 32px 30px 28px;
-  transition: all 0.35s ease;
+  padding: 0;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
   cursor: default;
@@ -1507,82 +1507,86 @@ section { padding: 100px 60px; }
   height: 2px;
   border-radius: 0 0 20px 20px;
   transform: scaleX(0);
-  transition: transform 0.35s ease;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: left;
 }
 
-/* ── Cores por card (matching imagem: laranja, roxo, azul / ciano, roxo2, rosa) ── */
-.service-card:nth-child(1)::before { background: radial-gradient(ellipse at 30% 0%, rgba(255,122,61,0.12), transparent 60%); }
-.service-card:nth-child(1)::after  { background: linear-gradient(90deg, #ff7a3d, #ff4d4d); }
-.service-card:nth-child(1) .sc-icon-wrap { background: rgba(255,122,61,0.12); border-color: rgba(255,122,61,0.25); }
-.service-card:nth-child(1) .sc-icon-wrap svg, .service-card:nth-child(1) .sc-icon-emoji { color: #ff7a3d; filter: drop-shadow(0 0 10px rgba(255,122,61,0.7)); }
+/* ── Cores por card ── */
+.service-card:nth-child(1)::before { background: radial-gradient(ellipse at center top, rgba(255,122,61,0.16), transparent 68%); }
+.service-card:nth-child(1)::after  { background: linear-gradient(90deg, #ff7a3d, #ff5722); }
 .service-card:nth-child(1) .sc-badge { background: rgba(255,122,61,0.12); border-color: rgba(255,122,61,0.3); color: #ff9a6c; }
 .service-card:nth-child(1) .sc-cta { color: #ff9a6c; }
 
-.service-card:nth-child(2)::before { background: radial-gradient(ellipse at 30% 0%, rgba(139,92,246,0.12), transparent 60%); }
-.service-card:nth-child(2)::after  { background: linear-gradient(90deg, #8b5cf6, #d946ef); }
-.service-card:nth-child(2) .sc-icon-wrap { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.25); }
-.service-card:nth-child(2) .sc-icon-wrap svg, .service-card:nth-child(2) .sc-icon-emoji { color: #a78bfa; filter: drop-shadow(0 0 10px rgba(167,139,250,0.7)); }
+.service-card:nth-child(2)::before { background: radial-gradient(ellipse at center top, rgba(139,92,246,0.16), transparent 68%); }
+.service-card:nth-child(2)::after  { background: linear-gradient(90deg, #8b5cf6, #a855f7); }
 .service-card:nth-child(2) .sc-badge { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.3); color: #c4b5fd; }
 .service-card:nth-child(2) .sc-cta { color: #c4b5fd; }
 
-.service-card:nth-child(3)::before { background: radial-gradient(ellipse at 30% 0%, rgba(56,189,248,0.10), transparent 60%); }
-.service-card:nth-child(3)::after  { background: linear-gradient(90deg, #38bdf8, #818cf8); }
-.service-card:nth-child(3) .sc-icon-wrap { background: rgba(56,189,248,0.10); border-color: rgba(56,189,248,0.22); }
-.service-card:nth-child(3) .sc-icon-wrap svg, .service-card:nth-child(3) .sc-icon-emoji { color: #38bdf8; filter: drop-shadow(0 0 10px rgba(56,189,248,0.7)); }
+.service-card:nth-child(3)::before { background: radial-gradient(ellipse at center top, rgba(56,189,248,0.14), transparent 68%); }
+.service-card:nth-child(3)::after  { background: linear-gradient(90deg, #38bdf8, #0ea5e9); }
 .service-card:nth-child(3) .sc-badge { background: rgba(56,189,248,0.10); border-color: rgba(56,189,248,0.28); color: #7dd3fc; }
 .service-card:nth-child(3) .sc-cta { color: #7dd3fc; }
 
-.service-card:nth-child(4)::before { background: radial-gradient(ellipse at 30% 0%, rgba(52,211,153,0.10), transparent 60%); }
+.service-card:nth-child(4)::before { background: radial-gradient(ellipse at center top, rgba(52,211,153,0.14), transparent 68%); }
 .service-card:nth-child(4)::after  { background: linear-gradient(90deg, #34d399, #10b981); }
-.service-card:nth-child(4) .sc-icon-wrap { background: rgba(52,211,153,0.10); border-color: rgba(52,211,153,0.22); }
-.service-card:nth-child(4) .sc-icon-wrap svg, .service-card:nth-child(4) .sc-icon-emoji { color: #34d399; filter: drop-shadow(0 0 10px rgba(52,211,153,0.7)); }
 .service-card:nth-child(4) .sc-badge { background: rgba(52,211,153,0.10); border-color: rgba(52,211,153,0.28); color: #6ee7b7; }
 .service-card:nth-child(4) .sc-cta { color: #6ee7b7; }
 
-.service-card:nth-child(5)::before { background: radial-gradient(ellipse at 30% 0%, rgba(212,168,67,0.10), transparent 60%); }
+.service-card:nth-child(5)::before { background: radial-gradient(ellipse at center top, rgba(212,168,67,0.14), transparent 68%); }
 .service-card:nth-child(5)::after  { background: linear-gradient(90deg, #D4A843, #f59e0b); }
-.service-card:nth-child(5) .sc-icon-wrap { background: rgba(212,168,67,0.10); border-color: rgba(212,168,67,0.22); }
-.service-card:nth-child(5) .sc-icon-wrap svg, .service-card:nth-child(5) .sc-icon-emoji { color: #D4A843; filter: drop-shadow(0 0 10px rgba(212,168,67,0.7)); }
 .service-card:nth-child(5) .sc-badge { background: rgba(212,168,67,0.10); border-color: rgba(212,168,67,0.28); color: #fcd34d; }
 .service-card:nth-child(5) .sc-cta { color: #fcd34d; }
 
-.service-card:nth-child(6)::before { background: radial-gradient(ellipse at 30% 0%, rgba(244,63,94,0.10), transparent 60%); }
+.service-card:nth-child(6)::before { background: radial-gradient(ellipse at center top, rgba(244,63,94,0.14), transparent 68%); }
 .service-card:nth-child(6)::after  { background: linear-gradient(90deg, #f43f5e, #ec4899); }
-.service-card:nth-child(6) .sc-icon-wrap { background: rgba(244,63,94,0.10); border-color: rgba(244,63,94,0.22); }
-.service-card:nth-child(6) .sc-icon-wrap svg, .service-card:nth-child(6) .sc-icon-emoji { color: #f43f5e; filter: drop-shadow(0 0 10px rgba(244,63,94,0.7)); }
-.service-card:nth-child(6) .sc-badge { background: rgba(244,63,94,0.10); border-color: rgba(244,63,94,0.22); color: #fda4af; }
+.service-card:nth-child(6) .sc-badge { background: rgba(244,63,94,0.10); border-color: rgba(244,63,94,0.24); color: #fda4af; }
 .service-card:nth-child(6) .sc-cta { color: #fda4af; }
 
 .service-card:hover {
   border-color: rgba(255,255,255,0.18);
-  transform: translateY(-5px);
+  transform: translateY(-4px);
   box-shadow: 0 28px 72px rgba(0,0,0,0.5);
 }
 .service-card:hover::before { opacity: 1; }
 .service-card:hover::after  { transform: scaleX(1); }
 
-/* ── Elementos internos do card ── */
+/* ── Ilustração 3D ── */
+.sc-illustration {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: -20px;
+}
+
+.sc-illustration svg {
+  height: 160px;
+  width: auto;
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,0.4));
+}
+
+/* ── Conteúdo do card ── */
+.sc-content {
+  padding: 24px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
 .sc-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
-.sc-icon-wrap {
-  width: 52px; height: 52px;
-  border-radius: 14px;
-  border: 1px solid;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.sc-icon-emoji {
-  font-size: 26px;
-  line-height: 1;
+.sc-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.3px;
 }
 
 .sc-badge {
@@ -1594,22 +1598,14 @@ section { padding: 100px 60px; }
   padding: 5px 12px;
   border-radius: 999px;
   border: 1px solid;
-}
-
-.sc-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 20px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -0.3px;
-  margin-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .sc-desc {
   font-size: 13.5px;
   color: rgba(160,166,185,0.8);
   line-height: 1.72;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   flex: 1;
   font-family: 'Space Grotesk', sans-serif;
 }
@@ -1617,20 +1613,21 @@ section { padding: 100px 60px; }
 .sc-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 20px;
+  gap: 7px;
+  margin-bottom: 18px;
 }
 
 .sc-tag {
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   font-family: 'Space Grotesk', sans-serif;
-  padding: 4px 10px;
+  padding: 5px 11px;
   border-radius: 6px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.09);
-  color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.50);
+  text-transform: uppercase;
 }
 
 .sc-cta {
@@ -1655,7 +1652,7 @@ section { padding: 100px 60px; }
   border: 1px solid rgba(255,255,255,0.07);
   border-radius: 16px;
   background: rgba(10,10,16,0.8);
-  margin-top: 40px;
+  margin-top: 42px;
   position: relative;
   z-index: 2;
   overflow-x: auto;
@@ -1722,8 +1719,9 @@ section { padding: 100px 60px; }
   .s3-stat-item { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.07); }
   .s3-stat-item:last-child { border-bottom: none; }
   .s3-title { font-size: clamp(36px, 10vw, 56px); }
+  .sc-illustration { height: 180px; }
+  .sc-illustration svg { height: 140px; }
 }
-
 /* ─── NICHOS ─────────────────────────────────── */
 .niches { background: #000; }
 
@@ -2986,6 +2984,10 @@ footer {
 <!-- ═══════════════════════════════════════════
      S3 · SERVIÇOS — sections/s3-servicos.html
      ═══════════════════════════════════════════ -->
+
+<!-- ═══════════════════════════════════════════
+     S3 · ECOSSISTEMA — VERSÃO ATUALIZADA
+     ═══════════════════════════════════════════ -->
 <section class="services" id="servicos">
   <div class="container">
 
@@ -3044,110 +3046,318 @@ footer {
 
       <!-- 1 · Marketing IA -->
       <div class="service-card reveal">
-        <div class="sc-top">
-          <div class="sc-icon-wrap">
-            <span class="sc-icon-emoji">🎯</span>
+        <div class="sc-illustration">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Plataforma holográfica -->
+            <ellipse cx="100" cy="170" rx="70" ry="12" fill="url(#glow-orange)" opacity="0.4"/>
+            <ellipse cx="100" cy="170" rx="60" ry="10" fill="url(#glow-orange)" opacity="0.6"/>
+            <ellipse cx="100" cy="170" rx="50" ry="8" fill="#ff7a3d" opacity="0.3"/>
+            
+            <!-- Alvo principal -->
+            <circle cx="100" cy="90" r="50" fill="none" stroke="#ff7a3d" stroke-width="2" opacity="0.2"/>
+            <circle cx="100" cy="90" r="38" fill="none" stroke="#ff7a3d" stroke-width="2.5" opacity="0.4"/>
+            <circle cx="100" cy="90" r="26" fill="none" stroke="#ff914d" stroke-width="3" opacity="0.6"/>
+            <circle cx="100" cy="90" r="12" fill="#ff7a3d" opacity="0.8"/>
+            <circle cx="100" cy="90" r="6" fill="#fff" opacity="0.9"/>
+            
+            <!-- Flechas acertando o alvo -->
+            <path d="M 160 90 L 120 90 L 128 85 M 120 90 L 128 95" stroke="#ff5722" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M 100 30 L 100 70 L 95 62 M 100 70 L 105 62" stroke="#ff5722" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <path d="M 40 90 L 80 90 L 72 85 M 80 90 L 72 95" stroke="#ff914d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            
+            <defs>
+              <radialGradient id="glow-orange" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#ff7a3d" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#ff7a3d" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="sc-content">
+          <div class="sc-top">
+            <div class="sc-title">Marketing IA</div>
+            <span class="sc-badge">Performance</span>
           </div>
-          <span class="sc-badge">Performance</span>
+          <p class="sc-desc">Campanhas que convertem, funis automáticos e tráfego otimizado com inteligência artificial.</p>
+          <div class="sc-tags">
+            <span class="sc-tag">Copy IA</span>
+            <span class="sc-tag">Funis Auto</span>
+            <span class="sc-tag">Ads IA</span>
+          </div>
+          <a href="#contato" class="sc-cta">Converta 24h por dia →</a>
         </div>
-        <div class="sc-title">Marketing IA</div>
-        <p class="sc-desc">Campanhas que convertem, funis automáticos e tráfego otimizado com inteligência artificial.</p>
-        <div class="sc-tags">
-          <span class="sc-tag">Copy IA</span>
-          <span class="sc-tag">Funis Auto</span>
-          <span class="sc-tag">Ads IA</span>
-        </div>
-        <a href="#contato" class="sc-cta">Converta 24h por dia →</a>
       </div>
 
       <!-- 2 · Vendas Online -->
       <div class="service-card reveal reveal-delay-1">
-        <div class="sc-top">
-          <div class="sc-icon-wrap">
-            <span class="sc-icon-emoji">🛒</span>
+        <div class="sc-illustration">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Plataforma holográfica -->
+            <ellipse cx="100" cy="170" rx="70" ry="12" fill="url(#glow-purple)" opacity="0.4"/>
+            <ellipse cx="100" cy="170" rx="60" ry="10" fill="url(#glow-purple)" opacity="0.6"/>
+            <ellipse cx="100" cy="170" rx="50" ry="8" fill="#8b5cf6" opacity="0.3"/>
+            
+            <!-- Carrinho de compras holográfico -->
+            <path d="M 70 80 L 75 110 L 125 110 L 130 80 Z" fill="none" stroke="#a78bfa" stroke-width="2.5" opacity="0.4"/>
+            <path d="M 70 80 L 75 110 L 125 110 L 130 80 Z" fill="#8b5cf6" opacity="0.1"/>
+            
+            <!-- Grade holográfica do carrinho -->
+            <line x1="75" y1="90" x2="125" y2="90" stroke="#a855f7" stroke-width="1.5" opacity="0.3"/>
+            <line x1="77" y1="100" x2="123" y2="100" stroke="#a855f7" stroke-width="1.5" opacity="0.3"/>
+            <line x1="85" y1="80" x2="81" y2="110" stroke="#a855f7" stroke-width="1.5" opacity="0.3"/>
+            <line x1="100" y1="80" x2="100" y2="110" stroke="#a855f7" stroke-width="1.5" opacity="0.3"/>
+            <line x1="115" y1="80" x2="119" y2="110" stroke="#a855f7" stroke-width="1.5" opacity="0.3"/>
+            
+            <!-- Rodas -->
+            <circle cx="85" cy="120" r="6" fill="none" stroke="#8b5cf6" stroke-width="2"/>
+            <circle cx="115" cy="120" r="6" fill="none" stroke="#8b5cf6" stroke-width="2"/>
+            <circle cx="85" cy="120" r="3" fill="#a78bfa"/>
+            <circle cx="115" cy="120" r="3" fill="#a78bfa"/>
+            
+            <!-- Alça do carrinho -->
+            <path d="M 130 80 Q 135 75 135 65 L 135 55" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <path d="M 70 80 Q 65 75 65 65 L 65 55" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            
+            <defs>
+              <radialGradient id="glow-purple" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="sc-content">
+          <div class="sc-top">
+            <div class="sc-title">Vendas Online</div>
+            <span class="sc-badge">Automação</span>
           </div>
-          <span class="sc-badge">Automação</span>
+          <p class="sc-desc">TikTok Shop, Instagram Shop e integrações Shopify com automações inteligentes e upsell IA.</p>
+          <div class="sc-tags">
+            <span class="sc-tag">TikTok Shop</span>
+            <span class="sc-tag">Shopify</span>
+            <span class="sc-tag">Up-sell IA</span>
+          </div>
+          <a href="#contato" class="sc-cta">Escale suas vendas →</a>
         </div>
-        <div class="sc-title">Vendas Online</div>
-        <p class="sc-desc">TikTok Shop, Instagram Shop e integrações Shopify com automações inteligentes e upsell IA.</p>
-        <div class="sc-tags">
-          <span class="sc-tag">TikTok Shop</span>
-          <span class="sc-tag">Shopify</span>
-          <span class="sc-tag">Up-sell IA</span>
-        </div>
-        <a href="#contato" class="sc-cta">Escale suas vendas →</a>
       </div>
 
       <!-- 3 · Audiovisual IA -->
       <div class="service-card reveal reveal-delay-2">
-        <div class="sc-top">
-          <div class="sc-icon-wrap">
-            <span class="sc-icon-emoji">🎬</span>
+        <div class="sc-illustration">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Plataforma holográfica -->
+            <ellipse cx="100" cy="170" rx="70" ry="12" fill="url(#glow-cyan)" opacity="0.4"/>
+            <ellipse cx="100" cy="170" rx="60" ry="10" fill="url(#glow-cyan)" opacity="0.6"/>
+            <ellipse cx="100" cy="170" rx="50" ry="8" fill="#38bdf8" opacity="0.3"/>
+            
+            <!-- Claquete -->
+            <rect x="60" y="70" width="80" height="55" rx="4" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+            <rect x="60" y="70" width="80" height="55" rx="4" fill="#38bdf8" opacity="0.05"/>
+            
+            <!-- Parte superior da claquete -->
+            <path d="M 60 70 L 60 55 L 140 55 L 140 70" fill="#334155" stroke="#38bdf8" stroke-width="2"/>
+            <rect x="70" y="58" width="8" height="10" fill="#0ea5e9"/>
+            <rect x="90" y="58" width="8" height="10" fill="#38bdf8"/>
+            <rect x="110" y="58" width="8" height="10" fill="#0ea5e9"/>
+            <rect x="130" y="58" width="8" height="10" fill="#38bdf8"/>
+            
+            <!-- Botão Play centralizado -->
+            <circle cx="100" cy="97" r="20" fill="#38bdf8" opacity="0.2"/>
+            <circle cx="100" cy="97" r="16" fill="none" stroke="#38bdf8" stroke-width="2"/>
+            <path d="M 95 90 L 95 104 L 108 97 Z" fill="#38bdf8"/>
+            
+            <defs>
+              <radialGradient id="glow-cyan" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="sc-content">
+          <div class="sc-top">
+            <div class="sc-title">Audiovisual IA</div>
+            <span class="sc-badge">Criativo</span>
           </div>
-          <span class="sc-badge">Criativo</span>
+          <p class="sc-desc">Vídeos virais, músicas originais, avatares realistas e lip sync profissional com IA de última geração.</p>
+          <div class="sc-tags">
+            <span class="sc-tag">Vídeos Virais</span>
+            <span class="sc-tag">Músicas IA</span>
+            <span class="sc-tag">Lip Sync</span>
+          </div>
+          <a href="#contato" class="sc-cta">Crie conteúdo que viraliza →</a>
         </div>
-        <div class="sc-title">Audiovisual IA</div>
-        <p class="sc-desc">Vídeos virais, músicas originais, avatares realistas e lip sync profissional com IA de última geração.</p>
-        <div class="sc-tags">
-          <span class="sc-tag">Vídeos Virais</span>
-          <span class="sc-tag">Músicas IA</span>
-          <span class="sc-tag">Lip Sync</span>
-        </div>
-        <a href="#contato" class="sc-cta">Crie conteúdo que viraliza →</a>
       </div>
 
       <!-- 4 · Automações IA -->
       <div class="service-card reveal">
-        <div class="sc-top">
-          <div class="sc-icon-wrap">
-            <span class="sc-icon-emoji">🤖</span>
+        <div class="sc-illustration">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Plataforma holográfica -->
+            <ellipse cx="100" cy="170" rx="70" ry="12" fill="url(#glow-green)" opacity="0.4"/>
+            <ellipse cx="100" cy="170" rx="60" ry="10" fill="url(#glow-green)" opacity="0.6"/>
+            <ellipse cx="100" cy="170" rx="50" ry="8" fill="#34d399" opacity="0.3"/>
+            
+            <!-- Cabeça do robô -->
+            <rect x="70" y="55" width="60" height="50" rx="8" fill="#1e293b" stroke="#34d399" stroke-width="2.5"/>
+            <rect x="70" y="55" width="60" height="50" rx="8" fill="#34d399" opacity="0.08"/>
+            
+            <!-- Antena -->
+            <line x1="100" y1="55" x2="100" y2="40" stroke="#34d399" stroke-width="2"/>
+            <circle cx="100" cy="37" r="4" fill="#34d399"/>
+            <circle cx="100" cy="37" r="7" fill="none" stroke="#34d399" stroke-width="1.5" opacity="0.4"/>
+            
+            <!-- Olhos -->
+            <circle cx="85" cy="75" r="8" fill="#34d399" opacity="0.3"/>
+            <circle cx="85" cy="75" r="5" fill="#10b981"/>
+            <circle cx="115" cy="75" r="8" fill="#34d399" opacity="0.3"/>
+            <circle cx="115" cy="75" r="5" fill="#10b981"/>
+            
+            <!-- Boca sorridente -->
+            <path d="M 80 90 Q 100 98 120 90" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            
+            <!-- Balões de chat -->
+            <ellipse cx="55" cy="75" rx="18" ry="14" fill="none" stroke="#34d399" stroke-width="2" opacity="0.6"/>
+            <path d="M 48 85 L 45 95 L 55 88" fill="#34d399" opacity="0.6"/>
+            <line x1="50" y1="72" x2="50" y2="72" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+            <line x1="55" y1="75" x2="55" y2="75" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+            <line x1="60" y1="78" x2="60" y2="78" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+            
+            <ellipse cx="145" cy="75" rx="18" ry="14" fill="none" stroke="#34d399" stroke-width="2" opacity="0.6"/>
+            <path d="M 152 85 L 155 95 L 145 88" fill="#34d399" opacity="0.6"/>
+            <line x1="140" y1="72" x2="140" y2="72" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+            <line x1="145" y1="75" x2="145" y2="75" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+            <line x1="150" y1="78" x2="150" y2="78" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+            
+            <defs>
+              <radialGradient id="glow-green" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#34d399" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="sc-content">
+          <div class="sc-top">
+            <div class="sc-title">Automações IA</div>
+            <span class="sc-badge">Inteligência</span>
           </div>
-          <span class="sc-badge">Inteligência</span>
+          <p class="sc-desc">Chatbots avançados, CRM com IA, agentes inteligentes e automações completas para seu negócio.</p>
+          <div class="sc-tags">
+            <span class="sc-tag">Chatbots</span>
+            <span class="sc-tag">CRM IA</span>
+            <span class="sc-tag">Agentes IA</span>
+          </div>
+          <a href="#contato" class="sc-cta">Automatize e economize tempo →</a>
         </div>
-        <div class="sc-title">Automações IA</div>
-        <p class="sc-desc">Chatbots avançados, CRM com IA, agentes inteligentes e automações completas para seu negócio.</p>
-        <div class="sc-tags">
-          <span class="sc-tag">Chatbots</span>
-          <span class="sc-tag">CRM IA</span>
-          <span class="sc-tag">Agentes IA</span>
-        </div>
-        <a href="#contato" class="sc-cta">Automatize e economize tempo →</a>
       </div>
 
       <!-- 5 · Sites & Apps IA -->
       <div class="service-card reveal reveal-delay-1">
-        <div class="sc-top">
-          <div class="sc-icon-wrap">
-            <span class="sc-icon-emoji">🌐</span>
+        <div class="sc-illustration">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Plataforma holográfica -->
+            <ellipse cx="100" cy="170" rx="70" ry="12" fill="url(#glow-gold)" opacity="0.4"/>
+            <ellipse cx="100" cy="170" rx="60" ry="10" fill="url(#glow-gold)" opacity="0.6"/>
+            <ellipse cx="100" cy="170" rx="50" ry="8" fill="#D4A843" opacity="0.3"/>
+            
+            <!-- Globo terrestre -->
+            <circle cx="100" cy="90" r="45" fill="#1e293b" stroke="#D4A843" stroke-width="2.5"/>
+            <circle cx="100" cy="90" r="45" fill="#D4A843" opacity="0.06"/>
+            
+            <!-- Meridianos -->
+            <ellipse cx="100" cy="90" rx="15" ry="45" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0.4"/>
+            <ellipse cx="100" cy="90" rx="30" ry="45" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0.4"/>
+            
+            <!-- Paralelos -->
+            <ellipse cx="100" cy="90" rx="45" ry="15" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0.4"/>
+            <ellipse cx="100" cy="90" rx="45" ry="30" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity="0.4"/>
+            
+            <!-- Pontos de conexão -->
+            <circle cx="75" cy="70" r="3" fill="#D4A843"/>
+            <circle cx="75" cy="70" r="6" fill="none" stroke="#D4A843" stroke-width="1" opacity="0.4"/>
+            <circle cx="125" cy="70" r="3" fill="#fcd34d"/>
+            <circle cx="125" cy="70" r="6" fill="none" stroke="#fcd34d" stroke-width="1" opacity="0.4"/>
+            <circle cx="85" cy="110" r="3" fill="#D4A843"/>
+            <circle cx="85" cy="110" r="6" fill="none" stroke="#D4A843" stroke-width="1" opacity="0.4"/>
+            <circle cx="115" cy="105" r="3" fill="#fcd34d"/>
+            <circle cx="115" cy="105" r="6" fill="none" stroke="#fcd34d" stroke-width="1" opacity="0.4"/>
+            
+            <!-- Linhas de conexão -->
+            <line x1="75" y1="70" x2="125" y2="70" stroke="#f59e0b" stroke-width="1" opacity="0.3"/>
+            <line x1="75" y1="70" x2="85" y2="110" stroke="#f59e0b" stroke-width="1" opacity="0.3"/>
+            <line x1="125" y1="70" x2="115" y2="105" stroke="#f59e0b" stroke-width="1" opacity="0.3"/>
+            
+            <defs>
+              <radialGradient id="glow-gold" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#D4A843" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#D4A843" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="sc-content">
+          <div class="sc-top">
+            <div class="sc-title">Sites & Apps IA</div>
+            <span class="sc-badge">Tecnologia</span>
           </div>
-          <span class="sc-badge">Tecnologia</span>
+          <p class="sc-desc">Sites profissionais, landing pages de alta conversão e apps inteligentes com IA embutida.</p>
+          <div class="sc-tags">
+            <span class="sc-tag">Sites</span>
+            <span class="sc-tag">Landing Pages</span>
+            <span class="sc-tag">Apps</span>
+          </div>
+          <a href="#contato" class="sc-cta">Presença digital que impressiona →</a>
         </div>
-        <div class="sc-title">Sites & Apps IA</div>
-        <p class="sc-desc">Sites profissionais, landing pages de alta conversão e apps inteligentes com IA embutida.</p>
-        <div class="sc-tags">
-          <span class="sc-tag">Sites</span>
-          <span class="sc-tag">Landing Pages</span>
-          <span class="sc-tag">Apps</span>
-        </div>
-        <a href="#contato" class="sc-cta">Presença digital que impressiona →</a>
       </div>
 
       <!-- 6 · Consultoria IA -->
       <div class="service-card reveal reveal-delay-2">
-        <div class="sc-top">
-          <div class="sc-icon-wrap">
-            <span class="sc-icon-emoji">📊</span>
+        <div class="sc-illustration">
+          <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Plataforma holográfica -->
+            <ellipse cx="100" cy="170" rx="70" ry="12" fill="url(#glow-pink)" opacity="0.4"/>
+            <ellipse cx="100" cy="170" rx="60" ry="10" fill="url(#glow-pink)" opacity="0.6"/>
+            <ellipse cx="100" cy="170" rx="50" ry="8" fill="#f43f5e" opacity="0.3"/>
+            
+            <!-- Gráfico de barras crescente -->
+            <rect x="55" y="110" width="18" height="25" rx="2" fill="#334155" stroke="#f43f5e" stroke-width="2"/>
+            <rect x="55" y="110" width="18" height="25" rx="2" fill="#f43f5e" opacity="0.2"/>
+            
+            <rect x="78" y="95" width="18" height="40" rx="2" fill="#334155" stroke="#f43f5e" stroke-width="2"/>
+            <rect x="78" y="95" width="18" height="40" rx="2" fill="#f43f5e" opacity="0.25"/>
+            
+            <rect x="101" y="75" width="18" height="60" rx="2" fill="#334155" stroke="#ec4899" stroke-width="2"/>
+            <rect x="101" y="75" width="18" height="60" rx="2" fill="#ec4899" opacity="0.3"/>
+            
+            <rect x="124" y="55" width="18" height="80" rx="2" fill="#334155" stroke="#ec4899" stroke-width="2.5"/>
+            <rect x="124" y="55" width="18" height="80" rx="2" fill="#ec4899" opacity="0.35"/>
+            
+            <!-- Seta de crescimento -->
+            <path d="M 50 120 L 145 40" stroke="#fda4af" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="4 4" opacity="0.6"/>
+            <path d="M 145 40 L 135 42 M 145 40 L 143 50" stroke="#fda4af" stroke-width="2.5" stroke-linecap="round"/>
+            
+            <defs>
+              <radialGradient id="glow-pink" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#f43f5e" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#f43f5e" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="sc-content">
+          <div class="sc-top">
+            <div class="sc-title">Consultoria IA</div>
+            <span class="sc-badge">Estratégia</span>
           </div>
-          <span class="sc-badge">Estratégia</span>
+          <p class="sc-desc">Diagnóstico completo, estratégia personalizada e implementação de IA para resultados reais.</p>
+          <div class="sc-tags">
+            <span class="sc-tag">Diagnóstico</span>
+            <span class="sc-tag">Estratégia</span>
+            <span class="sc-tag">Treinamento</span>
+          </div>
+          <a href="#contato" class="sc-cta">Transforme seu negócio →</a>
         </div>
-        <div class="sc-title">Consultoria IA</div>
-        <p class="sc-desc">Diagnóstico completo, estratégia personalizada e implementação de IA para resultados reais.</p>
-        <div class="sc-tags">
-          <span class="sc-tag">Diagnóstico</span>
-          <span class="sc-tag">Estratégia</span>
-          <span class="sc-tag">Treinamento</span>
-        </div>
-        <a href="#contato" class="sc-cta">Transforme seu negócio →</a>
       </div>
 
     </div><!-- /services-grid -->
@@ -3173,8 +3383,6 @@ footer {
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════
-     S4 · NICHOS — sections/s4-nichos.html
      ═══════════════════════════════════════════ -->
 <!-- NICHOS -->
 <section class="niches" id="nichos">
