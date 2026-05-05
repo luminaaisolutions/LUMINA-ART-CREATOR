@@ -2124,100 +2124,295 @@ section { padding: 100px 60px; }
   .s4-final-cta { flex-direction: column; text-align: center; }
   .s4-final-left { flex-direction: column; text-align: center; }
 }
-/* ─── ARTISTAS ───────────────────────────────── */
-.artists { background: var(--black); }
+/* ========================================
+   S5 — ARTISTAS & MODELOS IA
+======================================== */
+.secao-artistas {
+  background: #000000;
+  padding: 110px 60px;
+  position: relative;
+}
 
-.artists-grid {
+.artistas-container {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+/* Cabeçalho */
+.artistas-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.artistas-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #FF8C42;
+  margin-bottom: 16px;
+}
+
+.artistas-headline {
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  letter-spacing: -1px;
+}
+
+.artistas-headline-linha1 {
+  display: block;
+  color: #FFFFFF;
+}
+
+.artistas-headline-linha2 {
+  display: block;
+  background: linear-gradient(135deg, #FF8C42 0%, #C86DD7 35%, #6C63FF 70%, #3A86FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.artistas-descricao {
+  font-size: 18px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.65);
+  max-width: 650px;
+  margin: 0 auto 32px;
+}
+
+.artistas-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: rgba(108, 99, 255, 0.12);
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  border-radius: 8px;
+  color: #6C63FF;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.artistas-cta:hover {
+  background: rgba(108, 99, 255, 0.2);
+  border-color: rgba(108, 99, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Grid de Cards */
+.artistas-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
   gap: 16px;
-  margin-top: 56px;
+  margin-bottom: 60px;
+  overflow-x: auto;
+  padding-bottom: 10px;
 }
 
-.artist-card {
-  background: var(--dark2);
-  border: 1px solid var(--dark4);
-  border-radius: 16px;
+/* Card Individual */
+.artista-card {
+  background: #0D0D12;
+  border-radius: 12px;
   overflow: hidden;
-  transition: all 0.3s;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
 }
 
-.artist-card:hover {
-  border-color: rgba(212,168,67,0.3);
-  transform: translateY(-6px);
-  box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+.artista-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-.artist-avatar {
+/* Imagem do Card */
+.artista-card-imagem {
+  position: relative;
   width: 100%;
-  aspect-ratio: 1;
+  height: 400px;
+  overflow: hidden;
+}
+
+.artista-card-imagem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.artista-card-imagem::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+/* Badge no Card */
+.artista-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10;
+}
+
+.badge-cantora { background: #6C63FF; color: #fff; }
+.badge-cantor { background: #6C63FF; color: #fff; }
+.badge-modelo { background: #C86DD7; color: #fff; }
+.badge-influencer { background: #C86DD7; color: #fff; }
+
+/* Conteúdo do Card */
+.artista-card-conteudo {
+  padding: 20px;
+}
+
+.artista-nome {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 6px;
+}
+
+.artista-funcao {
+  font-size: 14px;
+  font-weight: 500;
+  color: #C86DD7;
+  margin-bottom: 12px;
+}
+
+.artista-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.artista-tag {
+  padding: 4px 10px;
+  background: rgba(255, 140, 66, 0.15);
+  border: 1px solid rgba(255, 140, 66, 0.3);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #FF8C42;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tag-gospel { background: rgba(108, 99, 255, 0.15); border-color: rgba(108, 99, 255, 0.3); color: #6C63FF; }
+.tag-pop { background: rgba(255, 140, 66, 0.15); border-color: rgba(255, 140, 66, 0.3); color: #FF8C42; }
+.tag-country { background: rgba(255, 193, 7, 0.15); border-color: rgba(255, 193, 7, 0.3); color: #FFC107; }
+.tag-fashion { background: rgba(200, 109, 215, 0.15); border-color: rgba(200, 109, 215, 0.3); color: #C86DD7; }
+.tag-beauty { background: rgba(255, 107, 142, 0.15); border-color: rgba(255, 107, 142, 0.3); color: #FF6B8E; }
+
+.artista-plays {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.artista-plays::before {
+  content: '▶';
+  color: #FF8C42;
+  font-size: 10px;
+}
+
+/* Faixa de Features */
+.artistas-features {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  padding: 40px;
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.05) 0%, rgba(200, 109, 215, 0.05) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
-  position: relative;
-  overflow: hidden;
 }
 
-.artist-avatar.gospel { background: linear-gradient(135deg, #1a1230, #2d1f4e); }
-.artist-avatar.pop { background: linear-gradient(135deg, #1a0f2e, #3b1f5e); }
-.artist-avatar.rnb { background: linear-gradient(135deg, #0f1a30, #1f3b5e); }
-.artist-avatar.fashion { background: linear-gradient(135deg, #1a1a1a, #2d2d2d); }
-.artist-avatar.beauty { background: linear-gradient(135deg, #2d0f1a, #5e1f3b); }
-
-.artist-avatar-glow {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.3s;
+.feature-icon svg {
+  width: 32px;
+  height: 32px;
 }
 
-.artist-card:hover .artist-avatar-glow { opacity: 1; }
+.icon-lipsync svg { stroke: #FF6B8E; }
+.icon-avatar svg { stroke: #6C63FF; }
+.icon-voz svg { stroke: #C86DD7; }
+.icon-direitos svg { stroke: #3A86FF; }
 
-.artist-avatar.gospel .artist-avatar-glow { background: radial-gradient(ellipse at center, rgba(124,58,237,0.2), transparent); }
-.artist-avatar.pop .artist-avatar-glow { background: radial-gradient(ellipse at center, rgba(209,86,163,0.2), transparent); }
-.artist-avatar.rnb .artist-avatar-glow { background: radial-gradient(ellipse at center, rgba(59,130,246,0.2), transparent); }
-.artist-avatar.fashion .artist-avatar-glow { background: radial-gradient(ellipse at center, rgba(212,168,67,0.2), transparent); }
-.artist-avatar.beauty .artist-avatar-glow { background: radial-gradient(ellipse at center, rgba(244,114,182,0.2), transparent); }
-
-.artist-avatar-emoji { font-size: 52px; position: relative; z-index: 1; }
-
-.artist-info { padding: 16px; }
-
-.artist-name {
-  font-family: 'Syne', sans-serif;
+.feature-titulo {
+  font-size: 15px;
   font-weight: 700;
-  font-size: 14px;
-  color: var(--white);
+  color: #FFFFFF;
   margin-bottom: 4px;
-  letter-spacing: -0.3px;
 }
 
-.artist-role {
-  font-size: 10px;
-  color: var(--gray);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  font-family: 'Space Grotesk', sans-serif;
+.feature-descricao {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
 }
 
-.artist-tag {
-  display: inline-block;
-  margin-top: 8px;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 3px;
-  font-family: 'Space Grotesk', sans-serif;
+/* Responsividade S5 */
+@media (max-width: 1200px) {
+  .artistas-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
-.artist-tag.gospel { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
-.artist-tag.pop { background: rgba(209,86,163,0.15); color: #f472b6; border: 1px solid rgba(209,86,163,0.2); }
-.artist-tag.rnb { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
-.artist-tag.fashion { background: rgba(212,168,67,0.15); color: var(--lumina-gold); border: 1px solid rgba(212,168,67,0.2); }
-.artist-tag.beauty { background: rgba(244,114,182,0.15); color: #fb7185; border: 1px solid rgba(244,114,182,0.2); }
+@media (max-width: 768px) {
+  .secao-artistas {
+    padding: 60px 24px;
+  }
+
+  .artistas-headline {
+    font-size: 42px;
+  }
+
+  .artistas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .artistas-features {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 30px 20px;
+  }
+}
 
 /* ─── CTA CENTRAL ────────────────────────────── */
 .cta-section {
@@ -4060,67 +4255,175 @@ footer {
   </div>
 </section>
 
-<!-- ARTISTAS -->
-<section class="artists" id="artistas">
-  <div class="container">
-    <div class="reveal">
-      <div class="section-label">Talentos Digitais</div>
-      <h2 class="section-title">ARTISTAS &<br><span class="accent">MODELOS IA</span></h2>
-      <p class="section-desc">Talentos digitais exclusivos da Lumina — disponíveis para campanhas, músicas, vídeos e ações de marketing.</p>
+<!-- ═══════════════════════════════════════════
+     S5 · ARTISTAS & MODELOS IA
+     ═══════════════════════════════════════════ -->
+<section class="secao-artistas" id="artistas">
+  <div class="artistas-container">
+    
+    <!-- Cabeçalho -->
+    <div class="artistas-header">
+      <div class="artistas-eyebrow">
+        <span>—</span>
+        <span>TALENTOS DIGITAIS</span>
+      </div>
+      
+      <h2 class="artistas-headline">
+        <span class="artistas-headline-linha1">ARTISTAS &</span>
+        <span class="artistas-headline-linha2">MODELOS IA</span>
+      </h2>
+      
+      <p class="artistas-descricao">
+        Talentos digitais exclusivos da Lumina — disponíveis para<br>
+        campanhas, músicas, vídeos e ações de marketing.
+      </p>
+      
+      <a href="#todos-talentos" class="artistas-cta">
+        Ver todos os talentos
+        <span>→</span>
+      </a>
     </div>
 
-    <div class="artists-grid">
-      <div class="artist-card reveal">
-        <div class="artist-avatar-photo">
-          <img src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/artists%2Flara_veronese.jpg?alt=media&token=12e33386-62e1-4548-a4f4-9a9dfd2dfaa4" alt="Lara Veronese — Cantora IA" loading="lazy">
+    <!-- Grid de Cards -->
+    <div class="artistas-grid">
+      
+      <!-- Card 1: Lara Veronese -->
+      <div class="artista-card">
+        <div class="artista-card-imagem">
+          <span class="artista-badge badge-cantora">CANTORA IA</span>
+          <img src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/artists%2Flara_veronese.jpg?alt=media&token=12e33386-62e1-4548-a4f4-9a9dfd2dfaa4" alt="Lara Veronese">
         </div>
-        <div class="artist-info">
-          <div class="artist-name">LARA VERONESE</div>
-          <div class="artist-role">Cantora IA</div>
-          <span class="artist-tag gospel">Gospel · Pop</span>
-        </div>
-      </div>
-      <div class="artist-card reveal reveal-delay-1">
-        <div class="artist-avatar-photo">
-          <img src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/artists%2Frick_villanova.jpg?alt=media&token=a60efe92-ad3a-48d5-8418-d4402d66c98f" alt="Rick Villanova — Cantor IA" loading="lazy" style="object-position: center top;">
-        </div>
-        <div class="artist-info">
-          <div class="artist-name">RICK VILLANOVA</div>
-          <div class="artist-role">Cantor IA</div>
-          <span class="artist-tag gospel">Gospel</span>
+        <div class="artista-card-conteudo">
+          <h3 class="artista-nome">LARA VERONESE</h3>
+          <p class="artista-funcao">Cantora IA</p>
+          <div class="artista-tags">
+            <span class="artista-tag tag-gospel">GOSPEL</span>
+            <span class="artista-tag tag-pop">POP</span>
+          </div>
+          <div class="artista-plays">120K plays</div>
         </div>
       </div>
-      <div class="artist-card reveal reveal-delay-2">
-        <div class="artist-avatar-photo">
-          <img src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/artists%2Fadrian_bale.jpg?alt=media&token=b37b8a76-cff4-4870-ac5e-999d1be2cfb2" alt="Adrian Bale — Cantor IA" loading="lazy" style="object-position: center 15%;">
+
+      <!-- Card 2: Rick Villanova -->
+      <div class="artista-card">
+        <div class="artista-card-imagem">
+          <span class="artista-badge badge-cantor">CANTOR IA</span>
+          <img src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/artists%2Frick_villanova.jpg?alt=media&token=a60efe92-ad3a-48d5-8418-d4402d66c98f" alt="Rick Villanova">
         </div>
-        <div class="artist-info">
-          <div class="artist-name">ADRIAN BALE</div>
-          <div class="artist-role">Cantor IA</div>
-          <span class="artist-tag rnb">Gospel · Country</span>
-        </div>
-      </div>
-      <div class="artist-card reveal reveal-delay-3">
-        <div class="artist-avatar-photo">
-          <img src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/artists%2Flia_maia.jpg?alt=media&token=41e0c421-ebad-4bc2-8eda-48076cadf93b" alt="Lia Maia — Modelo IA" loading="lazy" style="object-position: center top;">
-        </div>
-        <div class="artist-info">
-          <div class="artist-name">LIA MAIA</div>
-          <div class="artist-role">Modelo IA</div>
-          <span class="artist-tag fashion">Fashion</span>
+        <div class="artista-card-conteudo">
+          <h3 class="artista-nome">RICK VILLANOVA</h3>
+          <p class="artista-funcao">Cantor IA</p>
+          <div class="artista-tags">
+            <span class="artista-tag tag-gospel">GOSPEL</span>
+          </div>
+          <div class="artista-plays">96K plays</div>
         </div>
       </div>
-      <div class="artist-card reveal reveal-delay-4">
-        <div class="artist-avatar-photo">
-          <img src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/artists%2Findira_luz.jpg?alt=media&token=3ddfa17c-3133-49ce-9f62-ba9ce45430de" alt="Indira Luz — Modelo IA" loading="lazy" style="object-position: center top;">
+
+      <!-- Card 3: Adrian Bale -->
+      <div class="artista-card">
+        <div class="artista-card-imagem">
+          <span class="artista-badge badge-cantor">CANTOR IA</span>
+          <img src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/artists%2Fadrian_bale.jpg?alt=media&token=b37b8a76-cff4-4870-ac5e-999d1be2cfb2" alt="Adrian Bale">
         </div>
-        <div class="artist-info">
-          <div class="artist-name">INDIRA LUZ</div>
-          <div class="artist-role">Modelo IA</div>
-          <span class="artist-tag beauty">Beauty</span>
+        <div class="artista-card-conteudo">
+          <h3 class="artista-nome">ADRIAN BALE</h3>
+          <p class="artista-funcao">Cantor IA</p>
+          <div class="artista-tags">
+            <span class="artista-tag tag-gospel">GOSPEL</span>
+            <span class="artista-tag tag-country">COUNTRY</span>
+          </div>
+          <div class="artista-plays">156K plays</div>
         </div>
       </div>
+
+      <!-- Card 4: Lia Maia -->
+      <div class="artista-card">
+        <div class="artista-card-imagem">
+          <span class="artista-badge badge-modelo">MODELO IA</span>
+          <img src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/artists%2Flia_maia.jpg?alt=media&token=41e0c421-ebad-4bc2-8eda-48076cadf93b" alt="Lia Maia">
+        </div>
+        <div class="artista-card-conteudo">
+          <h3 class="artista-nome">LIA MAIA</h3>
+          <p class="artista-funcao">Modelo IA</p>
+          <div class="artista-tags">
+            <span class="artista-tag tag-fashion">FASHION</span>
+          </div>
+          <div class="artista-plays">112K plays</div>
+        </div>
+      </div>
+
+      <!-- Card 5: Indira Luz -->
+      <div class="artista-card">
+        <div class="artista-card-imagem">
+          <span class="artista-badge badge-influencer">MODELO IA</span>
+          <img src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0723352507.firebasestorage.app/o/artists%2Findira_luz.jpg?alt=media&token=3ddfa17c-3133-49ce-9f62-ba9ce45430de" alt="Indira Luz">
+        </div>
+        <div class="artista-card-conteudo">
+          <h3 class="artista-nome">INDIRA LUZ</h3>
+          <p class="artista-funcao">Influencer IA</p>
+          <div class="artista-tags">
+            <span class="artista-tag tag-beauty">BEAUTY</span>
+          </div>
+          <div class="artista-plays">205K plays</div>
+        </div>
+      </div>
+
     </div>
+
+    <!-- Faixa de Features -->
+    <div class="artistas-features">
+      
+      <div class="feature-item">
+        <div class="feature-icon icon-lipsync">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 0 0-9.95 9h19.9A10 10 0 0 0 12 2Z"/>
+            <path d="M12 22a10 10 0 0 0 9.95-9h-19.9a10 10 0 0 0 9.95 9Z"/>
+            <path d="M8 12h8"/>
+          </svg>
+        </div>
+        <h4 class="feature-titulo">LIP SYNC REALISTA</h4>
+        <p class="feature-descricao">Movimentos labiais precisos</p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon icon-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </div>
+        <h4 class="feature-titulo">AVATARES 4K</h4>
+        <p class="feature-descricao">Qualidade ultra realista</p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon icon-voz">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </div>
+        <h4 class="feature-titulo">VOZES NATURAIS</h4>
+        <p class="feature-descricao">Emoção e entonação real</p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon icon-direitos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <h4 class="feature-titulo">DIREITOS COMERCIAIS</h4>
+        <p class="feature-descricao">Uso seguro e autorizado</p>
+      </div>
+
+    </div>
+
   </div>
 </section>
 
