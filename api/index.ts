@@ -1,3 +1,4 @@
+import rateLimit from "express-rate-limit";
 import express from "express";
 import path from "path";
 import { Resend } from 'resend';
@@ -226,6 +227,16 @@ async function withRetry<T>(
 
 async function createServer() {
   const app = express();
+  const geminiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  max: 20, // 20 requisições por minuto por IP
+  message: {
+    error: "Muitas requisições. Aguarde alguns segundos."
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
   const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
   app.use(express.json({ limit: '50mb' }));
 
@@ -712,7 +723,7 @@ OUTPUT: ONE complete image prompt in English (maximum 450 words). Include ALL vi
   });
 
   // Main Gemini API Proxy
-  app.post("/api/gemini", async (req, res) => {
+  app.post("/api/gemini", geminiLimiter, async (req, res) => {
     try {
       const { method, args, apiKey: clientApiKey } = req.body;
 
