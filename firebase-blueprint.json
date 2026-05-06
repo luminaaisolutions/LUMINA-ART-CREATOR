@@ -1,0 +1,114 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Informações do perfil do usuário.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID único do usuário." },
+        "email": { "type": "string", "format": "email", "description": "E-mail do usuário." },
+        "displayName": { "type": "string", "description": "Nome de exibição." },
+        "firstName": { "type": "string", "description": "Primeiro nome." },
+        "lastName": { "type": "string", "description": "Sobrenome." },
+        "phone": { "type": "string", "description": "Telefone de contato." },
+        "photoURL": { "type": "string", "description": "URL da foto de perfil." },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "Papel do usuário no sistema." },
+        "credits": { "type": "number", "description": "Saldo de créditos para geração." },
+        "plan": { "type": "string", "enum": ["trial", "iniciante", "creator pro", "elite agency"], "description": "Plano de assinatura atual." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação da conta." },
+        "isVerified": { "type": "boolean", "description": "Se o e-mail foi verificado via OTP." },
+        "verificationCode": { "type": "string", "description": "Código OTP atual." },
+        "referralCode": { "type": "string", "description": "Código de indicação único do usuário." },
+        "referredBy": { "type": "string", "description": "UID do usuário que indicou este usuário." },
+        "referralCount": { "type": "number", "description": "Total de indicações bem-sucedidas." }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "BatchItem": {
+      "title": "Batch Generation Item",
+      "description": "Um item individual de geração de vídeo ou imagem.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID único do item." },
+        "type": { "type": "string", "enum": ["video", "image", "lipsync"], "description": "Tipo de geração." },
+        "status": { "type": "string", "enum": ["pending", "processing", "completed", "failed"], "description": "Status atual." },
+        "prompt": { "type": "string", "description": "Prompt de texto utilizado." },
+        "aspectRatio": { "type": "string", "description": "Proporção da imagem/vídeo." },
+        "resolution": { "type": "string", "description": "Resolução desejada." },
+        "previewUrl": { "type": "string", "description": "URL do resultado gerado." },
+        "progress": { "type": "number", "description": "Progresso da geração (0-100)." },
+        "duration": { "type": "number", "description": "Duração do vídeo em segundos." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação." },
+        "completedAt": { "type": "string", "format": "date-time", "description": "Data de conclusão." },
+        "error": { "type": "string", "description": "Mensagem de erro em caso de falha." },
+        "isLarge": { "type": "boolean", "description": "Se o preview é muito grande para o Firestore." },
+        "lowPriority": { "type": "boolean", "description": "Se a geração é de baixa prioridade." },
+        "sourceTab": { "type": "string", "description": "Aba de origem da geração." }
+      },
+      "required": ["id", "type", "status", "prompt", "createdAt"]
+    },
+    "Payment": {
+      "title": "Payment Transaction",
+      "description": "Registro de transação de pagamento via Mercado Pago.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID da transação no Mercado Pago." },
+        "userId": { "type": "string", "description": "UID do usuário." },
+        "amount": { "type": "number", "description": "Valor pago." },
+        "credits": { "type": "number", "description": "Créditos adquiridos." },
+        "plan": { "type": "string", "description": "Plano adquirido." },
+        "status": { "type": "string", "description": "Status do pagamento (pending, approved, rejected)." },
+        "method": { "type": "string", "description": "Método de pagamento (pix, credit_card, etc.)." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data da transação." }
+      },
+      "required": ["id", "userId", "amount", "status", "createdAt"]
+    },
+    "BrandProfile": {
+      "title": "Brand Profile",
+      "description": "Perfil de marca do usuário para criativos personalizados.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID único da marca." },
+        "name": { "type": "string", "description": "Nome da marca." },
+        "logos": { 
+          "type": "array", 
+          "items": { "type": "object" },
+          "description": "Logotipos da marca (base64)." 
+        },
+        "images": { 
+          "type": "array", 
+          "items": { "type": "object" },
+          "description": "Imagens de referência." 
+        },
+        "colors": { "type": "array", "items": { "type": "string" }, "description": "Cores primárias." },
+        "typography": { "type": "string", "description": "Tipografia preferida." },
+        "mission": { "type": "string", "description": "Missão da marca." },
+        "niche": { "type": "string", "description": "Nicho de atuação." },
+        "contact": { "type": "string", "description": "Informações de contato." },
+        "description": { "type": "string", "description": "Descrição detalhada." },
+        "styleAnalysis": { "type": "string", "description": "Análise de estilo gerada por IA." },
+        "toneOfVoice": { "type": "string", "description": "Tom de voz detectado." },
+        "detectedPalette": { "type": "array", "items": { "type": "string" }, "description": "Paleta detectada pela IA." }
+      },
+      "required": ["id", "name"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Dados do perfil do usuário."
+    },
+    "/users/{userId}/batches/{batchId}": {
+      "schema": "BatchItem",
+      "description": "Itens de geração do usuário."
+    },
+    "/users/{userId}/brands/{brandId}": {
+      "schema": "BrandProfile",
+      "description": "Perfis de marca do usuário."
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Histórico de pagamentos global."
+    }
+  }
+}
