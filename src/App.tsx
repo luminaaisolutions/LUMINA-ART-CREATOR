@@ -1249,14 +1249,13 @@ function AppContent() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             method,
-            // remover envio de apiKey
+            userId: user?.uid, // 👈 identificação do usuário
             args: {
               model,
               prompt,
               contents,
               config,
               operation: options.operation,
-              // Parâmetros extras para Ideogram
               aspectRatio: options.aspectRatio,
               quality: options.quality,
               referenceImageUrl: options.referenceImageUrl
